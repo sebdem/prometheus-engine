@@ -4,6 +4,11 @@ import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.g2d.BitmapFont;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
+import com.badlogic.gdx.scenes.scene2d.Actor;
+import com.badlogic.gdx.scenes.scene2d.Touchable;
+import com.badlogic.gdx.scenes.scene2d.ui.Button;
+import com.badlogic.gdx.scenes.scene2d.ui.Skin;
+import com.badlogic.gdx.scenes.scene2d.ui.TextButton;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -14,6 +19,9 @@ public class MainMenuScene extends AbstractScene {
 
     @Override
     public void create() {
+        super.create();
+        this.font.setColor(Color.valueOf("#EEEE70"));
+
         navItems.add("Continue");
         navItems.add("New Game");
         navItems.add("Load Save");
@@ -21,21 +29,19 @@ public class MainMenuScene extends AbstractScene {
         navItems.add("Settings");
         navItems.add("Close");
 
-        this.background = Color.valueOf("#1a1a1a");
+        Actor navItemActor;
 
-        this.font = new BitmapFont();
-        this.font.setColor(Color.valueOf("#CECECE"));
+        for(int i = 0; i < navItems.size(); i++) {
+            navItemActor = new TextButton(navItems.get(i), this.uiSkinDefault);
+            navItemActor.setPosition(1f, uiStage.getHeight() - (i + 1) * navItemActor.getHeight());
+            this.uiStage.addActor(navItemActor);
+        }
+
     }
 
     @Override
-    public void render(SpriteBatch batch, int windowWidth, int windowHeight, float aspect){
-        super.render(batch, windowWidth, windowHeight, aspect);
-
-        int startY = windowHeight;
-        for(String item : navItems) {
-            startY -=40;
-            font.draw(batch, item, 32, startY);
-        }
+    public void render(int windowWidth, int windowHeight, float aspect){
+        super.render(windowWidth, windowHeight, aspect);
     }
     @Override
     public void dispose() {
