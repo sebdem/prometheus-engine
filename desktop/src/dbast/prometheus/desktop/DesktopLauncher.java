@@ -37,6 +37,10 @@ public class DesktopLauncher {
 			config.width = 320;
 			config.height = 720;
 			config.width = 1280;
+			config.height = 900;
+			config.width = 1600;
+			config.height = 1440;
+			config.width = 2560;
 			config.title = "It's " + LocalDateTime.now().getDayOfWeek().getDisplayName(TextStyle.FULL, Locale.ENGLISH) +" mah dudes"; // TODO slap a name on this motherf
 		}
 
