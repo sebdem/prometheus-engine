@@ -1,17 +1,60 @@
 package dbast.prometheus.engine.entity.systems;
 
+import com.badlogic.gdx.Gdx;
+import com.badlogic.gdx.math.Rectangle;
 import dbast.prometheus.engine.entity.Entity;
 import dbast.prometheus.engine.entity.components.CollisionBox;
 import dbast.prometheus.engine.entity.components.Component;
 import dbast.prometheus.engine.entity.components.PositionComponent;
+import dbast.prometheus.engine.entity.components.StateComponent;
 
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 public class CollisionDetectionSystem extends ComponentSystem {
+
     @Override
-    public void execute(float updateDelta) {
-        Entity test = null;
+    public void execute(float updateDelta, List<Entity> entities) {
+        Map<Long, Rectangle> entityHitboxes = new HashMap<>();
+
+        for(Entity entityA : entities) {
+            PositionComponent positionA = (PositionComponent)entityA.getComponent(PositionComponent.class);
+            CollisionBox collisionA = (CollisionBox)entityA.getComponent(CollisionBox.class);
+
+            Rectangle hitboxA = new Rectangle(positionA.getX_pos(), positionA.getY_pos(), collisionA.getWidth(), collisionA.getHeight());
+            entityHitboxes.put(entityA.getId(), hitboxA);
+
+            boolean isColliding = false;
+            for(Entity entityB: entities) {
+                if (!entityA.getId().equals(entityB.getId())) {
+                    PositionComponent positionB = (PositionComponent)entityB.getComponent(PositionComponent.class);
+                    CollisionBox collisionB = (CollisionBox)entityB.getComponent(CollisionBox.class);
+
+                    Rectangle hitboxB = entityHitboxes.get(entityB.getId());
+                    if (hitboxB == null) {
+                        hitboxB = new Rectangle(positionB.getX_pos(), positionB.getY_pos(), collisionB.getWidth(), collisionB.getHeight());
+                        entityHitboxes.put(entityB.getId(), hitboxB);
+                    }
+
+                    if (hitboxA.overlaps(hitboxB)) {
+                        Gdx.app.getApplicationLogger().log("Collision System:", String.format("Entity %s collides with Entity %s", entityA.getId(),entityB.getId()));
+                        isColliding = true;
+                    }
+                }
+            }
+            collisionA.setColliding(isColliding);
+            StateComponent entityState = (StateComponent)entityA.getComponent(StateComponent.class);
+            if (entityState != null) {
+              //  Gdx.app.getApplicationLogger().log("Collision System:", String.format("update for entity %s state; new state is%s colliding", entityA.getId(), isColliding ? "" : " not"));
+                if (isColliding) {
+                    entityState.setState("colliding");
+                } else {
+                    entityState.setState("");
+                }
+            }
+        }
     }
 
     @Override

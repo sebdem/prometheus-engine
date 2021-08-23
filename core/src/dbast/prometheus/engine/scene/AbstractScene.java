@@ -59,8 +59,8 @@ public abstract class AbstractScene implements IKeyed {
      */
     public void activateScene() { }
 
-    public void update(){
-        this.gui.act(Gdx.graphics.getDeltaTime());
+    public void update(float deltaTime){
+        this.gui.act(deltaTime);
     }
 
     public void dispose() {

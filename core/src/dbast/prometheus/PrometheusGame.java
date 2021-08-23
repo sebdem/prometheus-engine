@@ -18,6 +18,7 @@ public class PrometheusGame extends ApplicationAdapter {
 				new DefaultScene("Test_default"),
 				new WorldScene("LEVEL_DEBUG")
 		);
+
 		activeScene = SceneRegistry.get("LEVEL_DEBUG");
 	}
 
@@ -26,7 +27,7 @@ public class PrometheusGame extends ApplicationAdapter {
 		windowWidth = Gdx.graphics.getWidth();
 		windowHeight = Gdx.graphics.getHeight();
 		float aspect = (float)windowWidth/windowHeight;
-		activeScene.update();
+		activeScene.update(Gdx.graphics.getDeltaTime());
 
 		activeScene.render(windowWidth, windowHeight, aspect);
 	}
