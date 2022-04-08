@@ -1,19 +1,15 @@
 package dbast.prometheus.desktop;
 
 import com.badlogic.gdx.Files;
-import com.badlogic.gdx.Gdx;
-import com.badlogic.gdx.Graphics;
 import com.badlogic.gdx.backends.lwjgl.LwjglApplication;
 import com.badlogic.gdx.backends.lwjgl.LwjglApplicationConfiguration;
-import com.badlogic.gdx.scenes.scene2d.Stage;
 import dbast.prometheus.PrometheusGame;
+import dbast.prometheus.SimpleDecalTest;
 import dbast.prometheus.TestThreeDim;
 
-import java.awt.*;
 import java.time.LocalDateTime;
 import java.time.format.TextStyle;
 import java.util.Arrays;
-import java.util.Date;
 import java.util.List;
 import java.util.Locale;
 

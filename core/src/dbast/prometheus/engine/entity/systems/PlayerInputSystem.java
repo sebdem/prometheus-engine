@@ -3,6 +3,9 @@ package dbast.prometheus.engine.entity.systems;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Input;
 import com.badlogic.gdx.InputProcessor;
+import com.badlogic.gdx.graphics.Camera;
+import com.badlogic.gdx.math.Vector2;
+import com.badlogic.gdx.math.Vector3;
 import dbast.prometheus.engine.entity.Entity;
 import dbast.prometheus.engine.entity.components.*;
 
@@ -10,6 +13,7 @@ import java.util.Arrays;
 import java.util.List;
 
 public class PlayerInputSystem extends ComponentSystem {
+
     @Override
     public void execute(float updateDelta, List<Entity> entities) {
         InputProcessor inputProcessor = Gdx.input.getInputProcessor();

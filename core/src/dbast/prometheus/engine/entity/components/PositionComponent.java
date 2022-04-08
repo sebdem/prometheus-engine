@@ -1,5 +1,7 @@
 package dbast.prometheus.engine.entity.components;
 
+import com.badlogic.gdx.math.Vector3;
+
 public class PositionComponent extends Component {
 
     private float x_pos;
@@ -28,5 +30,9 @@ public class PositionComponent extends Component {
     }
     public void setY_pos(float y_pos) {
         this.y_pos = y_pos;
+    }
+
+    public Vector3 toVector3() {
+        return new Vector3(x_pos, y_pos, 0f);
     }
 }

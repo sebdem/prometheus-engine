@@ -15,6 +15,8 @@ import java.util.Map;
 
 public class CollisionDetectionSystem extends ComponentSystem {
 
+    private static boolean LOG_COLLISIONS = false;
+
     @Override
     public void execute(float updateDelta, List<Entity> entities) {
         Map<Long, Rectangle> entityHitboxes = new HashMap<>();
@@ -39,7 +41,9 @@ public class CollisionDetectionSystem extends ComponentSystem {
                     }
 
                     if (hitboxA.overlaps(hitboxB)) {
-                        Gdx.app.getApplicationLogger().log("Collision System:", String.format("Entity %s collides with Entity %s", entityA.getId(),entityB.getId()));
+                        if (LOG_COLLISIONS) {
+                            Gdx.app.getApplicationLogger().log("Collision System:", String.format("Entity %s collides with Entity %s", entityA.getId(),entityB.getId()));
+                        }
                         isColliding = true;
                     }
                 }

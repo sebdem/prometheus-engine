@@ -2,6 +2,7 @@ package dbast.prometheus.engine.scene;
 
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.graphics.Color;
+import com.badlogic.gdx.graphics.GL20;
 import com.badlogic.gdx.graphics.GL30;
 import com.badlogic.gdx.scenes.scene2d.ui.Label;
 import dbast.prometheus.engine.base.IKeyed;

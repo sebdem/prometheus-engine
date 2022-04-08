@@ -3,27 +3,28 @@ package dbast.prometheus.engine.scene;
 import com.badlogic.gdx.ApplicationLogger;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Input;
-import com.badlogic.gdx.graphics.Color;
-import com.badlogic.gdx.graphics.Texture;
+import com.badlogic.gdx.graphics.*;
 import com.badlogic.gdx.graphics.g2d.BitmapFont;
+import com.badlogic.gdx.graphics.g2d.Sprite;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
+import com.badlogic.gdx.graphics.g3d.decals.Decal;
+import com.badlogic.gdx.math.Matrix4;
 import com.badlogic.gdx.math.Rectangle;
-import com.badlogic.gdx.physics.box2d.Box2D;
+import com.badlogic.gdx.math.Vector3;
 import com.badlogic.gdx.scenes.scene2d.InputEvent;
 import com.badlogic.gdx.scenes.scene2d.InputListener;
 import com.badlogic.gdx.utils.Align;
 import dbast.prometheus.engine.entity.Entity;
-import dbast.prometheus.engine.entity.components.CollisionBox;
-import dbast.prometheus.engine.entity.components.Component;
-import dbast.prometheus.engine.entity.components.PositionComponent;
-import dbast.prometheus.engine.entity.components.SpriteComponent;
+import dbast.prometheus.engine.entity.components.*;
 import dbast.prometheus.engine.entity.systems.CollisionDetectionSystem;
 import dbast.prometheus.engine.entity.systems.MovementSystem;
 import dbast.prometheus.engine.entity.systems.PlayerInputSystem;
 import dbast.prometheus.engine.world.TilePlane;
 
-import javax.swing.text.Position;
-import java.util.*;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 public class WorldScene extends AbstractScene{
 
@@ -36,6 +37,9 @@ public class WorldScene extends AbstractScene{
     private PlayerInputSystem playerInputSystem;
     private List<Class<? extends Component>> entityRenderComponents;
     private MovementSystem movementSystem;
+    private Camera cam;
+    private Camera camSprites;
+
 
     public WorldScene(String key) {
         super(key);
@@ -47,7 +51,13 @@ public class WorldScene extends AbstractScene{
         font = new BitmapFont();
         font.setColor(Color.valueOf("#FFFFFF"));
         font.getRegion().getTexture().setFilter(Texture.TextureFilter.Linear, Texture.TextureFilter.Linear);
+        font.getData().setScale(0.1f);
 
+        cam = new PerspectiveCamera(80f, 32 ,18);
+        //cam = new OrthographicCamera(16 ,9);
+
+        //cam.position.set(0,0,6f);
+        //cam.rotate(20, 1f,0,0f);
 
         tileMap.put(0, new Texture(Gdx.files.internal("world/terrain/water.png")));
         tileMap.put(1, new Texture(Gdx.files.internal("world/terrain/dirt.png")));
@@ -57,9 +67,9 @@ public class WorldScene extends AbstractScene{
 
         collisionDetectionSystem = new CollisionDetectionSystem();
         playerInputSystem = new PlayerInputSystem();
-        movementSystem = new MovementSystem(new Rectangle(0f,0f, world.width, world.height));
-        entityRenderComponents = Arrays.asList(SpriteComponent.class, PositionComponent.class, CollisionBox.class);
 
+        movementSystem = new MovementSystem(new Rectangle(0f,0f, world.width, world.height));
+        entityRenderComponents = Arrays.asList(SpriteComponent.class, PositionComponent.class, SizeComponent.class);
 
         batch = new SpriteBatch();
 
@@ -70,15 +80,18 @@ public class WorldScene extends AbstractScene{
             if (keycode == Input.Keys.F3) {
                 gui.setDebugAll(!gui.isDebugAll());
             }
+
             return super.keyDown(event, keycode);
             }
         });
+
 
         return this;
     }
 
     @Override
     public void render(int windowWidth, int windowHeight, float aspect) {
+        batch.setProjectionMatrix(cam.combined);
         batch.begin();
         preRender(windowWidth, windowHeight, aspect);
         mainRender(windowWidth, windowHeight, aspect);
@@ -90,18 +103,6 @@ public class WorldScene extends AbstractScene{
     public void mainRender(int windowWidth, int windowHeight, float aspect){
         Texture tile;
         int[] xArray;
-        //int unknownMultiplier = 150; // seriously, what is that?
-        int tileScaleFactor = 100; // seriously, what is that?
-        if (windowHeight > windowWidth) {
-            tileScaleFactor = windowHeight / 9;
-        } else {
-            tileScaleFactor = windowWidth / 16;
-        }
-        int tileWidth = tileScaleFactor; //  (int)Math.round(unknownMultiplier * aspect);
-        int tileHeight = tileScaleFactor; // (int)Math.round(unknownMultiplier * aspect);
-
-        int coordWidth = tileWidth / 2;
-        font.getData().setScale(aspect);
 
         ApplicationLogger logger =  Gdx.app.getApplicationLogger();
 
@@ -112,31 +113,51 @@ public class WorldScene extends AbstractScene{
             xArray = world.terrainTiles[y];
             for(int x = 0; x < world.width; x++) {
                 tile = tileMap.get(xArray[x]);
-                batch.draw(tile, x * tileWidth, y * tileHeight, tileWidth, tileHeight) ;
+                //batch.draw(tile, x * tileWidth, y * tileHeight, tileWidth, tileHeight) ;
+                Sprite tileSprite = new Sprite(tile);
+                tileSprite.setOrigin(0,0);
+                tileSprite.setOriginBasedPosition(x,y);
+                tileSprite.setSize(1f,1f);
+                tileSprite.draw(batch);
+
                 if(gui.isDebugAll()) {
-                    logger.log("rendering:", String.format("(%s,%s) with tile %s (managed=%s)", x, y, tileMap.get(xArray[x]), tile.isManaged()));
-                    font.draw(batch, String.format("(%s,%s)", x, y), x * tileWidth, (y+1) * tileHeight, coordWidth, Align.bottomLeft, false);
+                    //logger.log("rendering:", String.format("(%s,%s) with tile %s (managed=%s)", x, y, tileMap.get(xArray[x]), tile.isManaged()));
+
+                    //Vector3 debugPos = cam.project(new Vector3(x,y,-1f));
+                    Vector3 debugPos = new Vector3(x,y,1f);
+                    logger.log("rendering:", String.format("(%s,%s) ", debugPos.x, debugPos.y));
+                    font.draw(batch, String.format("(%s,%s)", x, y), debugPos.x, debugPos.y, 0f, Align.bottomLeft, false);
+
                     //font.draw(batch, String.format("(%s,%s)", x, y), 0, 32, coordWidth, Align.bottomLeft, false);
                 }
+
             }
         }
-
 
         for(int entityIndex = 0; entityIndex < world.entities.size(); entityIndex++) {
             Entity entity = world.entities.get(entityIndex);
             if (entity.hasComponents(entityRenderComponents)) {
                 SpriteComponent spriteComponent = (SpriteComponent)entity.getComponent(SpriteComponent.class);
                 PositionComponent positionComponent = (PositionComponent)entity.getComponent(PositionComponent.class);
-                CollisionBox sizeComponent = (CollisionBox)entity.getComponent(CollisionBox.class);
+                SizeComponent sizeComponent = (SizeComponent)entity.getComponent(SizeComponent.class);
 
-                batch.draw(spriteComponent.getSprite(), positionComponent.getX_pos() * tileWidth, positionComponent.getY_pos() * tileHeight, sizeComponent.getWidth() * tileWidth,   sizeComponent.getHeight() * tileHeight) ;
+               // batch.draw(spriteComponent.getSprite(), positionComponent.getX_pos() * tileWidth, positionComponent.getY_pos() * tileHeight, sizeComponent.getWidth() * tileWidth,   sizeComponent.getHeight() * tileHeight) ;
+                Sprite sprite = spriteComponent.getSprite();
+
+                sprite.setOrigin(0,0);
+                sprite.setOriginBasedPosition(positionComponent.getX_pos(), positionComponent.getY_pos());
+                sprite.setSize(sizeComponent.getWidth(),sizeComponent.getHeight());
+
+                sprite.draw(batch);
                 if(gui.isDebugAll()) {
-                    font.setColor(Color.GOLD);
-                    font.draw(batch, String.format("(%s,%s)", positionComponent.getX_pos(), positionComponent.getY_pos()), positionComponent.getX_pos() * tileWidth, (positionComponent.getY_pos()+1) * tileHeight, coordWidth, Align.bottomLeft, false);
+                    //font.setColor(Color.GOLD);
+                    //font.draw(batch, String.format("(%s,%s)", positionComponent.getX_pos(), positionComponent.getY_pos()), positionComponent.getX_pos() * tileWidth, (positionComponent.getY_pos()+1) * tileHeight, coordWidth, Align.bottomLeft, false);
                 }
             }
         }
     }
+
+    public static double viewingAngle = Math.toRadians(60);
 
     public void update(float deltaTime){
         super.update(deltaTime);
@@ -144,6 +165,23 @@ public class WorldScene extends AbstractScene{
         collisionDetectionSystem.execute(deltaTime, collisionDetectionSystem.onlyQualified(world.entities));
         playerInputSystem.execute(deltaTime, playerInputSystem.onlyQualified(world.entities));
         movementSystem.execute(deltaTime, movementSystem.onlyQualified(world.entities));
+
+        Entity cameraFocus = world.entities.stream().filter(entity -> entity.hasComponents(Arrays.asList(PositionComponent.class, InputControllerComponent.class))).findAny().orElse(null);
+        if (cameraFocus != null) {
+            PositionComponent position = (PositionComponent)cameraFocus.getComponent(PositionComponent.class);
+            SizeComponent size = (SizeComponent)cameraFocus.getComponent(SizeComponent.class);
+            // this shit definitely worked, do not delete yet...
+            //cam.position.set(position.getX_pos(), position.getY_pos() - cam.viewportHeight *0.25f, cam.position.z);
+            Vector3 newPosition = position.toVector3().add(size.toVector3().scl(0.5f));
+
+            double tans = Math.tan(viewingAngle) * 4f;
+
+           // cam.position.set(newPosition.cpy().add(0, (float) -(Math.cos(viewingAngle) * tans),(float) (Math.sin(viewingAngle)  * tans)));
+            cam.position.set(newPosition.cpy().add(0, (float) -(Math.cos(viewingAngle) * tans),(float) (Math.sin(viewingAngle)  * tans)));
+            //cam.position.set(newPosition.cpy().sub(0,2f,-10f));
+            cam.lookAt(newPosition);
+        }
+        cam.update();
     }
 
     @Override

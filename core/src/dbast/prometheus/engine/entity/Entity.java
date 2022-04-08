@@ -3,6 +3,7 @@ package dbast.prometheus.engine.entity;
 import dbast.prometheus.engine.entity.components.Component;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 
 public class Entity {
@@ -25,6 +26,15 @@ public class Entity {
         this.properties.add(property);
         property.setEntity(this);
         return this;
+    }
+
+    public <C extends Component> C detachComponent(Class<C> clazz) {
+        for(int i = 0; i < this.properties.size(); i++) {
+            if (clazz.isInstance(this.properties.get(i))) {
+                return clazz.cast(this.properties.remove(i));
+            }
+        }
+        return null;
     }
 
     public Component getComponent(Class<? extends Component> classOf) {
