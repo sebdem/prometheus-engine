@@ -1,19 +1,10 @@
 package dbast.prometheus.engine.world;
 
 import com.badlogic.gdx.Gdx;
-import com.badlogic.gdx.graphics.Texture;
-import com.badlogic.gdx.graphics.g2d.Sprite;
-import dbast.prometheus.engine.entity.Entity;
 import dbast.prometheus.engine.entity.EntityRegistry;
 import dbast.prometheus.engine.entity.components.*;
-import dbast.prometheus.engine.world.tile.Tile;
-import dbast.prometheus.utils.GeneralUtils;
-import net.dermetfan.gdx.utils.ArrayUtils;
 
-import java.util.ArrayList;
-import java.util.List;
-
-public class TilePlane {
+public class WorldSpace {
 
     public int[][] terrainTiles;
     public int height;
@@ -21,14 +12,14 @@ public class TilePlane {
 
     public EntityRegistry entities;
 
-    public TilePlane(int width, int height) {
+    public WorldSpace(int width, int height) {
         this.width = width;
         this.height = height;
         this.terrainTiles = new int[height][width];
     }
 
 
-    public static TilePlane testLevel() {
+    public static WorldSpace testLevel() {
         int[][] level = new int[][]{
                 {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
                 {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
@@ -39,20 +30,20 @@ public class TilePlane {
                 {2, 1, 1, 2, 2, 2, 2, 2, 1, 1, 1, 1, 2, 2, 1, 0, 0},
                 {2, 2, 2, 2, 2, 2, 2, 2, 1, 2, 2, 2, 2, 2, 2, 1, 1},
                 {2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2},
-                {2, 2, 0, 0, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2},
-                {2, 1, 1, 1, 1, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2},
-                {2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2},
-                {2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2},
-                {2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2},
+                {2, 2, 0, 0, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 0, 2, 2},
+                {2, 1, 1, 1, 1, 2, 2, 2, 2, 2, 2, 2, 2, 0, 0, 2, 2},
+                {2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 0, 0, 2, 2},
+                {2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 1, 0, 0, 0},
+                {2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 1, 1, 0},
         };
 
-        TilePlane tilePlane = new TilePlane(level[0].length, level.length);
+        WorldSpace worldSpace = new WorldSpace(level[0].length, level.length);
 
-        tilePlane.terrainTiles = level;
+        worldSpace.terrainTiles = level;
         //GeneralUtils.populate2DInt(tilePlane.terrainTiles, 0, 3);
 
-        tilePlane.entities = new EntityRegistry();
-        tilePlane.entities.addNewEntity(
+        worldSpace.entities = new EntityRegistry();
+        worldSpace.entities.addNewEntity(
                 1L,
                 new CollisionBox(0.9f,1.45f,false),
                 new SizeComponent(1f,1.5f),
@@ -64,7 +55,7 @@ public class TilePlane {
         );
 
         for(int i = 0; i < 18; i++) {
-            tilePlane.entities.addNewEntity(
+            worldSpace.entities.addNewEntity(
                     CollisionBox.createBasic(),
                     SizeComponent.createBasic(),
                     PositionComponent.initial(),
@@ -74,7 +65,7 @@ public class TilePlane {
         }
 
         StateComponent stateComponent =  new StateComponent();
-        tilePlane.entities.addNewEntity(
+        worldSpace.entities.addNewEntity(
                 CollisionBox.createBasic().setPermeable(false),
                 SizeComponent.createBasic(),
                 new PositionComponent(4f, 4f),
@@ -86,13 +77,13 @@ public class TilePlane {
                         .bindTo(stateComponent)
         );
 
-        tilePlane.entities.addNewEntity(
+        worldSpace.entities.addNewEntity(
                 CollisionBox.createBasic().setPermeable(false),
                 SizeComponent.createBasic(),
                 new PositionComponent(6f, 4f),
                 SpriteComponent.fromFile(Gdx.files.internal("world/objects/chest_locked.png"))
         );
 
-        return tilePlane;
+        return worldSpace;
     }
 }

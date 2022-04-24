@@ -7,19 +7,19 @@ import com.badlogic.gdx.graphics.*;
 import com.badlogic.gdx.graphics.g2d.BitmapFont;
 import com.badlogic.gdx.graphics.g2d.Sprite;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
-import com.badlogic.gdx.graphics.g3d.decals.Decal;
-import com.badlogic.gdx.math.Matrix4;
 import com.badlogic.gdx.math.Rectangle;
 import com.badlogic.gdx.math.Vector3;
 import com.badlogic.gdx.scenes.scene2d.InputEvent;
 import com.badlogic.gdx.scenes.scene2d.InputListener;
 import com.badlogic.gdx.utils.Align;
+import com.badlogic.gdx.utils.Logger;
 import dbast.prometheus.engine.entity.Entity;
 import dbast.prometheus.engine.entity.components.*;
 import dbast.prometheus.engine.entity.systems.CollisionDetectionSystem;
 import dbast.prometheus.engine.entity.systems.MovementSystem;
 import dbast.prometheus.engine.entity.systems.PlayerInputSystem;
-import dbast.prometheus.engine.world.TilePlane;
+import dbast.prometheus.engine.world.WorldSpace;
+import dbast.prometheus.engine.world.WorldSpaceVariable;
 
 import java.util.Arrays;
 import java.util.HashMap;
@@ -30,7 +30,7 @@ public class WorldScene extends AbstractScene{
 
     protected BitmapFont font;
     protected SpriteBatch batch;
-    protected TilePlane world;
+    protected WorldSpaceVariable world;
     private Map<Integer, Texture> tileMap = new HashMap<>();
 
     private CollisionDetectionSystem collisionDetectionSystem;
@@ -38,8 +38,8 @@ public class WorldScene extends AbstractScene{
     private List<Class<? extends Component>> entityRenderComponents;
     private MovementSystem movementSystem;
     private Camera cam;
-    private Camera camSprites;
 
+    public static ApplicationLogger logger = Gdx.app.getApplicationLogger();
 
     public WorldScene(String key) {
         super(key);
@@ -62,8 +62,9 @@ public class WorldScene extends AbstractScene{
         tileMap.put(0, new Texture(Gdx.files.internal("world/terrain/water.png")));
         tileMap.put(1, new Texture(Gdx.files.internal("world/terrain/dirt.png")));
         tileMap.put(2, new Texture(Gdx.files.internal("world/terrain/grass.png")));
+        tileMap.put(3, new Texture(Gdx.files.internal("world/terrain/debug_tile.png")));
 
-        world = TilePlane.testLevel();
+        world = WorldSpaceVariable.testLevel();
 
         collisionDetectionSystem = new CollisionDetectionSystem();
         playerInputSystem = new PlayerInputSystem();
@@ -77,11 +78,30 @@ public class WorldScene extends AbstractScene{
         this.gui.addListener(new InputListener() {
             @Override
             public boolean keyDown(InputEvent event, int keycode) {
-            if (keycode == Input.Keys.F3) {
-                gui.setDebugAll(!gui.isDebugAll());
+                if (keycode == Input.Keys.F3) {
+                    gui.setDebugAll(!gui.isDebugAll());
+                }
+                logger.log("Events", "setting viewing angle from " + Math.toDegrees(viewingAngle)  );
+                if (keycode == Input.Keys.PAGE_UP) {
+                    viewingAngle = Math.toRadians(Math.toDegrees(viewingAngle) + 15f);
+                }
+                if (keycode == Input.Keys.PAGE_DOWN) {
+                    viewingAngle = Math.toRadians(Math.toDegrees(viewingAngle) - 15f);
+                }
+
+                logger.log("Events", "to " + Math.toDegrees(viewingAngle)  );
+                return super.keyDown(event, keycode);
             }
 
-            return super.keyDown(event, keycode);
+            @Override
+            public boolean keyTyped(InputEvent event, char character) {
+                if (character == '+') {
+                    cameraDistance += 0.125f;
+                }
+                if (character == '-') {
+                    cameraDistance -= 0.125f;
+                }
+                return super.keyTyped(event, character);
             }
         });
 
@@ -104,11 +124,18 @@ public class WorldScene extends AbstractScene{
         Texture tile;
         int[] xArray;
 
-        ApplicationLogger logger =  Gdx.app.getApplicationLogger();
-
         //logger.log("rendering:", String.format("width: %s, height: %s, aspectRatio:%s, density: %s, dpiX: %s|%s, dpiY: %s|%s, GWidth: %s, GHeight: %s",
         //        windowWidth, windowHeight, aspect, Gdx.graphics.getDensity(), Gdx.graphics.getPpiX(), Gdx.graphics.getPpcX(), Gdx.graphics.getPpiY(), Gdx.graphics.getPpcY(), Gdx.graphics.getWidth(), Gdx.graphics.getHeight()));
         font.setColor(Color.WHITE);
+
+        world.terrainTiles.forEach((tilePos, tileId)-> {
+            Sprite tileSprite = new Sprite(tileMap.get(tileId));
+            //tileSprite.setOrigin(0,0);
+            tileSprite.setPosition(tilePos.x,(float)(tilePos.y + tilePos.z * Math.sin(viewingAngle)));
+            tileSprite.setSize(1f,1f);
+            tileSprite.draw(batch);
+        });
+        /*
         for(int y = 0; y < world.height; y++) {
             xArray = world.terrainTiles[y];
             for(int x = 0; x < world.width; x++) {
@@ -132,7 +159,7 @@ public class WorldScene extends AbstractScene{
                 }
 
             }
-        }
+        }*/
 
         for(int entityIndex = 0; entityIndex < world.entities.size(); entityIndex++) {
             Entity entity = world.entities.get(entityIndex);
@@ -155,9 +182,11 @@ public class WorldScene extends AbstractScene{
                 }
             }
         }
+
     }
 
-    public static double viewingAngle = Math.toRadians(60);
+    public static double viewingAngle = Math.toRadians(90);
+    public static float cameraDistance = 6f;
 
     public void update(float deltaTime){
         super.update(deltaTime);
@@ -166,6 +195,7 @@ public class WorldScene extends AbstractScene{
         playerInputSystem.execute(deltaTime, playerInputSystem.onlyQualified(world.entities));
         movementSystem.execute(deltaTime, movementSystem.onlyQualified(world.entities));
 
+        // TODO stop looking through all entities. Just grab one and keep it, this way, scenes could also move the camera with an invisible entity...
         Entity cameraFocus = world.entities.stream().filter(entity -> entity.hasComponents(Arrays.asList(PositionComponent.class, InputControllerComponent.class))).findAny().orElse(null);
         if (cameraFocus != null) {
             PositionComponent position = (PositionComponent)cameraFocus.getComponent(PositionComponent.class);
@@ -174,10 +204,14 @@ public class WorldScene extends AbstractScene{
             //cam.position.set(position.getX_pos(), position.getY_pos() - cam.viewportHeight *0.25f, cam.position.z);
             Vector3 newPosition = position.toVector3().add(size.toVector3().scl(0.5f));
 
-            double tans = Math.tan(viewingAngle) * 4f;
+
+
+            double tans =  cameraDistance;
+           // logger.log("rendering:","camera distance: " + cameraDistance);
 
            // cam.position.set(newPosition.cpy().add(0, (float) -(Math.cos(viewingAngle) * tans),(float) (Math.sin(viewingAngle)  * tans)));
-            cam.position.set(newPosition.cpy().add(0, (float) -(Math.cos(viewingAngle) * tans),(float) (Math.sin(viewingAngle)  * tans)));
+            //cam.position.set(newPosition.cpy().add(0, (float) -(Math.cos(viewingAngle) + tans ),(float) (Math.sin(viewingAngle)  + tans)));
+            cam.position.set(newPosition.cpy().add(0,-(float)Math.cos(viewingAngle) * cameraDistance,(float)Math.sin(viewingAngle) * cameraDistance));
             //cam.position.set(newPosition.cpy().sub(0,2f,-10f));
             cam.lookAt(newPosition);
         }
