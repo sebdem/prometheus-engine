@@ -6,6 +6,7 @@ import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.math.Vector3;
 import dbast.prometheus.engine.entity.EntityRegistry;
 import dbast.prometheus.engine.entity.components.*;
+import dbast.prometheus.utils.Vector3Comparator;
 
 import java.util.Comparator;
 import java.util.HashMap;
@@ -23,16 +24,7 @@ public class WorldSpaceVariable {
     public WorldSpaceVariable(int width, int height) {
         this.width = width;
         this.height = height;
-        this.terrainTiles = new TreeMap<>(new Comparator<Vector3>() {
-            @Override
-            public int compare(Vector3 o1, Vector3 o2) {
-                // ignore x for now
-                int zComp = Float.compare(o1.z, o2.z);
-                int yComp = Float.compare(o1.y, o2.y);
-                int xComp = Float.compare(o1.x, o2.x);
-                return (zComp == 0) ?  (yComp == 0) ?  xComp  : yComp : zComp;
-            }
-        });
+        this.terrainTiles = new TreeMap<>(new Vector3Comparator());
     }
 
     public WorldSpaceVariable placeTile(int tileId, float x, float y, float z) {
@@ -43,7 +35,7 @@ public class WorldSpaceVariable {
 
     public static WorldSpaceVariable testLevel() {
 
-        WorldSpaceVariable worldSpace = new WorldSpaceVariable(20, 20);
+        WorldSpaceVariable worldSpace = new WorldSpaceVariable(100, 100);
         for(float z = -1f; z < 2; z++ ) {
             for(float y = 0; y < worldSpace.height; y++) {
                 for(float x = 0; x < worldSpace.width; x++) {
@@ -56,7 +48,8 @@ public class WorldSpaceVariable {
                             }
                         } break;
                         case 1: {
-                            if (y + 1 == worldSpace.height) {
+                           // if (y + 2 == worldSpace.height) {
+                             if (Math.sqrt(y*y) == Math.sqrt(x*x)) {
                                 worldSpace.placeTile(3, x, y, z);
                             }
                         }
@@ -70,7 +63,7 @@ public class WorldSpaceVariable {
         worldSpace.entities = new EntityRegistry();
         worldSpace.entities.addNewEntity(
                 1L,
-                new CollisionBox(0.9f,1.45f,false),
+                new CollisionBox(1f,1f,false),
                 new SizeComponent(1f,1.5f),
                 PositionComponent.initial(),
                 new InputControllerComponent(),
@@ -79,7 +72,7 @@ public class WorldSpaceVariable {
                 SpriteComponent.fromFile(Gdx.files.internal("world/environment/tree.png"))
         );
 
-        for(int i = 0; i < 18; i++) {
+        for(int i = 0; i < 100; i++) {
             worldSpace.entities.addNewEntity(
                     CollisionBox.createBasic(),
                     SizeComponent.createBasic(),

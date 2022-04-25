@@ -5,6 +5,7 @@ import dbast.prometheus.engine.entity.components.Component;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+import java.util.Optional;
 
 public class Entity {
 
@@ -37,13 +38,20 @@ public class Entity {
         return null;
     }
 
-    public Component getComponent(Class<? extends Component> classOf) {
+    /*public Component getComponent(Class<? extends Component> classOf) {
         return properties.stream().filter(classOf::isInstance).findFirst().orElse(null);
+    }*/
+    public <CT extends Component> CT getComponent(Class<CT> classOf) {
+        return classOf.cast(properties.stream().filter(classOf::isInstance).findFirst().orElse(null));
+    }
+    public <CT extends Component> Optional<CT> optionalComponent(Class<CT> classOf) {
+        return (Optional<CT>)properties.stream().filter(classOf::isInstance).findFirst();
     }
 
+    public boolean hasComponent(Class<? extends Component> target) {
+        return  this.properties.stream().anyMatch(target::isInstance);
+    }
     public boolean hasComponents(List<Class<? extends Component>> targets) {
         return targets.stream().allMatch(targetClass -> this.properties.stream().anyMatch(targetClass::isInstance));
-        //this.properties.forEach(property-> (targets.get(0)).isInstance(property));
-        //return property_types.containsAll(targets);
     }
 }

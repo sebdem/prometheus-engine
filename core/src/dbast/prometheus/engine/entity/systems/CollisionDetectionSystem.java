@@ -22,8 +22,8 @@ public class CollisionDetectionSystem extends ComponentSystem {
         Map<Long, Rectangle> entityHitboxes = new HashMap<>();
 
         for(Entity entityA : entities) {
-            PositionComponent positionA = (PositionComponent)entityA.getComponent(PositionComponent.class);
-            CollisionBox collisionA = (CollisionBox)entityA.getComponent(CollisionBox.class);
+            PositionComponent positionA = entityA.getComponent(PositionComponent.class);
+            CollisionBox collisionA = entityA.getComponent(CollisionBox.class);
 
             Rectangle hitboxA = new Rectangle(positionA.getX_pos(), positionA.getY_pos(), collisionA.getWidth(), collisionA.getHeight());
             entityHitboxes.put(entityA.getId(), hitboxA);
@@ -31,8 +31,8 @@ public class CollisionDetectionSystem extends ComponentSystem {
             boolean isColliding = false;
             for(Entity entityB: entities) {
                 if (!entityA.getId().equals(entityB.getId())) {
-                    PositionComponent positionB = (PositionComponent)entityB.getComponent(PositionComponent.class);
-                    CollisionBox collisionB = (CollisionBox)entityB.getComponent(CollisionBox.class);
+                    PositionComponent positionB = entityB.getComponent(PositionComponent.class);
+                    CollisionBox collisionB = entityB.getComponent(CollisionBox.class);
 
                     Rectangle hitboxB = entityHitboxes.get(entityB.getId());
                     if (hitboxB == null) {
@@ -49,7 +49,7 @@ public class CollisionDetectionSystem extends ComponentSystem {
                 }
             }
             collisionA.setColliding(isColliding);
-            StateComponent entityState = (StateComponent)entityA.getComponent(StateComponent.class);
+            StateComponent entityState = entityA.getComponent(StateComponent.class);
             if (entityState != null) {
               //  Gdx.app.getApplicationLogger().log("Collision System:", String.format("update for entity %s state; new state is%s colliding", entityA.getId(), isColliding ? "" : " not"));
                 if (isColliding) {

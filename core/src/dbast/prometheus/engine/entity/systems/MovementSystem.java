@@ -19,9 +19,9 @@ public class MovementSystem extends ComponentSystem {
     @Override
     public void execute(float updateDelta, List<Entity> qualifiedEntities) {
         for(Entity entity : qualifiedEntities) {
-            PositionComponent position = (PositionComponent)entity.getComponent(PositionComponent.class);
-            CollisionBox collisionBox = (CollisionBox)entity.getComponent(CollisionBox.class);
-            VelocityComponent velocity = (VelocityComponent)entity.getComponent(VelocityComponent.class);
+            PositionComponent position = entity.getComponent(PositionComponent.class);
+            CollisionBox collisionBox = entity.getComponent(CollisionBox.class);
+            VelocityComponent velocity = entity.getComponent(VelocityComponent.class);
 
             float newXpos = position.getX_pos() + velocity.getVelocity_x() * updateDelta;
             float newYpos = position.getY_pos() + velocity.getVelocity_y() * updateDelta;

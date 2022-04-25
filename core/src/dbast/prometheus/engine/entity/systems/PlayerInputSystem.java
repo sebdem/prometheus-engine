@@ -50,8 +50,8 @@ public class PlayerInputSystem extends ComponentSystem {
 
         for(Entity entity : entities) {
             //Gdx.app.getApplicationLogger().log("PIS", String.format("Entity %s update for PIS System at %s", entity.getId(), updateDelta));
-            PositionComponent position = (PositionComponent)entity.getComponent(PositionComponent.class);
-            VelocityComponent velocity = (VelocityComponent)entity.getComponent(VelocityComponent.class);
+            PositionComponent position = entity.getComponent(PositionComponent.class);
+            VelocityComponent velocity = entity.getComponent(VelocityComponent.class);
             velocity.setVelocity_x(velocityX);
             velocity.setVelocity_y(velocityY);
         }
