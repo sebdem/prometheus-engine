@@ -25,7 +25,8 @@ public class MovementSystem extends ComponentSystem {
 
             float newXpos = position.getX_pos() + velocity.getVelocity_x() * updateDelta;
             float newYpos = position.getY_pos() + velocity.getVelocity_y() * updateDelta;
-            // TODO ignore entity collisionBox for now...
+            // TODO ignore entity collisionBox for now, might even have to merge with CollisionDetectionSystem...
+            // TODO [AI System]: Fetch Targets, if any, and calculate velocity needed to reach it.
 
             if (boundaries.x > newXpos) {
                 newXpos = boundaries.x;

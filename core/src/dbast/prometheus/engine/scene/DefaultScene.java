@@ -17,8 +17,10 @@ public class DefaultScene extends AbstractScene {
     @Override
     public DefaultScene create() {
         super.create();
+        // ==== [ init batch ] ============================
         batch = new SpriteBatch();
 
+        // ==== [ set background ] ============================
         background_image = new Texture(Gdx.files.internal("ui/background.png"));
         background_image.setWrap(Texture.TextureWrap.MirroredRepeat, Texture.TextureWrap.MirroredRepeat);
         return this;

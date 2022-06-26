@@ -71,6 +71,16 @@ public class LockOnCamera extends PerspectiveCamera {
                         (float)Math.sin(viewingAngle) * cameraDistance);
             }
             Vector3 targetPosition = lockOnComponent.toVector3();
+
+            double xPos = Math.round(targetPosition.x);
+            double yPos = Math.round(targetPosition.y);
+
+            targetPosition.set(
+                    (float)(xPos + (Math.round((targetPosition.x - xPos) / 0.0625f)) * 0.0625f),
+                    (float)(yPos + (Math.round((targetPosition.y - yPos) / 0.0625f)) * 0.0625f),
+                    targetPosition.z
+            );
+
             this.position.set(targetPosition.cpy().add(cameraOffset));
             this.lookAt(targetPosition.cpy().add(entityOffset));
         }

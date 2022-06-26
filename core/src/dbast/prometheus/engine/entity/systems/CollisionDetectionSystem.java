@@ -21,6 +21,7 @@ public class CollisionDetectionSystem extends ComponentSystem {
     public void execute(float updateDelta, List<Entity> entities) {
         Map<Long, Rectangle> entityHitboxes = new HashMap<>();
 
+        // TODO i believe this can be optimized for local comparing of collisions
         for(Entity entityA : entities) {
             PositionComponent positionA = entityA.getComponent(PositionComponent.class);
             CollisionBox collisionA = entityA.getComponent(CollisionBox.class);
@@ -49,15 +50,6 @@ public class CollisionDetectionSystem extends ComponentSystem {
                 }
             }
             collisionA.setColliding(isColliding);
-            StateComponent entityState = entityA.getComponent(StateComponent.class);
-            if (entityState != null) {
-              //  Gdx.app.getApplicationLogger().log("Collision System:", String.format("update for entity %s state; new state is%s colliding", entityA.getId(), isColliding ? "" : " not"));
-                if (isColliding) {
-                    entityState.setState("colliding");
-                } else {
-                    entityState.setState("");
-                }
-            }
         }
     }
 

@@ -3,8 +3,8 @@ package dbast.prometheus.engine.entity.components;
 import com.badlogic.gdx.math.Vector3;
 
 public class SizeComponent extends Component {
-    private float width;
-    private float height;
+    protected float width;
+    protected float height;
 
     public SizeComponent(float width, float height) {
         this.width = width;

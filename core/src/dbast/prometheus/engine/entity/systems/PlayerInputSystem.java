@@ -20,8 +20,8 @@ public class PlayerInputSystem extends ComponentSystem {
         float velocityX = 0;
         float velocityY = 0;
 
-        float inc = 3f;
-        float sprint = 1.9f;
+        float inc = 4f;
+        float sprint = 2f;
 
         if(Gdx.input.isKeyPressed(Input.Keys.W) || Gdx.input.isKeyPressed(Input.Keys.UP)) {
             velocityY += inc;

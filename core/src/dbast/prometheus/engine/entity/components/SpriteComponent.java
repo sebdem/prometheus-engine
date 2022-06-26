@@ -16,6 +16,10 @@ public class SpriteComponent extends Component {
         return new SpriteComponent(new Sprite(new Texture(internal)));
     }
 
+    public static SpriteComponent fromTexture(Texture texture) {
+        return new SpriteComponent(new Sprite(texture));
+    }
+
     public Sprite getSprite() {
         return defaultSprite;
     }
