@@ -11,6 +11,7 @@ import dbast.prometheus.utils.Vector3Comparator;
 
 import java.util.*;
 
+// TODO WorldSpace builder from a level file
 public class WorldSpace {
 
     public Map<Vector3, Tile> terrainTiles;

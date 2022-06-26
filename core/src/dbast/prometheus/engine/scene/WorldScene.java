@@ -10,6 +10,7 @@ import com.badlogic.gdx.math.Vector3;
 import com.badlogic.gdx.scenes.scene2d.InputEvent;
 import com.badlogic.gdx.scenes.scene2d.InputListener;
 import dbast.prometheus.engine.LockOnCamera;
+import dbast.prometheus.engine.config.PrometheusConfig;
 import dbast.prometheus.engine.entity.Entity;
 import dbast.prometheus.engine.entity.components.*;
 import dbast.prometheus.engine.entity.systems.CollisionDetectionSystem;
@@ -96,9 +97,11 @@ public class WorldScene extends AbstractScene{
             }
             if (keycode == Input.Keys.PAGE_UP) {
                 cam.setViewingAngle(Math.toRadians(Math.toDegrees(cam.getViewingAngle()) + 15f));
+                logger.log("moving camera up ", "15deg" );
             }
             if (keycode == Input.Keys.PAGE_DOWN) {
                 cam.setViewingAngle(Math.toRadians(Math.toDegrees(cam.getViewingAngle()) - 15f));
+                logger.log("moving camera down ", "15deg" );
             }
             if (keycode == Input.Keys.MINUS) {
                 cam.setCameraDistance(cam.getCameraDistance() + 0.125f);
@@ -112,7 +115,8 @@ public class WorldScene extends AbstractScene{
         this.gui.addListener(new InputListener() {
             @Override
             public boolean keyDown(InputEvent event, int keycode) {
-                EventBus.trigger(new Event("key_input", Collections.singletonMap("keycode", keycode)));
+                // Todo add a parameter to differentiate between down and typed events, if needed.
+               // EventBus.trigger(new Event("key_input", Collections.singletonMap("keycode", keycode)));
                 return super.keyDown(event, keycode);
             }
 
@@ -141,7 +145,7 @@ public class WorldScene extends AbstractScene{
         afterRender(windowWidth, windowHeight, aspect);
     }
 
-    // TODO move sprite building out of here turn drawToBatch into a a render VBO or whatever those are called. Update whenever things actually change. Then just render drawToBatch
+    // TODO move sprite building out of here. Update new reference whenever things actually change. Then just render to batch
     Map<Vector3, Sprite> drawToBatch = new TreeMap<>(new Vector3Comparator());
     Map<Vector3, Sprite> tileBatch = new HashMap<>();
     Map<Vector3, Sprite> entityBatch = new HashMap<>();
@@ -197,7 +201,9 @@ public class WorldScene extends AbstractScene{
     }
 
 
-    public static boolean snapSpritesToGrid = true;
+    //public static float gridSnapIncrement =  0.0625f;
+    protected static float gridSnapIncrement = (Float)PrometheusConfig.conf.getOrDefault("gridSnapIncrement", 0.0625f);
+
     @Override
     public void mainRender(int windowWidth, int windowHeight, float aspect){
         font.setColor(Color.WHITE);
@@ -205,14 +211,15 @@ public class WorldScene extends AbstractScene{
 
         prepareTileSprites();
         prepareEntitySprites();
-        if (snapSpritesToGrid) {
+        if ((Boolean)PrometheusConfig.conf.getOrDefault("gridSnapping", false)) {
             drawToBatch.forEach((spritePos, sprite)-> {
                 double xPos = Math.round(spritePos.x);
                 double yPos = Math.round(spritePos.y);
 
+
                 sprite.setPosition(
-                    (float)(xPos + (Math.round((spritePos.x - xPos) / 0.0625f)) * 0.0625f),
-                    (float)(yPos + (Math.round((spritePos.y - yPos) / 0.0625f)) * 0.0625f)
+                    (float)(xPos + (Math.round((spritePos.x - xPos) / gridSnapIncrement)) * gridSnapIncrement),
+                    (float)(yPos + (Math.round((spritePos.y - yPos) / gridSnapIncrement)) * gridSnapIncrement)
                 );
                 sprite.draw(batch);
             });

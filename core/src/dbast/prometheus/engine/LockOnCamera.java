@@ -3,6 +3,7 @@ package dbast.prometheus.engine;
 import com.badlogic.gdx.graphics.PerspectiveCamera;
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.math.Vector3;
+import dbast.prometheus.engine.config.PrometheusConfig;
 import dbast.prometheus.engine.entity.Entity;
 import dbast.prometheus.engine.entity.components.PositionComponent;
 import dbast.prometheus.engine.entity.components.SizeComponent;
@@ -60,6 +61,8 @@ public class LockOnCamera extends PerspectiveCamera {
         return false;
     }
 
+    protected static float gridSnapIncrement = (Float)PrometheusConfig.conf.getOrDefault("gridSnapIncrement", 0.0625f);
+
     @Override
     public void update() {
         if (lockOnEntity != null) {
@@ -72,14 +75,16 @@ public class LockOnCamera extends PerspectiveCamera {
             }
             Vector3 targetPosition = lockOnComponent.toVector3();
 
-            double xPos = Math.round(targetPosition.x);
-            double yPos = Math.round(targetPosition.y);
+            if ((Boolean) PrometheusConfig.conf.getOrDefault("gridSnapping", false)) {
+                double xPos = Math.round(targetPosition.x);
+                double yPos = Math.round(targetPosition.y);
 
-            targetPosition.set(
-                    (float)(xPos + (Math.round((targetPosition.x - xPos) / 0.0625f)) * 0.0625f),
-                    (float)(yPos + (Math.round((targetPosition.y - yPos) / 0.0625f)) * 0.0625f),
-                    targetPosition.z
-            );
+                targetPosition.set(
+                        (float)(xPos + (Math.round((targetPosition.x - xPos) / gridSnapIncrement)) * gridSnapIncrement),
+                        (float)(yPos + (Math.round((targetPosition.y - yPos) / gridSnapIncrement)) * gridSnapIncrement),
+                        targetPosition.z
+                );
+            }
 
             this.position.set(targetPosition.cpy().add(cameraOffset));
             this.lookAt(targetPosition.cpy().add(entityOffset));
