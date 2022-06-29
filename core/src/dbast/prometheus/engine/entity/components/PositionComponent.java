@@ -32,7 +32,25 @@ public class PositionComponent extends Component {
         this.y_pos = y_pos;
     }
 
+    public boolean isNearby(PositionComponent other, float maxDistance) {
+        return Math.abs(other.x_pos - x_pos) <= maxDistance && Math.abs(other.y_pos - y_pos) <= maxDistance;
+        /*
+        return (other.x_pos > this.x_pos - maxDistance && other.x_pos < this.x_pos + maxDistance)
+                && (other.y_pos > this.y_pos - maxDistance && other.y_pos < this.y_pos + maxDistance);*/
+
+    }
+    public boolean isNearby(float otherXPos, float otherYPos, float maxDistance) {
+        return Math.abs(otherXPos - x_pos) <= maxDistance && Math.abs(otherYPos - y_pos) <= maxDistance;
+        /*
+        return (other.x_pos > this.x_pos - maxDistance && other.x_pos < this.x_pos + maxDistance)
+                && (other.y_pos > this.y_pos - maxDistance && other.y_pos < this.y_pos + maxDistance);*/
+
+    }
+
     public Vector3 toVector3() {
         return new Vector3(x_pos, y_pos, 0f);
+    }
+    public Vector3 toVector3(float z) {
+        return new Vector3(x_pos, y_pos, z);
     }
 }

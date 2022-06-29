@@ -22,4 +22,11 @@ public class TileRegistry {
     public static Tile get(int tileId) {
         return registry.getOrDefault(tileId, Tile.MISSING_TEXTURE);
     }
+    public static Tile getByTag(String tileTag) {
+        return registry.values().stream().filter(tile -> tile.tag.equals(tileTag)).findFirst().orElse(Tile.MISSING_TEXTURE);
+    }
+
+    public static Integer idOfTag(String tileTag) {
+        return registry.entrySet().stream().filter(integerTileEntry -> integerTileEntry.getValue().tag.equals(tileTag)).map(Map.Entry::getKey).findFirst().orElse(-1);
+    }
 }
