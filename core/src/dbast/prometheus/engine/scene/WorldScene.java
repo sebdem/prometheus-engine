@@ -3,8 +3,13 @@ package dbast.prometheus.engine.scene;
 import com.badlogic.gdx.ApplicationLogger;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Input;
-import com.badlogic.gdx.graphics.*;
-import com.badlogic.gdx.graphics.g2d.*;
+import com.badlogic.gdx.graphics.Color;
+import com.badlogic.gdx.graphics.Pixmap;
+import com.badlogic.gdx.graphics.Texture;
+import com.badlogic.gdx.graphics.TextureData;
+import com.badlogic.gdx.graphics.g2d.BitmapFont;
+import com.badlogic.gdx.graphics.g2d.Sprite;
+import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.math.Rectangle;
 import com.badlogic.gdx.math.Vector3;
 import com.badlogic.gdx.scenes.scene2d.InputEvent;
@@ -22,7 +27,7 @@ import dbast.prometheus.engine.events.EventBus;
 import dbast.prometheus.engine.world.WorldSpace;
 import dbast.prometheus.engine.world.tile.Tile;
 import dbast.prometheus.engine.world.tile.TileRegistry;
-import dbast.prometheus.utils.Vector3Comparator;
+import dbast.prometheus.utils.SpriteBuffer;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -83,7 +88,8 @@ public class WorldScene extends AbstractScene{
 
         // ==== [ camera setup ] ============================
         Entity cameraFocus = world.entities.stream().filter(entity -> entity.hasComponent(InputControllerComponent.class)).findAny().orElse(world.entities.get(0));
-        cam = new LockOnCamera(80f, 16 ,9);
+       // Entity cameraFocus = world.entities.get((int) (Math.random()*world.entities.size()));
+        cam = new LockOnCamera(90f, 16 ,9);
         cam.lockOnEntity(cameraFocus);
         cam.setEntityOffset(cameraFocus.getComponent(SizeComponent.class).toVector3().scl(0.5f,0.25f,0.5f));//.scl(0.5f));
         cam.setCameraDistance(6f);
@@ -106,7 +112,9 @@ public class WorldScene extends AbstractScene{
 
             if (keycode == Input.Keys.F3) {
                 gui.setDebugAll(!gui.isDebugAll());
-                this.tileBatch.clear();
+            }
+            if (keycode == Input.Keys.F4) {
+                naturalRenderOrder = !naturalRenderOrder;
             }
             if (keycode == Input.Keys.PAGE_UP) {
                 cam.setViewingAngle(Math.toRadians(Math.toDegrees(cam.getViewingAngle()) + 15f));
@@ -148,9 +156,7 @@ public class WorldScene extends AbstractScene{
 
         // ==== [ init batch ] ============================
         batch = new SpriteBatch();
-        //drawToBatch = new TreeMap<>(new Vector3Comparator.Relative(cam));
-        drawToBatch = new TreeMap<>(Vector3Comparator.getConfigured());
-
+        spriteQueue = new SpriteBuffer();
         return this;
     }
 
@@ -166,74 +172,65 @@ public class WorldScene extends AbstractScene{
     }
 
     // TODO move sprite building out of here. Update new reference whenever things actually change. Then just render to batch
-    //Map<Vector3, Sprite> drawToBatch = new TreeMap<>(Vector3Comparator.getConfigured());
-    Map<Vector3, Sprite> drawToBatch = null;
-    Map<Vector3, Sprite> tileBatch = new HashMap<>();
-    Map<Vector3, Sprite> entityBatch = new HashMap<>();
-
-    static float renderDistance = 24f;
+    SpriteBuffer spriteQueue = null;
+    static float renderDistance = 18f;
 
     public void prepareTileSprites() {
-        tileBatch.clear();
         Entity cameraLockOn = cam.getLockOnEntity();
         PositionComponent lockOnPosition = cameraLockOn.getComponent(PositionComponent.class);
 
-        if (tileBatch.isEmpty()) {
-            //  logger.log("rendering:", "tiles " + world.terrainTiles.size());
-            world.terrainTiles.forEach((tilePos, tile)-> {
-                if (lockOnPosition.isNearby(tilePos.x, tilePos.y, renderDistance)) {
+        //  logger.log("rendering:", "tiles " + world.terrainTiles.size());
+        world.terrainTiles.forEach((tilePos, tile)-> {
+            if (lockOnPosition.isNearby(tilePos.x, tilePos.y, renderDistance)) {
 
-                    Sprite tileSprite = new Sprite(tile.tileTexture);
-                    float distanceToFocus = lockOnPosition.toVector3().dst(tilePos.cpy().set(tilePos.x, tilePos.y, tilePos.z*0.5f));
-                    //Gdx.app.getApplicationLogger().log("Render Pipeline", String.format("distance of tile %s to focus is %s", tile.tag, distanceToFocus));
-                    if (distanceToFocus > renderDistance) {
-                        tileSprite.setAlpha(0.5f);
+                Sprite tileSprite = new Sprite(tile.tileTexture);
+
+                float spriteX = tilePos.x;
+                float spriteY = tilePos.y;
+
+                tileSprite.setOrigin(0.5f, 0f);
+                tileSprite.setPosition(spriteX, spriteY);
+                tileSprite.setSize(tileSprite.getRegionWidth() / (float)tile.tileTexture.getWidth(), tileSprite.getRegionHeight() / (float)tile.tileTexture.getWidth());
+
+                //tileBatch.put(tilePos, tileSprite);
+                spriteQueue.add(tilePos, tileSprite);
+
+                // =========================================================================================================
+                // <editor-fold desc="---- start debugging nonsense ----"
+                // =========================================================================================================
+                if (gui.isDebugAll() && !debuggedSprites.contains(tileSprite.hashCode())) {
+                    TextureData spriteTexture = tileSprite.getTexture().getTextureData();
+                    debuggedSprites.add(tileSprite.hashCode());
+                    if (!spriteTexture.isPrepared()) {
+                        spriteTexture.prepare();
                     }
 
-                    tileSprite.setOrigin(0.5f, 0f);
-                    tileSprite.setPosition(tilePos.x, tilePos.y);
-                    tileSprite.setSize(tileSprite.getRegionWidth() / (float)tile.tileTexture.getWidth(), tileSprite.getRegionHeight() / (float)tile.tileTexture.getWidth());
+                    Pixmap pixmap = spriteTexture.consumePixmap();
+                    pixmap.setColor(0xCCCCCCCC);
+                    pixmap.drawRectangle(0, 0, pixmap.getWidth(), pixmap.getHeight());
 
-                    tileBatch.put(tilePos, tileSprite);
+                    pixmap.setColor(0xFF0000FF);
+                    pixmap.drawPixel(0,0);
 
-    // =========================================================================================================
-    //  --------------------- start debugging nonsense --------------------------------------------------------
-    // =========================================================================================================
-                    if (gui.isDebugAll() && !debuggedSprites.contains(tileSprite.hashCode())) {
-                        TextureData spriteTexture = tileSprite.getTexture().getTextureData();
-                        debuggedSprites.add(tileSprite.hashCode());
-                        if (!spriteTexture.isPrepared()) {
-                            spriteTexture.prepare();
-                        }
+                    pixmap.setColor(0xFF00FFFF);
+                    pixmap.drawPixel((int)(tileSprite.getOriginX() * (pixmap.getWidth()-1)),(int)(tileSprite.getOriginY() * (pixmap.getHeight()-1)));
 
-                        Pixmap pixmap = spriteTexture.consumePixmap();
-                        pixmap.setColor(0xCCCCCCCC);
-                        pixmap.drawRectangle(0, 0, pixmap.getWidth(), pixmap.getHeight());
 
-                        pixmap.setColor(0xFF0000FF);
-                        pixmap.drawPixel(0,0);
+                    spriteTexture.disposePixmap();
 
-                        pixmap.setColor(0xFF00FFFF);
-                        pixmap.drawPixel((int)(tileSprite.getOriginX() * pixmap.getWidth()-1),(int)(tileSprite.getOriginY() * pixmap.getHeight()-1));
-
-                        spriteTexture.disposePixmap();
-
-                        tileSprite.setTexture(new Texture(pixmap));
-                    }
-    // =========================================================================================================
-    //  --------------------- end debugging nonsense ----------------------------------------------------------
-    // =========================================================================================================
-
+                    tileSprite.setTexture(new Texture(pixmap));
                 }
-            });
-        }
-        drawToBatch.putAll(tileBatch);
+                // =========================================================================================================
+                //</editor-fold>
+                // =========================================================================================================
+
+            }
+        });
     }
 
     private Set<Integer> debuggedSprites = new HashSet<>();
 
     public void prepareEntitySprites() {
-        entityBatch.clear();
 
         Entity cameraLockOn = cam.getLockOnEntity();
         PositionComponent lockOnPosition = cameraLockOn.getComponent(PositionComponent.class);
@@ -242,28 +239,32 @@ public class WorldScene extends AbstractScene{
                 entity.hasComponents(entityRenderComponents) && lockOnPosition.isNearby(entity.getComponent(PositionComponent.class),renderDistance)
         ).collect(Collectors.toList());
 
-
         for (Entity entity : entities) {
             SpriteComponent spriteComponent = entity.getComponent(SpriteComponent.class);
             PositionComponent positionComponent = entity.getComponent(PositionComponent.class);
             SizeComponent sizeComponent = entity.getComponent(SizeComponent.class);
 
-            Sprite sprite = spriteComponent.getSprite();
-           // sprite.setOrigin(0.25f, 0.5f);
-            sprite.setOrigin(0.5f, 1f);
-            sprite.setPosition(positionComponent.getX_pos(), positionComponent.getY_pos());
-            sprite.setSize(sizeComponent.getWidth(), sizeComponent.getHeight());
-
-            // sprite.draw(batch);
             Vector3 entityPos = positionComponent.toVector3();
             world.toNextUpperLevel(entityPos);
-            //entityPos.z = 0f;
+            float spriteX = entityPos.x;
+            float spriteY = entityPos.y;
 
-            entityBatch.put(entityPos, sprite);
+            Sprite sprite = spriteComponent.getSprite();
+            sprite.setOrigin(0.5f, 1f);
 
-// =========================================================================================================
-//  --------------------- start debugging nonsense --------------------------------------------------------
-// =========================================================================================================
+           // spriteY += entityPos.z * (sprite.getOriginY() * sprite.getHeight());
+
+            sprite.setPosition(spriteX, spriteY);
+            sprite.setSize(sizeComponent.getWidth(), sizeComponent.getHeight());
+
+            //entityBatch.put(entityPos, sprite);
+           // Gdx.app.getApplicationLogger().log("render pipeline", String.format("[entity %s] sprite %s | X %s | Y %s | Z  %s | KEY: %s", entity.getId(), sprite.hashCode(), spriteX, spriteY, entityPos.z, skey ));
+            //spriteQueue.put(skey, sprite);
+            spriteQueue.add(entityPos, sprite);
+
+            // =========================================================================================================
+            // <editor-fold desc="---- start debugging nonsense ----"
+            // =========================================================================================================
             if (gui.isDebugAll() && !debuggedSprites.contains(sprite.hashCode())) {
                 Vector3 camPosition = cam.position;
                 TextureData spriteTexture = sprite.getTexture().getTextureData();
@@ -301,11 +302,10 @@ public class WorldScene extends AbstractScene{
 
                 sprite.setTexture(new Texture(pixmap));
             }
-// =========================================================================================================
-//  --------------------- end debugging nonsense ----------------------------------------------------------
-// =========================================================================================================
+            // =========================================================================================================
+            //</editor-fold>
+            // =========================================================================================================
         }
-        drawToBatch.putAll(entityBatch);
     }
 
 
@@ -313,19 +313,33 @@ public class WorldScene extends AbstractScene{
     protected static float gridSnapIncrement = (Float)PrometheusConfig.conf.getOrDefault("gridSnapIncrement", 0.0625f);
     protected static boolean useGridSnapping = (Boolean)PrometheusConfig.conf.getOrDefault("gridSnapping", false);
     protected static boolean useIsometric = (Boolean)PrometheusConfig.conf.getOrDefault("isometric", false);
+
+    public  static boolean naturalRenderOrder = true;
+
     @Override
     public void mainRender(int windowWidth, int windowHeight, float aspect){
         font.setColor(Color.WHITE);
-        drawToBatch.clear();
+
+        spriteQueue.clear();
 
         prepareTileSprites();
         prepareEntitySprites();
 
-        drawToBatch.forEach((spritePos, sprite)-> {
+        if (naturalRenderOrder) {
+            spriteQueue.sort(Comparator.naturalOrder());
+        } else {
+            spriteQueue.sort(Comparator.reverseOrder());
+        }
+
+        Entity cameraLockOn = cam.getLockOnEntity();
+        PositionComponent lockOnPosition = cameraLockOn.getComponent(PositionComponent.class);
+
+        spriteQueue.forEach((spriteData)-> {
             // beginn of render pipeline...
             // TODO can this be delegated to actual shader logic, hopefully sparing sweet CPU calculation time??
-            float intendedX = spritePos.x;
-            float intendedY = spritePos.y;
+            float intendedX = spriteData.spritePos3D.x;
+            float intendedY = spriteData.spritePos3D.y;
+            // Gdx.app.getApplicationLogger().log("render pipeline", String.format("[sprite %s 1/2] intendedX %s | intendedY %s", spriteData.hashCode(), intendedX, intendedY));
             if (useGridSnapping) {
                 double xPos = Math.round(intendedX);
                 double yPos = Math.round(intendedY);
@@ -338,22 +352,26 @@ public class WorldScene extends AbstractScene{
                 float unmodifiedY = intendedY;
 
                 // sprite height should be used here according to render logic... For some reason spritebased sizes fuck this up however, therefor use width
-                intendedX = (float) (unmodifiedX * 0.5 * sprite.getWidth() - unmodifiedY * 0.5 * sprite.getWidth());
-                intendedY = (float) (unmodifiedX * 0.25 * sprite.getWidth() + unmodifiedY * 0.25 * sprite.getWidth());
-
-                // offset all by 0.5f ~16px which would be half a base sprite, then do the same for every additional z axis
-              //  intendedY += spritePos.z * (sprite.getOriginY() + 0.5f)* sprite.getWidth() - 0.5f;
-               // Gdx.app.getApplicationLogger().log("render pipeline", String.format("[sprite %s] intendedX %s | intendedY %s | offsetting Y by %s", sprite.hashCode(), intendedX, intendedY, spritePos.z));
-                intendedY += spritePos.z * 0.5f - 0.5f * sprite.getWidth(); //(sprite.getOriginY());
+                intendedX = (float) (unmodifiedX * 0.5 * spriteData.sprite.getWidth() - unmodifiedY * 0.5 * spriteData.sprite.getWidth());
+                intendedY = (float) (unmodifiedX * 0.25 * spriteData.sprite.getWidth() + unmodifiedY * 0.25 * spriteData.sprite.getWidth());
+                // offset, because why the fuck?
+                intendedY += spriteData.spritePos3D.z * 0.5f - 0.5f * spriteData.sprite.getWidth();
+               // Gdx.app.getApplicationLogger().log("render pipeline", String.format("[sprite %s 2/2] intendedX %s | intendedY %s", spriteData.hashCode(), intendedX, intendedY));
             }
-           // if(cam.frustum.pointInFrustum(intendedX, intendedY - spritePos.z * 0.5f * sprite.getHeight(), spritePos.z - 1f)) {
-                sprite.setPosition(
-                        intendedX,
-                        intendedY
-                );
-          //  sprite.getTexture().draw(, 0, 0 );
-                sprite.draw(batch);
-           // }
+            spriteData.sprite.setPosition(
+                intendedX,
+                intendedY
+            );
+
+            float distanceToFocus = lockOnPosition.toVector3().dst(spriteData.spritePos3D.cpy().scl(1,1,0.5f));//tilePos.x, tilePos.y, tilePos.z*0.5f));
+            //Gdx.app.getApplicationLogger().log("Render Pipeline", String.format("distance of tile %s to focus is %s", tile.tag, distanceToFocus));
+            if (distanceToFocus > renderDistance) {
+                spriteData.sprite.setAlpha(0.5f);
+            } else {
+                spriteData.sprite.setAlpha(1f);
+            }
+
+            spriteData.sprite.draw(batch);
         });
     }
 
