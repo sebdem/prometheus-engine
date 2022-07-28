@@ -3,13 +3,9 @@ package dbast.prometheus.engine.scene;
 import com.badlogic.gdx.ApplicationLogger;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Input;
-import com.badlogic.gdx.graphics.Color;
-import com.badlogic.gdx.graphics.Pixmap;
-import com.badlogic.gdx.graphics.Texture;
-import com.badlogic.gdx.graphics.TextureData;
-import com.badlogic.gdx.graphics.g2d.BitmapFont;
-import com.badlogic.gdx.graphics.g2d.Sprite;
-import com.badlogic.gdx.graphics.g2d.SpriteBatch;
+import com.badlogic.gdx.graphics.*;
+import com.badlogic.gdx.graphics.g2d.*;
+import com.badlogic.gdx.math.Matrix3;
 import com.badlogic.gdx.math.Rectangle;
 import com.badlogic.gdx.math.Vector3;
 import com.badlogic.gdx.scenes.scene2d.InputEvent;
@@ -28,6 +24,8 @@ import dbast.prometheus.engine.world.WorldSpace;
 import dbast.prometheus.engine.world.tile.Tile;
 import dbast.prometheus.engine.world.tile.TileRegistry;
 import dbast.prometheus.utils.SpriteBuffer;
+import dbast.prometheus.utils.Vector3Comparator;
+import javafx.collections.transformation.SortedList;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -72,6 +70,7 @@ public class WorldScene extends AbstractScene{
                     new Tile("debug", new Texture(Gdx.files.internal("world/terrain/debug_tile.png"))),
                     new Tile("brickF", new Texture(Gdx.files.internal("world/terrain/iso/brick_full.png"))),
                     new Tile("tree", new Texture(Gdx.files.internal("world/environment/"+ ((useIsometric) ?  "iso_" : "") +"tree.png"))),
+                    new Tile("treeS", new Texture(Gdx.files.internal("world/environment/"+ ((useIsometric) ?  "iso_" : "") +"tree_short.png"))),
                     new Tile("cube", new Texture(Gdx.files.internal("iso_cube.png")))
             );
         } else {
@@ -84,11 +83,12 @@ public class WorldScene extends AbstractScene{
         }
 
         // ==== [ prepare world ] ============================
-        world = WorldSpace.testLevel();
+        world = WorldSpace.waveFunctionTest();
 
         // ==== [ camera setup ] ============================
         Entity cameraFocus = world.entities.stream().filter(entity -> entity.hasComponent(InputControllerComponent.class)).findAny().orElse(world.entities.get(0));
        // Entity cameraFocus = world.entities.get((int) (Math.random()*world.entities.size()));
+       // cam = new LockOnCamera(90f, 16 ,9);
         cam = new LockOnCamera(90f, 16 ,9);
         cam.lockOnEntity(cameraFocus);
         cam.setEntityOffset(cameraFocus.getComponent(SizeComponent.class).toVector3().scl(0.5f,0.25f,0.5f));//.scl(0.5f));
@@ -126,14 +126,12 @@ public class WorldScene extends AbstractScene{
             }
             if (keycode == Input.Keys.MINUS) {
                 cam.setCameraDistance(cam.getCameraDistance() + 0.125f);
-                renderDistance -= 1f;
+                //renderDistance += 0.5f;
             }
             if (keycode == Input.Keys.PLUS) {
                 cam.setCameraDistance(cam.getCameraDistance() - 0.125f);
-                renderDistance += 1f;
+                //renderDistance -= 0.5f;
             }
-            Vector3 mousePos = cam.unproject( new Vector3(Gdx.input.getX(), Gdx.input.getY(), 0));
-            logger.log("Input event: ","Mouse position is " + mousePos.toString());
             return null;
         });
 
@@ -152,6 +150,94 @@ public class WorldScene extends AbstractScene{
                 )));
                 return super.keyTyped(event, character);
             }
+
+            @Override
+            public boolean mouseMoved(InputEvent event, float x, float y) {
+                boolean defaultHandle = super.mouseMoved(event, x, y);
+                Entity cameraLockOn = cam.getLockOnEntity();
+                PositionComponent lockOnPosition = cameraLockOn.getComponent(PositionComponent.class);
+
+                Vector3 mousePos = new Vector3((float)Gdx.input.getX() / (float)Gdx.graphics.getWidth(), 1f -((float)Gdx.input.getY() / (float)Gdx.graphics.getHeight()), 0);
+               // logger.log("Input event: ","Offset Mouse position to center is " + mousePos.toString());
+                // focus on middle
+                mousePos.add(-0.5f, -0.5f,0f);
+                logger.log("Input event: ","Offset Mouse position to center is " + mousePos.toString());
+
+                if (useIsometric) {
+                    Vector3 boundaries = new Vector3(cam.viewportWidth, cam.viewportHeight, 0f);
+                    logger.log("Input event: ","boundaries is " + boundaries.toString());
+                    boundaries.prj(LockOnCamera.isoTransform);
+                    logger.log("Input event: ","boundaries is " + boundaries.toString());
+
+                    boolean useIsoTransformForScreen = true;
+                    if (useIsoTransformForScreen) {
+                        mousePos.prj(LockOnCamera.isoTransform);
+
+                        // for some odd reason these two appear to be switched...
+                        float mouseX = mousePos.x;
+                        mousePos.x = mousePos.y;
+                        mousePos.y = -mouseX;
+                    } else {
+                        // use original transform matrix that seems to logically be incorrect for it's actual purpose????
+                        mousePos.prj(LockOnCamera.screenToGridTransform);
+                    }
+                    mousePos.scl(cam.getCameraDistance());
+                    //mousePos.scl(boundaries);
+                    mousePos.scl( boundaries);
+
+
+                    mousePos.add(lockOnPosition.position);
+                    // mousePos.scl(renderDistance);
+                    logger.log("Input event: ","transformed Mouse position to center is " + mousePos.toString());
+                } else {
+                    mousePos.scl(cam.viewportWidth, cam.viewportHeight, 1f);
+                    mousePos.scl(1.75f);
+                    mousePos.add(lockOnPosition.position);
+                }
+                logger.log("Input event: ", String.format("Camera angled at %s", ((float)Math.sin(cam.getViewingAngle())) * cam.getCameraDistance()));
+
+                higlightThis.set(mousePos);
+
+/*
+TODO somehow translate mouse selection into world object selection?
+                Entity cameraLockOn = cam.getLockOnEntity();
+                PositionComponent lockOnPosition = cameraLockOn.getComponent(PositionComponent.class);
+
+                //
+                Vector3 mousePos = new Vector3((float)Gdx.input.getX() / (float)Gdx.graphics.getWidth(), 1f-(float)Gdx.input.getY() / (float)Gdx.graphics.getHeight(), 0);
+                logger.log("Input event: ","Original Mouse position is " + mousePos.toString());
+                // focus on middle
+                mousePos.add(-0.5f, -0.5f,0f);
+                logger.log("Input event: ","Offset Mouse position to center is " + mousePos.toString());
+                // do iso transform, if needed...
+                if (useIsometric) {
+                    float unmodifiedX = mousePos.x;
+                    float unmodifiedY = mousePos.y;
+
+
+                    mousePos.prj(LockOnCamera.isoTransform);
+                    float intendedX = mousePos.x * 32f;
+                    float intendedY = mousePos.y * 32f;
+                    mousePos.scl(32f);
+                   //  intendedX = (float) (unmodifiedX * 0.5  - unmodifiedY * 0.5);
+                   //  intendedY = (float) (unmodifiedX * 0.25  + unmodifiedY * 0.25 );
+
+                    //mousePos.set(intendedX, intendedY, mousePos.z);
+                    logger.log("Input event: ","Mouse position in ISO is " + mousePos.toString());
+                    //mousePos.add(lockOnPosition)
+                }
+                // multiply by "distance", as in the "size" of the stuff being shown
+                //mousePos.scl(cam.viewportWidth, cam.viewportHeight, 1f);
+                //mousePos.scl(renderDistance);
+
+                // add lock on position to mousePos
+                mousePos.add(lockOnPosition.position);
+                higlightThis.set(mousePos);
+
+                logger.log("Input event: ","Mouse position is " + mousePos.toString());
+*/
+                return defaultHandle;
+            }
         });
 
         // ==== [ init batch ] ============================
@@ -160,6 +246,7 @@ public class WorldScene extends AbstractScene{
         return this;
     }
 
+    public Vector3 higlightThis = new Vector3(0f,0f,0f);
 
     @Override
     public void render(int windowWidth, int windowHeight, float aspect) {
@@ -173,7 +260,8 @@ public class WorldScene extends AbstractScene{
 
     // TODO move sprite building out of here. Update new reference whenever things actually change. Then just render to batch
     SpriteBuffer spriteQueue = null;
-    static float renderDistance = 18f;
+    // static float renderDistance = 18f;
+    protected static float renderDistance = (Float)PrometheusConfig.conf.getOrDefault("renderDistance",18f);
 
     public void prepareTileSprites() {
         Entity cameraLockOn = cam.getLockOnEntity();
@@ -190,6 +278,7 @@ public class WorldScene extends AbstractScene{
 
                 tileSprite.setOrigin(0.5f, 0f);
                 tileSprite.setPosition(spriteX, spriteY);
+                // TODO fix rendering of sprites larger than 32px in width
                 tileSprite.setSize(tileSprite.getRegionWidth() / (float)tile.tileTexture.getWidth(), tileSprite.getRegionHeight() / (float)tile.tileTexture.getWidth());
 
                 //tileBatch.put(tilePos, tileSprite);
@@ -244,7 +333,8 @@ public class WorldScene extends AbstractScene{
             PositionComponent positionComponent = entity.getComponent(PositionComponent.class);
             SizeComponent sizeComponent = entity.getComponent(SizeComponent.class);
 
-            Vector3 entityPos = positionComponent.toVector3();
+            // TODO might needs cpy()
+            Vector3 entityPos = positionComponent.position;
             world.toNextUpperLevel(entityPos);
             float spriteX = entityPos.x;
             float spriteY = entityPos.y;
@@ -309,7 +399,6 @@ public class WorldScene extends AbstractScene{
     }
 
 
-    //public static float gridSnapIncrement =  0.0625f;
     protected static float gridSnapIncrement = (Float)PrometheusConfig.conf.getOrDefault("gridSnapIncrement", 0.0625f);
     protected static boolean useGridSnapping = (Boolean)PrometheusConfig.conf.getOrDefault("gridSnapping", false);
     protected static boolean useIsometric = (Boolean)PrometheusConfig.conf.getOrDefault("isometric", false);
@@ -350,20 +439,37 @@ public class WorldScene extends AbstractScene{
             if (useIsometric) {
                 float unmodifiedX = intendedX;
                 float unmodifiedY = intendedY;
+                Vector3 unmodified = new Vector3(unmodifiedX, unmodifiedY, 0);
+                unmodified.prj(LockOnCamera.isoTransform);
 
                 // sprite height should be used here according to render logic... For some reason spritebased sizes fuck this up however, therefor use width
-                intendedX = (float) (unmodifiedX * 0.5 * spriteData.sprite.getWidth() - unmodifiedY * 0.5 * spriteData.sprite.getWidth());
-                intendedY = (float) (unmodifiedX * 0.25 * spriteData.sprite.getWidth() + unmodifiedY * 0.25 * spriteData.sprite.getWidth());
+               // intendedX = (float) (unmodifiedX * 0.5 * spriteData.sprite.getWidth() - unmodifiedY * 0.5 * spriteData.sprite.getWidth());
+                //intendedY = (float) (unmodifiedX * 0.25 * spriteData.sprite.getWidth() + unmodifiedY * 0.25 * spriteData.sprite.getWidth());
+                intendedX = unmodified.x * spriteData.sprite.getWidth();
+                intendedY = unmodified.y * spriteData.sprite.getWidth();
                 // offset, because why the fuck?
                 intendedY += spriteData.spritePos3D.z * 0.5f - 0.5f * spriteData.sprite.getWidth();
+
                // Gdx.app.getApplicationLogger().log("render pipeline", String.format("[sprite %s 2/2] intendedX %s | intendedY %s", spriteData.hashCode(), intendedX, intendedY));
+
+                int sx = (int) spriteData.spritePos3D.x;
+                int sy = (int) spriteData.spritePos3D.y;
+                if ((int)higlightThis.x == sx && (int)higlightThis.y == sy) {
+                    intendedY += 0.125f; //* spriteData.sprite.getWidth();
+                }
+            } else {
+                int sx = (int) spriteData.spritePos3D.x;
+                int sy = (int) spriteData.spritePos3D.y;
+                if ((int)higlightThis.x == sx && (int)higlightThis.y == sy) {
+                    spriteData.sprite.rotate(45);
+                }
             }
             spriteData.sprite.setPosition(
                 intendedX,
                 intendedY
             );
 
-            float distanceToFocus = lockOnPosition.toVector3().dst(spriteData.spritePos3D.cpy().scl(1,1,0.5f));//tilePos.x, tilePos.y, tilePos.z*0.5f));
+            float distanceToFocus = lockOnPosition.position.dst(spriteData.spritePos3D.cpy().scl(1,1,0.5f));//tilePos.x, tilePos.y, tilePos.z*0.5f));
             //Gdx.app.getApplicationLogger().log("Render Pipeline", String.format("distance of tile %s to focus is %s", tile.tag, distanceToFocus));
             if (distanceToFocus > renderDistance) {
                 spriteData.sprite.setAlpha(0.5f);

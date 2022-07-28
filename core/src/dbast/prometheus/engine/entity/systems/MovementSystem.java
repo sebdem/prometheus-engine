@@ -1,6 +1,5 @@
 package dbast.prometheus.engine.entity.systems;
 
-import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.math.Rectangle;
 import dbast.prometheus.engine.entity.Entity;
 import dbast.prometheus.engine.entity.components.*;
@@ -19,12 +18,12 @@ public class MovementSystem extends ComponentSystem {
     @Override
     public void execute(float updateDelta, List<Entity> qualifiedEntities) {
         for(Entity entity : qualifiedEntities) {
-            PositionComponent position = entity.getComponent(PositionComponent.class);
+            PositionComponent positionComponent = entity.getComponent(PositionComponent.class);
             CollisionBox collisionBox = entity.getComponent(CollisionBox.class);
             VelocityComponent velocity = entity.getComponent(VelocityComponent.class);
 
-            float newXpos = position.getX_pos() + velocity.getVelocity_x() * updateDelta;
-            float newYpos = position.getY_pos() + velocity.getVelocity_y() * updateDelta;
+            float newXpos = positionComponent.getX() + velocity.getVelocity_x() * updateDelta;
+            float newYpos = positionComponent.getY() + velocity.getVelocity_y() * updateDelta;
             // TODO ignore entity collisionBox for now, might even have to merge with CollisionDetectionSystem...
             // TODO [AI System]: Fetch Targets, if any, and calculate velocity needed to reach it.
 
@@ -35,7 +34,7 @@ public class MovementSystem extends ComponentSystem {
                 newXpos = boundaries.width - collisionBox.getWidth();
                 velocity.setVelocity_x(-velocity.getVelocity_x());
             }
-            position.setX_pos(newXpos);
+            positionComponent.setX(newXpos);
 
             if (boundaries.y > newYpos) {
                 newYpos = boundaries.y;
@@ -44,7 +43,7 @@ public class MovementSystem extends ComponentSystem {
                 newYpos = boundaries.height - collisionBox.getHeight();
                 velocity.setVelocity_y(-velocity.getVelocity_y());
             }
-            position.setY_pos(newYpos);
+            positionComponent.setY(newYpos);
         }
     }
 

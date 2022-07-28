@@ -3,6 +3,7 @@ package dbast.prometheus.utils;
 import net.dermetfan.utils.ArrayUtils;
 
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
@@ -28,5 +29,9 @@ public class GeneralUtils {
                 row[x] = (int)(Math.random() * (max - min));
             }
         }
+    }
+
+    public static <T> T randomElement(Collection<T> collection) {
+        return (T)collection.toArray()[(int) (collection.size() * Math.random())];
     }
 }

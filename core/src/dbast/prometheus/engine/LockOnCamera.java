@@ -1,5 +1,6 @@
 package dbast.prometheus.engine;
 
+import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.graphics.PerspectiveCamera;
 import com.badlogic.gdx.math.Matrix4;
 import com.badlogic.gdx.math.Vector3;
@@ -70,14 +71,24 @@ public class LockOnCamera extends PerspectiveCamera implements PositionProvider 
     protected static boolean useIsometric = (Boolean) PrometheusConfig.conf.getOrDefault("isometric", false);
 
     // This doesn't seem to work properly...
-    public Matrix4 isoTransform = new Matrix4(
+    // EDIT: [1] and [4] were reversed???
+    public static Matrix4 isoTransform = new Matrix4(
             new float[]{
+                    // EDIT:
+                    0.5f, 0.25f , 0, 0,
+                    -0.5f, 0.25f, 0, 0,
+                    0, 0, 1, 0,
+                    0, 0, 0, 1
+            });
+
+    public static Matrix4 screenToGridTransform = new Matrix4(
+            new float[]{
+                    // EDIT:
                     0.5f, -0.5f, 0, 0,
                     0.25f , 0.25f, 0, 0,
                     0, 0, 1, 0,
                     0, 0, 0, 1
             });
-
     @Override
     public Vector3 unproject(Vector3 screenCoords) {
         return super.unproject(screenCoords);
@@ -124,12 +135,16 @@ public class LockOnCamera extends PerspectiveCamera implements PositionProvider 
         if (lockOnEntity != null) {
             if (this.recalcOffset) {
                 this.recalcOffset = false;
-                this.cameraOffset = new Vector3(
-                        entityOffset.x,
-                        entityOffset.y -(float)(Math.cos(viewingAngle) * cameraDistance),
-                        (float)Math.sin(viewingAngle) * cameraDistance);
+                //if (!useIsometric) {
+                    this.cameraOffset = new Vector3(
+                            entityOffset.x,
+                            entityOffset.y -(float)(Math.cos(viewingAngle) * cameraDistance),
+                            (useIsometric ? 0.5f : (float)Math.sin(viewingAngle)) * cameraDistance);
+                //} else {
+                //    this.cameraOffset = new Vector3(entityOffset.x, entityOffset.y, entityOffset.z);
+                //}
             }
-            Vector3 targetPosition = lockOnComponent.toVector3();
+            Vector3 targetPosition = lockOnComponent.position.cpy();
 
             if ((Boolean) PrometheusConfig.conf.getOrDefault("gridSnapping", false)) {
                 double xPos = Math.round(targetPosition.x);
@@ -145,12 +160,15 @@ public class LockOnCamera extends PerspectiveCamera implements PositionProvider 
             if (useIsometric) {
                 targetPosition.set(
                         (float) (targetPosition.x * 0.5- targetPosition.y * 0.5),
-                        (float) (targetPosition.x * 0.25+ targetPosition.y * 0.25),
-                        targetPosition.z
+                        (float) (targetPosition.x * 0.25+ targetPosition.y * 0.25) + targetPosition.z * 0.5f,
+                        1f//targetPosition.z * 0.5f
                 );
             }
-            this.position.set(targetPosition.cpy().add(cameraOffset));
-            this.lookAt(targetPosition.cpy().add(entityOffset));
+            Vector3 newPosition = targetPosition.cpy().add(cameraOffset);
+            Vector3 newLookAt = targetPosition.cpy().add(entityOffset);
+            //Gdx.app.getApplicationLogger().log("camera update", String.format("Updating camera... Current Position: %s | Target Position: %s (with offset: %s) | Looking At %s", this.position, targetPosition, newPosition, newLookAt));
+            this.position.set(newPosition);
+            this.lookAt(newLookAt);
         }
         super.update();
     }
