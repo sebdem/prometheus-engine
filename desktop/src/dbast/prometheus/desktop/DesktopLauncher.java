@@ -16,7 +16,7 @@ public class DesktopLauncher {
 	public static void main (String[] arg) {
 		List<String> arguments = Arrays.asList(arg);
 		PrometheusConfig.init();
-		PrometheusConfig.conf.put("gridSnapping", true);
+		PrometheusConfig.conf.put("gridSnapping", false);
 		PrometheusConfig.conf.put("isometric", true);
 		PrometheusConfig.conf.put("renderDistance", 32f);
 		PrometheusConfig.conf.put("gridSnapIncrement", 0.0625f); //1 pixel

@@ -72,7 +72,8 @@ public class WorldScene extends AbstractScene{
                     new Tile("glass_top", new Texture(Gdx.files.internal("world/terrain/iso/glass.png"))),
                     new Tile("tree", new Texture(Gdx.files.internal("world/environment/"+ ((useIsometric) ?  "iso_" : "") +"tree.png"))),
                     new Tile("treeS", new Texture(Gdx.files.internal("world/environment/"+ ((useIsometric) ?  "iso_" : "") +"tree_short.png"))),
-                    new Tile("cube", new Texture(Gdx.files.internal("iso_cube.png")))
+                    new Tile("cube", new Texture(Gdx.files.internal("iso_cube.png"))),
+                    new Tile("path_dirt", new Texture(Gdx.files.internal("world/terrain/iso/path_stone.png")))
             );
         } else {
             TileRegistry.register(

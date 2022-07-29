@@ -174,7 +174,7 @@ public class WorldSpace {
     }
 
     public static WorldSpace waveFunctionTest() {
-        WorldSpace worldSpace = new WorldSpace(30, 30);
+        WorldSpace worldSpace = new WorldSpace(64, 64);
         boolean useIsometric = (Boolean) PrometheusConfig.conf.getOrDefault("isometric", false);
 
 
@@ -184,29 +184,33 @@ public class WorldSpace {
         Tile grassTile = TileRegistry.getByTag("grass_0");
         Tile dirtTile = TileRegistry.getByTag("dirt_0");
         Tile treeTile = TileRegistry.getByTag("treeS");
-        List<Tile> all = Arrays.asList(grassTile, waterTile, dirtTile, treeTile);
+        Tile pathTile = TileRegistry.getByTag("path_dirt");
+        List<Tile> all = Arrays.asList(grassTile, treeTile, pathTile, waterTile);
 
         tileRules.put(waterTile, Arrays.asList(
                 waterTile, waterTile, waterTile, grassTile
         ));
         tileRules.put(dirtTile, Arrays.asList(
-                dirtTile, grassTile, grassTile
+                dirtTile, dirtTile, dirtTile, dirtTile, grassTile
         ));
         tileRules.put(treeTile, Arrays.asList(
-                treeTile, grassTile, grassTile
+                treeTile, grassTile
         ));
         tileRules.put(grassTile, Arrays.asList(
                grassTile, grassTile, grassTile, treeTile, dirtTile,
                 grassTile, grassTile, grassTile, treeTile, dirtTile,
-                grassTile, grassTile, grassTile,
-                waterTile
+                grassTile,
+                waterTile, pathTile
+        ));
+        tileRules.put(pathTile, Arrays.asList(
+                pathTile, pathTile, pathTile, grassTile
         ));
 
         Map<Vector3, List<Tile>> allowedTiles = new TreeMap<>(new Vector3Comparator.Planar());
 
         // Step 1 go over terrain and randomly add blocks
 
-        for(int i = 0; i <= 10; i++) {
+        for(int i = 0; i <= 30; i++) {
             float y = (float) Math.floor((Math.random()*worldSpace.height));
             float x = (float) Math.floor((Math.random()*worldSpace.width));
             /*
@@ -252,7 +256,7 @@ public class WorldSpace {
         });
 
         // Step 2 go over terrain and determine a random allowed tile from the given list and update all neighbors if not already determined
-       boolean smoothing = false;
+        boolean smoothing = false;
         if (smoothing) {
 
             int maxTerrainCycles = 64;
@@ -295,9 +299,10 @@ public class WorldSpace {
                     allowed.getKey().x >= 0 && allowed.getKey().y >= 0 &&
                     allowed.getKey().x < worldSpace.width && allowed.getKey().y < worldSpace.height &&
                     allowed.getValue().size() > 1)) {
-                Set<Vector3> positions = allowedTiles.keySet();
+                List<Vector3> positions = Arrays.asList(allowedTiles.keySet().toArray(new Vector3[0]));
+                Collections.shuffle(positions);
 
-                for (Vector3 position : positions.toArray(new Vector3[0])) {
+                for (Vector3 position : positions) {
                     List<Tile> allowedForPosition = allowedTiles.get(position);
 
                     if (allowedForPosition.size() >= 1) {
@@ -346,21 +351,27 @@ public class WorldSpace {
             if (tile.equals(waterTile)) {
                 worldSpace.placeTile(dirtTile, position.x, position.y, z - 1);
             }
+           /* if (tile.equals(dirtTile)) {
+                worldSpace.placeTile(grassTile, position.x, position.y, z + 1);
+            }*/
             worldSpace.placeTile(tile, position.x, position.y, z);
         });
 
         // Step 4 as terrain was generated, build features
-        List<PlaceFeature> features = Arrays.asList(
-                new Mountain("grass_0"), new CastleTower("brickF")
-        );
+        boolean placeFeatures = false;
+        if (placeFeatures) {
+            List<PlaceFeature> features = Arrays.asList(
+                    new Mountain("grass_0"), new CastleTower("brickF")
+            );
 
-        for(int i = 0; i <= 5; i++) {
-            float y = (float) Math.floor((Math.random()*worldSpace.height));
-            float x = (float) Math.floor((Math.random()*worldSpace.width));
-            float z = 0f;
-            int feature = (int) (Math.random() * features.size());
+            for(int i = 0; i <= 15; i++) {
+                float y = (float) Math.floor((Math.random()*worldSpace.height));
+                float x = (float) Math.floor((Math.random()*worldSpace.width));
+                float z = 0f;
+                int feature = (int) (Math.random() * features.size());
 
-            features.get(feature).place(worldSpace, x, y, z);
+                features.get(feature).place(worldSpace, x, y, z);
+            }
         }
 
 
@@ -372,6 +383,7 @@ public class WorldSpace {
                 new PositionComponent(0f, 0f),
                 new InputControllerComponent(),
                 new VelocityComponent(0,0),
+                //new VelocityComponent(3f,5f),
                 new HealthComponent(200f),
                 SpriteComponent.fromFile(Gdx.files.internal(
                         (useIsometric) ?  "sprites/player/iso_test_01.png" : "sprites/player/test_01.png"

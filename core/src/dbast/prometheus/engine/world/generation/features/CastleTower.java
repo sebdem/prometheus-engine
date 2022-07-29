@@ -1,16 +1,19 @@
 package dbast.prometheus.engine.world.generation.features;
 
 import com.badlogic.gdx.math.MathUtils;
+import com.badlogic.gdx.math.Vector3;
 import dbast.prometheus.engine.world.WorldSpace;
 import dbast.prometheus.engine.world.generation.PlaceFeature;
+import dbast.prometheus.engine.world.generation.ScalableFeature;
 import dbast.prometheus.engine.world.tile.TileRegistry;
 import dbast.prometheus.utils.GeneralUtils;
 
-public class CastleTower implements PlaceFeature {
+public class CastleTower extends ScalableFeature {
 
     private String tileTag;
 
     public CastleTower(String tileTag) {
+        super(vector3 -> (int)Math.floor(Math.random() * 4) + 3);
         this.tileTag = tileTag;
     }
 
@@ -18,8 +21,8 @@ public class CastleTower implements PlaceFeature {
     public void place(WorldSpace world, float x, float y, float z) {
         float maxZ = (float) (Math.floor((Math.random() * 3) + 1) * 4);
 
-        int scaleX = 4;
-        int scaleY = 4;
+        int scaleX = this.scaleXSupplier.apply(new Vector3(x, y, z));
+        int scaleY = scaleX;
 
         for (float z2 = 0; z2 <= maxZ; z2++) {
             for (float y2 = 0; y2 < scaleY; y2++) {
