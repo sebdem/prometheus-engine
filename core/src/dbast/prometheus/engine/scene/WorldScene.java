@@ -69,6 +69,7 @@ public class WorldScene extends AbstractScene{
                     new Tile("grass_top", new Texture(Gdx.files.internal("world/terrain/iso/grass_top.png"))),
                     new Tile("debug", new Texture(Gdx.files.internal("world/terrain/debug_tile.png"))),
                     new Tile("brickF", new Texture(Gdx.files.internal("world/terrain/iso/brick_full.png"))),
+                    new Tile("glass_top", new Texture(Gdx.files.internal("world/terrain/iso/glass.png"))),
                     new Tile("tree", new Texture(Gdx.files.internal("world/environment/"+ ((useIsometric) ?  "iso_" : "") +"tree.png"))),
                     new Tile("treeS", new Texture(Gdx.files.internal("world/environment/"+ ((useIsometric) ?  "iso_" : "") +"tree_short.png"))),
                     new Tile("cube", new Texture(Gdx.files.internal("iso_cube.png")))
@@ -78,7 +79,9 @@ public class WorldScene extends AbstractScene{
                 new Tile("water", new Texture(Gdx.files.internal("world/terrain/water.png"))),
                 new Tile("dirt_0", new Texture(Gdx.files.internal("world/terrain/dirt_full.png"))),
                 new Tile("grass_0", new Texture(Gdx.files.internal("world/terrain/grass.png"))),
-                new Tile("debug", new Texture(Gdx.files.internal("world/terrain/debug_tile.png")))
+                new Tile("debug", new Texture(Gdx.files.internal("world/terrain/debug_tile.png"))),
+                    new Tile("tree", new Texture(Gdx.files.internal("world/environment/tree.png"))),
+                    new Tile("treeS", new Texture(Gdx.files.internal("world/environment/tree.png")))
             );
         }
 

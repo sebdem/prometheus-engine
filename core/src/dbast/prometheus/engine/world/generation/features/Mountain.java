@@ -6,6 +6,12 @@ import dbast.prometheus.engine.world.tile.TileRegistry;
 
 public class Mountain implements PlaceFeature {
 
+    private String tileTag;
+
+    public Mountain(String tileTag) {
+        this.tileTag = tileTag;
+    }
+
     @Override
     public void place(WorldSpace world, float x, float y, float z) {
         float maxWidth = 3+(float)Math.random() * 16f;
@@ -24,7 +30,7 @@ public class Mountain implements PlaceFeature {
                     float pY = y + y2;
                    //world.placeTile(TileRegistry.idOfTag("dirt_0"), pX, pY, z2-1);
                     //world.removeTile(pX, pY, z2-1);
-                    world.placeTile(TileRegistry.idOfTag("grass_0"), pX, pY, z2);
+                    world.placeTile(TileRegistry.idOfTag(tileTag), pX, pY, z2);
                 }
             }
             xOff++;
@@ -32,6 +38,5 @@ public class Mountain implements PlaceFeature {
             if (zInc * 0.75 > 0.125f)
                 zInc *=0.75f;
         }
-
     }
 }

@@ -7,7 +7,9 @@ import com.badlogic.gdx.math.Vector3;
 import dbast.prometheus.engine.config.PrometheusConfig;
 import dbast.prometheus.engine.entity.EntityRegistry;
 import dbast.prometheus.engine.entity.components.*;
+import dbast.prometheus.engine.world.generation.GenerationUtils;
 import dbast.prometheus.engine.world.generation.PlaceFeature;
+import dbast.prometheus.engine.world.generation.features.CastleTower;
 import dbast.prometheus.engine.world.generation.features.Mountain;
 import dbast.prometheus.engine.world.tile.Tile;
 import dbast.prometheus.engine.world.tile.TileRegistry;
@@ -15,6 +17,7 @@ import dbast.prometheus.utils.GeneralUtils;
 import dbast.prometheus.utils.Vector3Comparator;
 
 import java.util.*;
+import java.util.stream.IntStream;
 
 // TODO WorldSpace builder from a level file
 public class WorldSpace {
@@ -171,7 +174,7 @@ public class WorldSpace {
     }
 
     public static WorldSpace waveFunctionTest() {
-        WorldSpace worldSpace = new WorldSpace(64, 64);
+        WorldSpace worldSpace = new WorldSpace(30, 30);
         boolean useIsometric = (Boolean) PrometheusConfig.conf.getOrDefault("isometric", false);
 
 
@@ -184,7 +187,7 @@ public class WorldSpace {
         List<Tile> all = Arrays.asList(grassTile, waterTile, dirtTile, treeTile);
 
         tileRules.put(waterTile, Arrays.asList(
-                waterTile, waterTile, waterTile, waterTile, grassTile
+                waterTile, waterTile, waterTile, grassTile
         ));
         tileRules.put(dirtTile, Arrays.asList(
                 dirtTile, grassTile, grassTile
@@ -193,14 +196,17 @@ public class WorldSpace {
                 treeTile, grassTile, grassTile
         ));
         tileRules.put(grassTile, Arrays.asList(
-                grassTile, grassTile, grassTile, treeTile, dirtTile, waterTile
+               grassTile, grassTile, grassTile, treeTile, dirtTile,
+                grassTile, grassTile, grassTile, treeTile, dirtTile,
+                grassTile, grassTile, grassTile,
+                waterTile
         ));
 
         Map<Vector3, List<Tile>> allowedTiles = new TreeMap<>(new Vector3Comparator.Planar());
 
         // Step 1 go over terrain and randomly add blocks
 
-        for(int i = 0; i <= 30; i++) {
+        for(int i = 0; i <= 10; i++) {
             float y = (float) Math.floor((Math.random()*worldSpace.height));
             float x = (float) Math.floor((Math.random()*worldSpace.width));
             /*
@@ -213,25 +219,40 @@ public class WorldSpace {
             allowedTiles.put(position, Collections.singletonList(selectedForPosition));
 
             List<Tile> allowedNeighbors = tileRules.get(selectedForPosition);
-            Vector3[] nearbys = new Vector3[]{
-                    position.cpy().add(-1,0,0),
-                    position.cpy().add(1,0,0),
-                    position.cpy().add(0,-1,0),
-                    position.cpy().add(0,1,0),
-            };
-            for(Vector3 nearbyTile : nearbys) {
+
+            for(Vector3 nearbyTile : GenerationUtils.nearby8Of(position)) {
                 List<Tile> allowedForPosition = allowedTiles.get(nearbyTile);
                 if (allowedForPosition == null) {
                     allowedForPosition = allowedNeighbors;
                 } else if (allowedForPosition.size() > 1){
                     allowedForPosition.retainAll(allowedNeighbors);
+                } else if (allowedForPosition.size() == 1) {
+                    continue;
                 }
                 allowedTiles.put(nearbyTile, new ArrayList<Tile>(allowedForPosition));
             }
         }
 
+        // step 1.5 manually place blocks to try how things adapt
+
+        IntStream.range(0,worldSpace.width).mapToObj(x->
+          //  new Vector3(x, (float) Math.floor(Math.sin(0.125*x)*4) + 4, 0)
+            new Vector3(x, (float) Math.floor(0.25*x) + 7, 0)
+        ).forEach(position -> {
+                allowedTiles.put(position, Collections.singletonList(waterTile));
+                Vector3[] nearbys = new Vector3[]{
+                        position.cpy().add(0, 2, 0),
+                        position.cpy().add(0, 1, 0),
+                        position.cpy().add(0, -1, 0),
+                        position.cpy().add(0, -2, 0),
+                };
+                for (Vector3 nearbyTile : nearbys) {
+                    allowedTiles.put(nearbyTile, Collections.singletonList(waterTile));
+                }
+        });
+
         // Step 2 go over terrain and determine a random allowed tile from the given list and update all neighbors if not already determined
-       boolean smoothing = true;
+       boolean smoothing = false;
         if (smoothing) {
 
             int maxTerrainCycles = 64;
@@ -247,18 +268,15 @@ public class WorldSpace {
                             allowedTiles.put(position, Collections.singletonList(selectedForPosition));
 
                             List<Tile> allowedNeighbors = tileRules.get(selectedForPosition);
-                            Vector3[] nearbys = new Vector3[]{
-                                    position.cpy().add(-1,0,0),
-                                    position.cpy().add(1,0,0),
-                                    position.cpy().add(0,-1,0),
-                                    position.cpy().add(0,1,0),
-                            };
-                            for(Vector3 nearbyTile : nearbys) {
+
+                            for(Vector3 nearbyTile : GenerationUtils.nearby8Of(position)) {
                                 allowedForPosition = allowedTiles.get(nearbyTile);
                                 if (allowedForPosition == null) {
                                     allowedForPosition = allowedNeighbors;
                                 } else if (allowedForPosition.size() > 1){
                                     allowedForPosition.retainAll(allowedNeighbors);
+                                } else if (allowedForPosition.size() == 1) {
+                                    continue;
                                 }
                                 allowedTiles.put(nearbyTile, new ArrayList<Tile>(allowedForPosition));
                             }
@@ -268,9 +286,53 @@ public class WorldSpace {
                     }
                 }
             }
-
         }
 
+        // New Step 2 go over all and finalize if needed.
+        boolean growthSmoothing = true;
+        if (growthSmoothing) {
+            while (allowedTiles.entrySet().stream().anyMatch(allowed->
+                    allowed.getKey().x >= 0 && allowed.getKey().y >= 0 &&
+                    allowed.getKey().x < worldSpace.width && allowed.getKey().y < worldSpace.height &&
+                    allowed.getValue().size() > 1)) {
+                Set<Vector3> positions = allowedTiles.keySet();
+
+                for (Vector3 position : positions.toArray(new Vector3[0])) {
+                    List<Tile> allowedForPosition = allowedTiles.get(position);
+
+                    if (allowedForPosition.size() >= 1) {
+                        Tile positionTile;
+                        if (allowedForPosition.size() == 1) {
+                            positionTile = allowedForPosition.get(0);
+                        } else {
+                            positionTile = GeneralUtils.randomElement(allowedForPosition);
+                            allowedTiles.put(position, Collections.singletonList(positionTile));
+                        }
+
+                        List<Tile> allowedNeighbors = tileRules.get(positionTile);
+
+                        for(Vector3 nearbyTile : GenerationUtils.nearby8Of(position)) {
+                            if (nearbyTile.x >= 0 && nearbyTile.y >= 0 &&
+                                nearbyTile.x < worldSpace.width && nearbyTile.y < worldSpace.height
+                            ) {
+                                allowedForPosition = allowedTiles.get(nearbyTile);
+                                if (allowedForPosition == null) {
+                                    allowedForPosition = allowedNeighbors;
+                                } else if (allowedForPosition.size() > 1){
+                                    allowedForPosition.retainAll(allowedNeighbors);
+                                } else if (allowedForPosition.size() == 1) {
+                                    continue;
+                                }
+                                allowedTiles.put(nearbyTile, new ArrayList<Tile>(allowedForPosition));
+                            }
+                        }
+                    }
+                   // Gdx.app.getApplicationLogger().log("World Setup", String.format("Position %s has %s number of valid tiles", position, allowedForPosition.size()));
+                };
+            }
+        }
+
+        // STEP 3: PLace actual tiles in worldspace
         allowedTiles.forEach((position, allowed) -> {
             if (allowed.size() > 1) {
                 Gdx.app.getApplicationLogger().log("generation", String.format("Error at %s: Position has multiple states: %s", position, allowed.size()));
@@ -281,8 +343,25 @@ public class WorldSpace {
                 worldSpace.placeTile(grassTile, position.x, position.y, z);
                 z++;
             }
+            if (tile.equals(waterTile)) {
+                worldSpace.placeTile(dirtTile, position.x, position.y, z - 1);
+            }
             worldSpace.placeTile(tile, position.x, position.y, z);
         });
+
+        // Step 4 as terrain was generated, build features
+        List<PlaceFeature> features = Arrays.asList(
+                new Mountain("grass_0"), new CastleTower("brickF")
+        );
+
+        for(int i = 0; i <= 5; i++) {
+            float y = (float) Math.floor((Math.random()*worldSpace.height));
+            float x = (float) Math.floor((Math.random()*worldSpace.width));
+            float z = 0f;
+            int feature = (int) (Math.random() * features.size());
+
+            features.get(feature).place(worldSpace, x, y, z);
+        }
 
 
         worldSpace.entities = new EntityRegistry();
@@ -372,7 +451,7 @@ public class WorldSpace {
                     world.placeTile(TileRegistry.idOfTag("grass_0"), x, y, z+1);
                     world.placeTile(TileRegistry.idOfTag("dirt_0"), x, y, z);
                 },
-                new Mountain(),
+                new Mountain("grass_0"),
                 (world, x, y, z) -> {
                     // place plain
                     int scale = 2+ (int) (Math.random() * 10);
@@ -424,7 +503,7 @@ public class WorldSpace {
                 }
         );
         features = Arrays.asList(
-                new Mountain());
+                new Mountain("grass_0"), new CastleTower("brickF"));
         // Step 2 go over terrain and randomly place features
 
         for(int i = 0; i <= 30; i++) {
