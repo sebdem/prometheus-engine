@@ -16,15 +16,21 @@ public class DesktopLauncher {
 	public static void main (String[] arg) {
 		List<String> arguments = Arrays.asList(arg);
 		PrometheusConfig.init();
-		PrometheusConfig.conf.put("gridSnapping", false);
+		PrometheusConfig.conf.put("gridSnapping", true);
 		PrometheusConfig.conf.put("isometric", true);
 		PrometheusConfig.conf.put("renderDistance", 32f);
-		PrometheusConfig.conf.put("gridSnapIncrement", 0.0625f); //1 pixel
-		//PrometheusConfig.conf.put("gridSnapIncrement", 0.125f);	//2 pixel
+		//PrometheusConfig.conf.put("gridSnapIncrement", 0.0625f); //1 pixel
+		PrometheusConfig.conf.put("gridSnapIncrement", 0.125f);	//2 pixel
 		//PrometheusConfig.conf.put("gridSnapIncrement", 0.1875f); //3 pixel - a bit snappy
 		//PrometheusConfig.conf.put("gridSnapIncrement", 0.25f);	//4 pixel
 		//PrometheusConfig.conf.put("gridSnapIncrement", 0.5f); //8 pixel - a bit snappy
 		//PrometheusConfig.conf.put("gridSnapIncrement", 1f); //16 pixel - a bit snappy
+
+		if (PrometheusConfig.conf.get("isometric", Boolean.class)) {
+			PrometheusConfig.conf.put("baseSpriteSize", 32f);
+		} else {
+			PrometheusConfig.conf.put("baseSpriteSize", 16f);
+		}
 
 		LwjglApplicationConfiguration config = new LwjglApplicationConfiguration();
 		config.addIcon("misc/flame128.png", Files.FileType.Internal);

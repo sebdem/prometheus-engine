@@ -2,6 +2,7 @@ package dbast.prometheus.engine.entity;
 
 import dbast.prometheus.engine.entity.components.Component;
 
+import java.beans.Transient;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;

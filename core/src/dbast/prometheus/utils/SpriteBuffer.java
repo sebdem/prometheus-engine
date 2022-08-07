@@ -29,7 +29,11 @@ public class SpriteBuffer extends ArrayList<SpriteBuffer.SpriteData> {
         public float recalcOrderIndex() {
             // as grid origin is the closest point to the camera, x + y needs to be inversed
             //this.orderIndex = -(spriteOrigin.x + spriteOrigin.y) + spriteOrigin.z;
+            // proper solution for entities...
             this.orderIndex = -(spritePos3D.x + sprite.getOriginX() + spritePos3D.y) + spritePos3D.z + sprite.getOriginY();
+            // almost solution for terrain...
+           // this.orderIndex = -(spritePos3D.x + sprite.getOriginX() + spritePos3D.y) + (spritePos3D.z / (spritePos3D.x + spritePos3D.y)) + sprite.getOriginY();
+            //this.orderIndex = -(spritePos3D.x + sprite.getOriginX() + spritePos3D.y) + ((spritePos3D.z+ sprite.getOriginY()) / (spritePos3D.x + spritePos3D.y)) ;
             return this.orderIndex;
         }
 
@@ -46,14 +50,15 @@ public class SpriteBuffer extends ArrayList<SpriteBuffer.SpriteData> {
         public int compareTo(SpriteData o) {
             /*
             // also a valid solution, but the using orderIndex built on creation of of this data is preferred
-            int zComp = Float.compare(this.spriteOrigin.z, o.spriteOrigin.z);
-            int yComp = Double.compare(Math.ceil(o.spriteOrigin.y), Math.ceil(this.spriteOrigin.y));
-            int xComp = Double.compare(Math.ceil(o.spriteOrigin.x), Math.ceil(this.spriteOrigin.x));
+            int zComp = Float.compare(this.spritePos3D.z + sprite.getOriginY(), o.spritePos3D.z + o.sprite.getOriginY());
+            int yComp = Double.compare(Math.ceil(o.spritePos3D.y), Math.ceil(this.spritePos3D.y));
+            int xComp = Double.compare(Math.ceil(o.spritePos3D.x +  + o.sprite.getOriginX()), Math.ceil(this.spritePos3D.x + sprite.getOriginX()));
 
             if (xComp == 0 && yComp == 0) {
                 return zComp;
             }
-            return yComp == 0 ? zComp == 0 ? xComp : zComp: yComp;*/
+            return yComp == 0 ? zComp == 0 ? xComp : zComp: yComp;
+            */
             return this.orderIndex.compareTo(o.orderIndex);
         }
     }

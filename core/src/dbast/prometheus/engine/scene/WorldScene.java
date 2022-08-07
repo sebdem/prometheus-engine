@@ -67,6 +67,7 @@ public class WorldScene extends AbstractScene{
                     new Tile("dirt_0", new Texture(Gdx.files.internal("world/terrain/iso/dirt_full.png"))),
                     new Tile("grass_0", new Texture(Gdx.files.internal("world/terrain/iso/grass.png"))),
                     new Tile("grass_top", new Texture(Gdx.files.internal("world/terrain/iso/grass_top.png"))),
+                    new Tile("grass_1", new Texture(Gdx.files.internal("world/terrain/iso/grass_high.png"))),
                     new Tile("debug", new Texture(Gdx.files.internal("world/terrain/debug_tile.png"))),
                     new Tile("brickF", new Texture(Gdx.files.internal("world/terrain/iso/brick_full.png"))),
                     new Tile("glass_top", new Texture(Gdx.files.internal("world/terrain/iso/glass.png"))),
@@ -91,7 +92,7 @@ public class WorldScene extends AbstractScene{
 
         // ==== [ camera setup ] ============================
         Entity cameraFocus = world.entities.stream().filter(entity -> entity.hasComponent(InputControllerComponent.class)).findAny().orElse(world.entities.get(0));
-       // Entity cameraFocus = world.entities.get((int) (Math.random()*world.entities.size()));
+        //Entity cameraFocus = world.entities.get((int) (Math.random()*world.entities.size()));
        // cam = new LockOnCamera(90f, 16 ,9);
         cam = new LockOnCamera(90f, 16 ,9);
         cam.lockOnEntity(cameraFocus);
@@ -120,6 +121,12 @@ public class WorldScene extends AbstractScene{
             if (keycode == Input.Keys.F4) {
                 naturalRenderOrder = !naturalRenderOrder;
             }
+            if (keycode == Input.Keys.F6) {
+                cam.lockOnEntity(world.entities.get((int) (Math.random()*world.entities.size())));
+            }
+            if (keycode == Input.Keys.F7) {
+                cam.lockOnEntity(world.entities.stream().filter(entity -> entity.hasComponent(InputControllerComponent.class)).findAny().orElse(world.entities.get(0)));
+            }
             if (keycode == Input.Keys.PAGE_UP) {
                 cam.setViewingAngle(Math.toRadians(Math.toDegrees(cam.getViewingAngle()) + 15f));
                 logger.log("moving camera up ", "15deg" );
@@ -135,6 +142,9 @@ public class WorldScene extends AbstractScene{
             if (keycode == Input.Keys.PLUS) {
                 cam.setCameraDistance(cam.getCameraDistance() - 0.125f);
                 //renderDistance -= 0.5f;
+            }
+            if (keycode == Input.Keys.F8) {
+                world.persist();
             }
             return null;
         });
@@ -154,6 +164,8 @@ public class WorldScene extends AbstractScene{
                 )));
                 return super.keyTyped(event, character);
             }
+
+
 
             @Override
             public boolean mouseMoved(InputEvent event, float x, float y) {
@@ -220,9 +232,9 @@ TODO somehow translate mouse selection into world object selection?
 
 
                     mousePos.prj(LockOnCamera.isoTransform);
-                    float intendedX = mousePos.x * 32f;
-                    float intendedY = mousePos.y * 32f;
-                    mousePos.scl(32f);
+                    float intendedX = mousePos.x * baseSpriteSize;
+                    float intendedY = mousePos.y * baseSpriteSize;
+                    mousePos.scl(baseSpriteSize);
                    //  intendedX = (float) (unmodifiedX * 0.5  - unmodifiedY * 0.5);
                    //  intendedY = (float) (unmodifiedX * 0.25  + unmodifiedY * 0.25 );
 
@@ -266,6 +278,7 @@ TODO somehow translate mouse selection into world object selection?
     SpriteBuffer spriteQueue = null;
     // static float renderDistance = 18f;
     protected static float renderDistance = (Float)PrometheusConfig.conf.getOrDefault("renderDistance",18f);
+    protected static float baseSpriteSize = (Float)PrometheusConfig.conf.getOrDefault("baseSpriteSize",16f);
 
     public void prepareTileSprites() {
         Entity cameraLockOn = cam.getLockOnEntity();
@@ -280,10 +293,11 @@ TODO somehow translate mouse selection into world object selection?
                 float spriteX = tilePos.x;
                 float spriteY = tilePos.y;
 
-                tileSprite.setOrigin(0.5f, 0f);
+                tileSprite.setOrigin(0.5f * (tileSprite.getRegionWidth() / baseSpriteSize), 0.f);
                 tileSprite.setPosition(spriteX, spriteY);
-                // TODO fix rendering of sprites larger than 32px in width
-                tileSprite.setSize(tileSprite.getRegionWidth() / (float)tile.tileTexture.getWidth(), tileSprite.getRegionHeight() / (float)tile.tileTexture.getWidth());
+
+               // tileSprite.setSize(tileSprite.getRegionWidth() / (float)tile.tileTexture.getWidth(), tileSprite.getRegionHeight() / (float)tile.tileTexture.getWidth());
+                tileSprite.setSize(tileSprite.getRegionWidth() / (float)baseSpriteSize, tileSprite.getRegionHeight() / baseSpriteSize);
 
                 //tileBatch.put(tilePos, tileSprite);
                 spriteQueue.add(tilePos, tileSprite);
@@ -344,12 +358,14 @@ TODO somehow translate mouse selection into world object selection?
             float spriteY = entityPos.y;
 
             Sprite sprite = spriteComponent.getSprite();
-            sprite.setOrigin(0.5f, 1f);
+           // sprite.setOrigin(0.5f, 1f);
+            sprite.setOrigin(0.5f * (sprite.getRegionWidth() / baseSpriteSize), 1f * (sprite.getRegionHeight() / baseSpriteSize));
 
            // spriteY += entityPos.z * (sprite.getOriginY() * sprite.getHeight());
 
             sprite.setPosition(spriteX, spriteY);
-            sprite.setSize(sizeComponent.getWidth(), sizeComponent.getHeight());
+           // sprite.setSize(sizeComponent.getWidth(), sizeComponent.getHeight());
+            sprite.setSize(sprite.getRegionWidth() / (float)baseSpriteSize, sprite.getRegionHeight() / baseSpriteSize);
 
             //entityBatch.put(entityPos, sprite);
            // Gdx.app.getApplicationLogger().log("render pipeline", String.format("[entity %s] sprite %s | X %s | Y %s | Z  %s | KEY: %s", entity.getId(), sprite.hashCode(), spriteX, spriteY, entityPos.z, skey ));
@@ -390,7 +406,7 @@ TODO somehow translate mouse selection into world object selection?
                 pixmap.drawPixel(0,0);
 
                 pixmap.setColor(0xFF00FFFF);
-                pixmap.drawPixel((int)(sprite.getOriginX() * pixmap.getWidth()-1),(int)(sprite.getOriginY() * pixmap.getHeight()-1));
+                pixmap.drawPixel((int)(sprite.getOriginX() * baseSpriteSize-1),(int)(sprite.getOriginY() * baseSpriteSize-1));
 
                 spriteTexture.disposePixmap();
 
@@ -449,12 +465,15 @@ TODO somehow translate mouse selection into world object selection?
                 // sprite height should be used here according to render logic... For some reason spritebased sizes fuck this up however, therefor use width
                // intendedX = (float) (unmodifiedX * 0.5 * spriteData.sprite.getWidth() - unmodifiedY * 0.5 * spriteData.sprite.getWidth());
                 //intendedY = (float) (unmodifiedX * 0.25 * spriteData.sprite.getWidth() + unmodifiedY * 0.25 * spriteData.sprite.getWidth());
-                intendedX = unmodified.x * spriteData.sprite.getWidth();
-                intendedY = unmodified.y * spriteData.sprite.getWidth();
+                intendedX = unmodified.x ;//* spriteData.sprite.getWidth();
+                intendedY = unmodified.y;// * spriteData.sprite.getWidth();
                 // offset, because why the fuck?
-                intendedY += spriteData.spritePos3D.z * 0.5f - 0.5f * spriteData.sprite.getWidth();
+                intendedY += spriteData.spritePos3D.z * 0.5f - 0.5f;// * spriteData.sprite.getWidth();
 
                // Gdx.app.getApplicationLogger().log("render pipeline", String.format("[sprite %s 2/2] intendedX %s | intendedY %s", spriteData.hashCode(), intendedX, intendedY));
+                // offset
+                intendedX -= spriteData.sprite.getOriginX() - 0.5f;
+               // intendedX -= spriteData.sprite.getOriginX();
 
                 int sx = (int) spriteData.spritePos3D.x;
                 int sy = (int) spriteData.spritePos3D.y;

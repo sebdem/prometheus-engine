@@ -4,7 +4,7 @@ import dbast.prometheus.engine.entity.Entity;
 
 public abstract class Component {
 
-    protected Entity entity;
+    protected transient Entity entity;
 
     public Component setEntity(Entity entity) {
         this.entity = entity;

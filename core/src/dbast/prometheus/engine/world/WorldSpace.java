@@ -1,12 +1,19 @@
 package dbast.prometheus.engine.world;
 
 import com.badlogic.gdx.Gdx;
+import com.badlogic.gdx.files.FileHandle;
 import com.badlogic.gdx.graphics.Texture;
+import com.badlogic.gdx.math.MathUtils;
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.math.Vector3;
+import com.badlogic.gdx.utils.Json;
+import com.badlogic.gdx.utils.JsonWriter;
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
 import dbast.prometheus.engine.config.PrometheusConfig;
 import dbast.prometheus.engine.entity.EntityRegistry;
 import dbast.prometheus.engine.entity.components.*;
+import dbast.prometheus.engine.serializing.data.WorldData;
 import dbast.prometheus.engine.world.generation.GenerationUtils;
 import dbast.prometheus.engine.world.generation.PlaceFeature;
 import dbast.prometheus.engine.world.generation.features.CastleTower;
@@ -15,8 +22,10 @@ import dbast.prometheus.engine.world.tile.Tile;
 import dbast.prometheus.engine.world.tile.TileRegistry;
 import dbast.prometheus.utils.GeneralUtils;
 import dbast.prometheus.utils.Vector3Comparator;
+import jdk.nashorn.internal.runtime.JSONFunctions;
 
 import java.util.*;
+import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 // TODO WorldSpace builder from a level file
@@ -50,6 +59,12 @@ public class WorldSpace {
     public WorldSpace removeTile(float x, float y, float z) {
         this.terrainTiles.remove(new Vector3(x, y, z));
         return this;
+    }
+
+    public void persist() {
+        FileHandle file = Gdx.files.local("save/world_" + (System.nanoTime() / 1000) + ".json");
+        file.writeString(new Gson().toJson(new WorldData(this)), false);
+        //Gdx.app.getClipboard().setContents();
     }
 
     public static WorldSpace mostMinimalLevel() {
@@ -177,12 +192,17 @@ public class WorldSpace {
         WorldSpace worldSpace = new WorldSpace(64, 64);
         boolean useIsometric = (Boolean) PrometheusConfig.conf.getOrDefault("isometric", false);
 
+        boolean smoothing = false;
+        boolean growthSmoothing = true;
+        boolean placeFeatures = true;
 
         // Step 0: Define tile "rules"
         Map<Tile, List<Tile>> tileRules = new HashMap<>();
         Tile waterTile = TileRegistry.getByTag("water");
         Tile grassTile = TileRegistry.getByTag("grass_0");
+        Tile grassHighTile = TileRegistry.getByTag("grass_1");
         Tile dirtTile = TileRegistry.getByTag("dirt_0");
+        Tile bigTree = TileRegistry.getByTag("tree");
         Tile treeTile = TileRegistry.getByTag("treeS");
         Tile pathTile = TileRegistry.getByTag("path_dirt");
         List<Tile> all = Arrays.asList(grassTile, treeTile, pathTile, waterTile);
@@ -191,19 +211,25 @@ public class WorldSpace {
                 waterTile, waterTile, waterTile, grassTile
         ));
         tileRules.put(dirtTile, Arrays.asList(
-                dirtTile, dirtTile, dirtTile, dirtTile, grassTile
+                dirtTile, dirtTile, dirtTile, grassTile
         ));
         tileRules.put(treeTile, Arrays.asList(
-                treeTile, grassTile
+                treeTile, bigTree, grassTile
+        ));
+        tileRules.put(bigTree, Arrays.asList(
+                bigTree, treeTile
         ));
         tileRules.put(grassTile, Arrays.asList(
                grassTile, grassTile, grassTile, treeTile, dirtTile,
                 grassTile, grassTile, grassTile, treeTile, dirtTile,
-                grassTile,
-                waterTile, pathTile
+                grassTile, grassHighTile,
+                waterTile
+        ));
+        tileRules.put(grassHighTile, Arrays.asList(
+                grassTile, grassHighTile, grassHighTile
         ));
         tileRules.put(pathTile, Arrays.asList(
-                pathTile, pathTile, pathTile, grassTile
+                grassTile
         ));
 
         Map<Vector3, List<Tile>> allowedTiles = new TreeMap<>(new Vector3Comparator.Planar());
@@ -238,10 +264,12 @@ public class WorldSpace {
         }
 
         // step 1.5 manually place blocks to try how things adapt
-
+        // draw a "river"
         IntStream.range(0,worldSpace.width).mapToObj(x->
           //  new Vector3(x, (float) Math.floor(Math.sin(0.125*x)*4) + 4, 0)
-            new Vector3(x, (float) Math.floor(0.25*x) + 7, 0)
+           // new Vector3(x, (float) Math.floor(0.25*x) + 7, 0)
+           // new Vector3(x, (float) (x), 0)
+            new Vector3(x, (float) Math.floor(0.5*x+ (Math.pow(Math.sin(Math.sqrt(x) ),2))*0.5*x), 0)
         ).forEach(position -> {
                 allowedTiles.put(position, Collections.singletonList(waterTile));
                 Vector3[] nearbys = new Vector3[]{
@@ -255,10 +283,63 @@ public class WorldSpace {
                 }
         });
 
-        // Step 2 go over terrain and determine a random allowed tile from the given list and update all neighbors if not already determined
-        boolean smoothing = false;
-        if (smoothing) {
 
+        Vector3[] pathPoints = allowedTiles.entrySet().stream()
+                .filter(entrySet ->
+                        entrySet.getValue().size() == 1 &&
+                        entrySet.getValue().contains(pathTile)
+                ).map(Map.Entry::getKey)
+                .toArray(Vector3[]::new);
+
+        for (int i = 0; i < pathPoints.length - 1; i++) {
+            Vector3 startPoint = pathPoints[i];
+            Vector3 endPoint = pathPoints[(i+1 < pathPoints.length) ? i+1 : 0];
+
+            allowedTiles.put(startPoint, Collections.singletonList(pathTile));
+            allowedTiles.put(endPoint, Collections.singletonList(pathTile));
+            boolean rightBound = Math.random() > 0.5f;
+            float startY = Math.min(startPoint.y, endPoint.y);
+            float endY = Math.max(startPoint.y, endPoint.y);
+
+            float startX = Math.min(startPoint.x, endPoint.x);
+            float endX = Math.max(startPoint.x, endPoint.x);
+/*
+            float dX = endPoint.x - startPoint.x;
+            float dY = endPoint.y - startPoint.y;
+            float delta = dY / dX;
+            float brushSize = 2;
+*/
+            for (float y = startY; y < endY + 1; y++) {
+                for (float x = startX; x < endX + 1; x++) {
+/*
+                        for(float y2 = y - brushSize; y2 < y + brushSize; y2++) {
+                            for(float x2 = x - brushSize; x2 < x + brushSize; x2++) {
+                                float deltaN = (endPoint.y - y2) / (endPoint.x - x2);
+                                float delta2 = (y2 - startPoint.y) / (x2 - startPoint.x);
+                                if (deltaN ==delta2) {
+                                    allowedTiles.put(new Vector3(x2, y2, startPoint.z), Collections.singletonList(pathTile));
+                                }
+                            }
+                        }
+*/
+                    if (
+                        (y == (rightBound ? startPoint.y : endPoint.y) &&
+                                GeneralUtils.isBetween(x, startX, endX, true)) ||
+                        (x == (rightBound ? endPoint.x : startPoint.x) &&
+                                GeneralUtils.isBetween(y, startY, endY, true))
+                    ) {
+                        allowedTiles.put(new Vector3(x, y, startPoint.z), Collections.singletonList(pathTile));
+                    }
+                }
+            }
+            if (Math.random() * 100 >= 80) {
+                i++;
+            }
+        }
+
+        // Step 2 go over terrain and determine a random allowed tile from the given list and update all neighbors if not already determined
+
+        if (smoothing) {
             int maxTerrainCycles = 64;
             for(int tCycle = 1; tCycle <= maxTerrainCycles; tCycle++) {
                 float z = 0f;
@@ -293,7 +374,6 @@ public class WorldSpace {
         }
 
         // New Step 2 go over all and finalize if needed.
-        boolean growthSmoothing = true;
         if (growthSmoothing) {
             while (allowedTiles.entrySet().stream().anyMatch(allowed->
                     allowed.getKey().x >= 0 && allowed.getKey().y >= 0 &&
@@ -341,27 +421,33 @@ public class WorldSpace {
         allowedTiles.forEach((position, allowed) -> {
             if (allowed.size() > 1) {
                 Gdx.app.getApplicationLogger().log("generation", String.format("Error at %s: Position has multiple states: %s", position, allowed.size()));
+            } else if (allowed.size() == 0) {
+                Gdx.app.getApplicationLogger().log("generation", String.format("Error at %s: Position has NO states: %s", position, allowed.size()));
+                allowed = Collections.singletonList(grassTile);
             }
             Tile tile = GeneralUtils.randomElement(allowed);
             float z = position.z;
             if (tile.equals(treeTile)) {
-                worldSpace.placeTile(grassTile, position.x, position.y, z);
-                z++;
+                worldSpace.placeTile(treeTile, position.x, position.y, z + 1);
+                tile = grassTile;
+            }
+            if (tile.equals(bigTree)) {
+                worldSpace.placeTile(bigTree, position.x, position.y, z + 1);
+                tile = grassTile;
             }
             if (tile.equals(waterTile)) {
                 worldSpace.placeTile(dirtTile, position.x, position.y, z - 1);
+                worldSpace.placeTile(tile, position.x, position.y, z);
+            } else {
+                worldSpace.placeTile(dirtTile, position.x, position.y, z - 1);
+                worldSpace.placeTile(tile, position.x, position.y, z);
             }
-           /* if (tile.equals(dirtTile)) {
-                worldSpace.placeTile(grassTile, position.x, position.y, z + 1);
-            }*/
-            worldSpace.placeTile(tile, position.x, position.y, z);
         });
 
         // Step 4 as terrain was generated, build features
-        boolean placeFeatures = false;
         if (placeFeatures) {
             List<PlaceFeature> features = Arrays.asList(
-                    new Mountain("grass_0"), new CastleTower("brickF")
+                    /*new Mountain("grass_0"),*/ new CastleTower("brickF")
             );
 
             for(int i = 0; i <= 15; i++) {
@@ -389,6 +475,25 @@ public class WorldSpace {
                         (useIsometric) ?  "sprites/player/iso_test_01.png" : "sprites/player/test_01.png"
                 ))
         );
+
+
+        Texture[] blobTextures = new Texture[]{
+                new Texture(Gdx.files.internal("sprites/enemies/" + ((useIsometric) ?  "iso_" : "") + "blob_0.png")),
+                new Texture(Gdx.files.internal("sprites/enemies/" + ((useIsometric) ?  "iso_" : "") + "blob_1.png")),
+                new Texture(Gdx.files.internal("sprites/enemies/" + ((useIsometric) ?  "iso_" : "") + "blob_2.png"))
+        };
+
+        float maxSpeed = 8f;
+        for(int i = 0; i < 200; i++) {
+            worldSpace.entities.addNewEntity(
+                    CollisionBox.createBasic(),
+                    SizeComponent.createBasic(),
+                    PositionComponent.initial(),
+                    SpriteComponent.fromTexture(blobTextures[(int)(Math.random() * 3)]),
+                    new VelocityComponent((float)((Math.random() - 0.5f) * maxSpeed),(float)((Math.random() - 0.5f) * maxSpeed))
+            );
+        }
+
         return worldSpace;
     }
 
