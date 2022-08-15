@@ -59,6 +59,8 @@ public class WorldScene extends AbstractScene{
         font.getData().setScale(0.1f);
         font.getData().setLineHeight(1.0f);
 
+        this.background = Color.valueOf("0077FF");
+
         // ==== [ load files ] ============================
         if (useIsometric) {
             TileRegistry.register(
@@ -97,7 +99,7 @@ public class WorldScene extends AbstractScene{
         cam = new LockOnCamera(90f, 16 ,9);
         cam.lockOnEntity(cameraFocus);
         cam.setEntityOffset(cameraFocus.getComponent(SizeComponent.class).toVector3().scl(0.5f,0.25f,0.5f));//.scl(0.5f));
-        cam.setCameraDistance(6f);
+        cam.setCameraDistance(16f);
         cam.setViewingAngle(Math.toRadians(90));
 
 
@@ -506,6 +508,7 @@ TODO somehow translate mouse selection into world object selection?
 
     public void update(float deltaTime){
         super.update(deltaTime);
+        EventBus.update(deltaTime);
 
         collisionDetectionSystem.execute(deltaTime, collisionDetectionSystem.onlyQualified(world.entities));
         playerInputSystem.execute(deltaTime, playerInputSystem.onlyQualified(world.entities));

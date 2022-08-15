@@ -8,6 +8,7 @@ import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.math.Vector3;
 import com.badlogic.gdx.utils.Json;
 import com.badlogic.gdx.utils.JsonWriter;
+import com.badlogic.gdx.utils.SortedIntList;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import dbast.prometheus.engine.config.PrometheusConfig;
@@ -20,6 +21,7 @@ import dbast.prometheus.engine.world.generation.features.CastleTower;
 import dbast.prometheus.engine.world.generation.features.Mountain;
 import dbast.prometheus.engine.world.tile.Tile;
 import dbast.prometheus.engine.world.tile.TileRegistry;
+import dbast.prometheus.utils.AstarNode;
 import dbast.prometheus.utils.GeneralUtils;
 import dbast.prometheus.utils.Vector3Comparator;
 import jdk.nashorn.internal.runtime.JSONFunctions;
@@ -52,7 +54,7 @@ public class WorldSpace {
         return this;
     }
     public Tile lookupTile(float x, float y, float z) {
-        return this.terrainTiles.get(new Vector3(x, y, z));
+        return this.terrainTiles.getOrDefault(new Vector3(x, y, z), null);
     }
 
 
@@ -194,7 +196,9 @@ public class WorldSpace {
 
         boolean smoothing = false;
         boolean growthSmoothing = true;
-        boolean placeFeatures = true;
+        boolean placeFeatures = false;
+
+        int entitiesToGenerate = 50;
 
         // Step 0: Define tile "rules"
         Map<Tile, List<Tile>> tileRules = new HashMap<>();
@@ -208,7 +212,7 @@ public class WorldSpace {
         List<Tile> all = Arrays.asList(grassTile, treeTile, pathTile, waterTile);
 
         tileRules.put(waterTile, Arrays.asList(
-                waterTile, waterTile, waterTile, grassTile
+                waterTile, waterTile, grassTile
         ));
         tileRules.put(dirtTile, Arrays.asList(
                 dirtTile, dirtTile, dirtTile, grassTile
@@ -283,58 +287,44 @@ public class WorldSpace {
                 }
         });
 
+        allowedTiles.put(new Vector3(0,0,0), Collections.singletonList(pathTile));
+        allowedTiles.put(new Vector3(9,9,0), Collections.singletonList(pathTile));
+       // allowedTiles.put(new Vector3(20,6,0), Collections.singletonList(pathTile));
 
         Vector3[] pathPoints = allowedTiles.entrySet().stream()
                 .filter(entrySet ->
                         entrySet.getValue().size() == 1 &&
                         entrySet.getValue().contains(pathTile)
                 ).map(Map.Entry::getKey)
+               // .sorted(new Vector3Comparator.Isometric())
                 .toArray(Vector3[]::new);
+
 
         for (int i = 0; i < pathPoints.length - 1; i++) {
             Vector3 startPoint = pathPoints[i];
             Vector3 endPoint = pathPoints[(i+1 < pathPoints.length) ? i+1 : 0];
 
-            allowedTiles.put(startPoint, Collections.singletonList(pathTile));
-            allowedTiles.put(endPoint, Collections.singletonList(pathTile));
-            boolean rightBound = Math.random() > 0.5f;
-            float startY = Math.min(startPoint.y, endPoint.y);
-            float endY = Math.max(startPoint.y, endPoint.y);
+            List<Vector3> pathSteps = GenerationUtils.findPath(startPoint, endPoint, 1f, (vector3) -> {
+               /* List<Tile> tileAt = allowedTiles.get(vector3);
+                if (tileAt != null && tileAt.contains(waterTile)) {
+                    Gdx.app.getApplicationLogger().log("generation", String.format("Path finding for %s issue tile is water!", vector3.toString()));
+                    return false;
+                }*/
+                return true;
+            });
 
-            float startX = Math.min(startPoint.x, endPoint.x);
-            float endX = Math.max(startPoint.x, endPoint.x);
-/*
-            float dX = endPoint.x - startPoint.x;
-            float dY = endPoint.y - startPoint.y;
-            float delta = dY / dX;
-            float brushSize = 2;
-*/
-            for (float y = startY; y < endY + 1; y++) {
-                for (float x = startX; x < endX + 1; x++) {
-/*
-                        for(float y2 = y - brushSize; y2 < y + brushSize; y2++) {
-                            for(float x2 = x - brushSize; x2 < x + brushSize; x2++) {
-                                float deltaN = (endPoint.y - y2) / (endPoint.x - x2);
-                                float delta2 = (y2 - startPoint.y) / (x2 - startPoint.x);
-                                if (deltaN ==delta2) {
-                                    allowedTiles.put(new Vector3(x2, y2, startPoint.z), Collections.singletonList(pathTile));
-                                }
-                            }
-                        }
-*/
-                    if (
-                        (y == (rightBound ? startPoint.y : endPoint.y) &&
-                                GeneralUtils.isBetween(x, startX, endX, true)) ||
-                        (x == (rightBound ? endPoint.x : startPoint.x) &&
-                                GeneralUtils.isBetween(y, startY, endY, true))
-                    ) {
-                        allowedTiles.put(new Vector3(x, y, startPoint.z), Collections.singletonList(pathTile));
-                    }
+            pathSteps.forEach(step -> {
+                allowedTiles.put(step, Collections.singletonList(pathTile));
+                if (!step.equals(endPoint)) {
+                   /* for (Vector3 nearbyTile : GenerationUtils.nearby8Of(step)) {
+                        allowedTiles.put(nearbyTile, Collections.singletonList(pathTile));
+                    }*/
                 }
-            }
-            if (Math.random() * 100 >= 80) {
+            });
+
+           /* if (Math.random() * 100 >= 80) {
                 i++;
-            }
+            }*/
         }
 
         // Step 2 go over terrain and determine a random allowed tile from the given list and update all neighbors if not already determined
@@ -484,12 +474,12 @@ public class WorldSpace {
         };
 
         float maxSpeed = 8f;
-        for(int i = 0; i < 200; i++) {
+        for(int i = 0; i < entitiesToGenerate; i++) {
             worldSpace.entities.addNewEntity(
                     CollisionBox.createBasic(),
                     SizeComponent.createBasic(),
                     PositionComponent.initial(),
-                    SpriteComponent.fromTexture(blobTextures[(int)(Math.random() * 3)]),
+                    SpriteComponent.fromTexture(blobTextures[(int)(Math.random() * blobTextures.length)]),
                     new VelocityComponent((float)((Math.random() - 0.5f) * maxSpeed),(float)((Math.random() - 0.5f) * maxSpeed))
             );
         }
