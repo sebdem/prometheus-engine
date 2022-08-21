@@ -21,6 +21,7 @@ import dbast.prometheus.engine.entity.systems.StateUpdateSystem;
 import dbast.prometheus.engine.events.Event;
 import dbast.prometheus.engine.events.EventBus;
 import dbast.prometheus.engine.world.WorldSpace;
+import dbast.prometheus.engine.world.level.WaveFunctionTest;
 import dbast.prometheus.engine.world.tile.Tile;
 import dbast.prometheus.engine.world.tile.TileRegistry;
 import dbast.prometheus.utils.SpriteBuffer;
@@ -90,7 +91,7 @@ public class WorldScene extends AbstractScene{
         }
 
         // ==== [ prepare world ] ============================
-        world = WorldSpace.waveFunctionTest();
+        world = new WaveFunctionTest(50,50, 25, false, true, null, 0,10).setup();
 
         // ==== [ camera setup ] ============================
         Entity cameraFocus = world.entities.stream().filter(entity -> entity.hasComponent(InputControllerComponent.class)).findAny().orElse(world.entities.get(0));
@@ -99,7 +100,7 @@ public class WorldScene extends AbstractScene{
         cam = new LockOnCamera(90f, 16 ,9);
         cam.lockOnEntity(cameraFocus);
         cam.setEntityOffset(cameraFocus.getComponent(SizeComponent.class).toVector3().scl(0.5f,0.25f,0.5f));//.scl(0.5f));
-        cam.setCameraDistance(16f);
+        cam.setCameraDistance(7f);
         cam.setViewingAngle(Math.toRadians(90));
 
 
@@ -138,12 +139,12 @@ public class WorldScene extends AbstractScene{
                 logger.log("moving camera down ", "15deg" );
             }
             if (keycode == Input.Keys.MINUS) {
-                cam.setCameraDistance(cam.getCameraDistance() + 0.125f);
-                //renderDistance += 0.5f;
+                cam.setCameraDistance(cam.getCameraDistance() + 0.25f);
+                renderDistance += 0.25f;
             }
             if (keycode == Input.Keys.PLUS) {
-                cam.setCameraDistance(cam.getCameraDistance() - 0.125f);
-                //renderDistance -= 0.5f;
+                cam.setCameraDistance(cam.getCameraDistance() - 0.25f);
+                renderDistance -= 0.25f;
             }
             if (keycode == Input.Keys.F8) {
                 world.persist();
@@ -261,6 +262,7 @@ TODO somehow translate mouse selection into world object selection?
         // ==== [ init batch ] ============================
         batch = new SpriteBatch();
         spriteQueue = new SpriteBuffer();
+
         return this;
     }
 
@@ -446,7 +448,7 @@ TODO somehow translate mouse selection into world object selection?
         PositionComponent lockOnPosition = cameraLockOn.getComponent(PositionComponent.class);
 
         spriteQueue.forEach((spriteData)-> {
-            // beginn of render pipeline...
+            // begin of render pipeline...
             // TODO can this be delegated to actual shader logic, hopefully sparing sweet CPU calculation time??
             float intendedX = spriteData.spritePos3D.x;
             float intendedY = spriteData.spritePos3D.y;
@@ -494,16 +496,15 @@ TODO somehow translate mouse selection into world object selection?
                 intendedY
             );
 
-            float distanceToFocus = lockOnPosition.position.dst(spriteData.spritePos3D.cpy().scl(1,1,0.5f));//tilePos.x, tilePos.y, tilePos.z*0.5f));
+            float distanceToFocus = 1- (lockOnPosition.position.cpy().scl(1,1,0f).dst(spriteData.spritePos3D.cpy().scl(1,1,0f)) / renderDistance);//tilePos.x, tilePos.y, tilePos.z*0.5f));
             //Gdx.app.getApplicationLogger().log("Render Pipeline", String.format("distance of tile %s to focus is %s", tile.tag, distanceToFocus));
-            if (distanceToFocus > renderDistance) {
-                spriteData.sprite.setAlpha(0.5f);
-            } else {
-                spriteData.sprite.setAlpha(1f);
-            }
 
-            spriteData.sprite.draw(batch);
+            spriteData.sprite.draw(batch, distanceToFocus > 0.3f ? 1f : distanceToFocus > 0.20 ? 0.5f : distanceToFocus > 0.10 ? 0.25f : 0f);
+           // spriteData.sprite.draw(batch, distanceToFocus );
+           // spriteData.sprite.draw(batch, distanceToFocus > renderDistance ? 0.5f : 1f);
         });
+
+
     }
 
     public void update(float deltaTime){
