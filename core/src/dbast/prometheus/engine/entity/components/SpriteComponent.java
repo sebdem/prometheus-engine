@@ -5,6 +5,7 @@ import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.Sprite;
 
 // TODO Refactor into RenderComponent
+@Deprecated
 public class SpriteComponent extends Component {
 
     protected Sprite defaultSprite;

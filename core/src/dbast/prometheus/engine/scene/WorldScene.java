@@ -27,6 +27,7 @@ import dbast.prometheus.engine.world.tile.TileRegistry;
 import dbast.prometheus.utils.SpriteBuffer;
 import dbast.prometheus.utils.Vector3Comparator;
 import javafx.collections.transformation.SortedList;
+import net.dermetfan.gdx.graphics.g2d.AnimatedSprite;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -65,28 +66,29 @@ public class WorldScene extends AbstractScene{
         // ==== [ load files ] ============================
         if (useIsometric) {
             TileRegistry.register(
-                    new Tile("water", new Texture(Gdx.files.internal("world/terrain/iso/water.png"))),
-                    new Tile("waterD", new Texture(Gdx.files.internal("world/terrain/iso/water_deep.png"))),
-                    new Tile("dirt_0", new Texture(Gdx.files.internal("world/terrain/iso/dirt_full.png"))),
-                    new Tile("grass_0", new Texture(Gdx.files.internal("world/terrain/iso/grass.png"))),
-                    new Tile("grass_top", new Texture(Gdx.files.internal("world/terrain/iso/grass_top.png"))),
-                    new Tile("grass_1", new Texture(Gdx.files.internal("world/terrain/iso/grass_high.png"))),
-                    new Tile("debug", new Texture(Gdx.files.internal("world/terrain/debug_tile.png"))),
-                    new Tile("brickF", new Texture(Gdx.files.internal("world/terrain/iso/brick_full.png"))),
-                    new Tile("glass_top", new Texture(Gdx.files.internal("world/terrain/iso/glass.png"))),
-                    new Tile("tree", new Texture(Gdx.files.internal("world/environment/"+ ((useIsometric) ?  "iso_" : "") +"tree.png"))),
-                    new Tile("treeS", new Texture(Gdx.files.internal("world/environment/"+ ((useIsometric) ?  "iso_" : "") +"tree_short.png"))),
-                    new Tile("cube", new Texture(Gdx.files.internal("iso_cube.png"))),
-                    new Tile("path_dirt", new Texture(Gdx.files.internal("world/terrain/iso/path_stone.png")))
+                    new Tile("water", Gdx.files.internal("world/terrain/iso/water.png"), 8, 1, 0.25f),
+                    new Tile("waterM", Gdx.files.internal("world/terrain/iso/water_moving.png"), 8, 1, 0.125f),
+                    new Tile("waterD", Gdx.files.internal("world/terrain/iso/water_deep.png")),
+                    new Tile("dirt_0", Gdx.files.internal("world/terrain/iso/dirt_full.png")),
+                    new Tile("grass_0", Gdx.files.internal("world/terrain/iso/grass.png")),
+                    new Tile("grass_top", Gdx.files.internal("world/terrain/iso/grass_top.png")),
+                    new Tile("grass_1", Gdx.files.internal("world/terrain/iso/grass_high.png")),
+                    new Tile("debug", Gdx.files.internal("world/terrain/debug_tile.png")),
+                    new Tile("brickF", Gdx.files.internal("world/terrain/iso/brick_full.png")),
+                    new Tile("glass_top", Gdx.files.internal("world/terrain/iso/glass.png")),
+                    new Tile("tree", Gdx.files.internal("world/environment/"+ ((useIsometric) ?  "iso_" : "") +"tree.png")),
+                    new Tile("treeS", Gdx.files.internal("world/environment/"+ ((useIsometric) ?  "iso_" : "") +"tree_short.png")),
+                    new Tile("cube", Gdx.files.internal("iso_cube.png")),
+                    new Tile("path_dirt", Gdx.files.internal("world/terrain/iso/path_stone.png"))
             );
         } else {
             TileRegistry.register(
-                new Tile("water", new Texture(Gdx.files.internal("world/terrain/water.png"))),
-                new Tile("dirt_0", new Texture(Gdx.files.internal("world/terrain/dirt_full.png"))),
-                new Tile("grass_0", new Texture(Gdx.files.internal("world/terrain/grass.png"))),
-                new Tile("debug", new Texture(Gdx.files.internal("world/terrain/debug_tile.png"))),
-                    new Tile("tree", new Texture(Gdx.files.internal("world/environment/tree.png"))),
-                    new Tile("treeS", new Texture(Gdx.files.internal("world/environment/tree.png")))
+                new Tile("water", Gdx.files.internal("world/terrain/water.png")),
+                new Tile("dirt_0", Gdx.files.internal("world/terrain/dirt_full.png")),
+                new Tile("grass_0", Gdx.files.internal("world/terrain/grass.png")),
+                new Tile("debug", Gdx.files.internal("world/terrain/debug_tile.png")),
+                new Tile("tree", Gdx.files.internal("world/environment/tree.png")),
+                new Tile("treeS", Gdx.files.internal("world/environment/tree.png"))
             );
         }
 
@@ -110,7 +112,7 @@ public class WorldScene extends AbstractScene{
         movementSystem = new MovementSystem(new Rectangle(0f,0f, world.width, world.height));
         stateSystem = new StateUpdateSystem();
 
-        entityRenderComponents = Arrays.asList(SpriteComponent.class, PositionComponent.class, SizeComponent.class);
+        entityRenderComponents = Arrays.asList(RenderComponent.class, PositionComponent.class, SizeComponent.class);
 
         // TODO am thinking i can get rid of GUI again... Good idea or not, future me? Could shove all that shit into a separate class based on our logic.
         Gdx.input.setInputProcessor(this.gui);
@@ -284,7 +286,7 @@ TODO somehow translate mouse selection into world object selection?
     protected static float renderDistance = (Float)PrometheusConfig.conf.getOrDefault("renderDistance",18f);
     protected static float baseSpriteSize = (Float)PrometheusConfig.conf.getOrDefault("baseSpriteSize",16f);
 
-    public void prepareTileSprites() {
+    public void prepareTileSprites(float deltaTime) {
         Entity cameraLockOn = cam.getLockOnEntity();
         PositionComponent lockOnPosition = cameraLockOn.getComponent(PositionComponent.class);
 
@@ -292,7 +294,7 @@ TODO somehow translate mouse selection into world object selection?
         world.terrainTiles.forEach((tilePos, tile)-> {
             if (lockOnPosition.isNearby(tilePos.x, tilePos.y, renderDistance)) {
 
-                Sprite tileSprite = new Sprite(tile.tileTexture);
+                Sprite tileSprite = new Sprite(tile.renderComponent.getTexture(animatorLife));
 
                 float spriteX = tilePos.x;
                 float spriteY = tilePos.y;
@@ -341,8 +343,9 @@ TODO somehow translate mouse selection into world object selection?
 
     private Set<Integer> debuggedSprites = new HashSet<>();
 
-    public void prepareEntitySprites() {
+    private float animatorLife = 0f;
 
+    public void prepareEntitySprites(float deltaTime) {
         Entity cameraLockOn = cam.getLockOnEntity();
         PositionComponent lockOnPosition = cameraLockOn.getComponent(PositionComponent.class);
 
@@ -351,7 +354,8 @@ TODO somehow translate mouse selection into world object selection?
         ).collect(Collectors.toList());
 
         for (Entity entity : entities) {
-            SpriteComponent spriteComponent = entity.getComponent(SpriteComponent.class);
+           // SpriteComponent spriteComponent = entity.getComponent(SpriteComponent.class);
+            RenderComponent renderComponent = entity.getComponent(RenderComponent.class);
             PositionComponent positionComponent = entity.getComponent(PositionComponent.class);
             SizeComponent sizeComponent = entity.getComponent(SizeComponent.class);
 
@@ -361,8 +365,9 @@ TODO somehow translate mouse selection into world object selection?
             float spriteX = entityPos.x;
             float spriteY = entityPos.y;
 
-            Sprite sprite = spriteComponent.getSprite();
-           // sprite.setOrigin(0.5f, 1f);
+
+            Sprite sprite = new Sprite(renderComponent.getTexture(animatorLife));
+            // sprite.setOrigin(0.5f, 1f);
             sprite.setOrigin(0.5f * (sprite.getRegionWidth() / baseSpriteSize), 1f * (sprite.getRegionHeight() / baseSpriteSize));
 
            // spriteY += entityPos.z * (sprite.getOriginY() * sprite.getHeight());
@@ -435,8 +440,11 @@ TODO somehow translate mouse selection into world object selection?
 
         spriteQueue.clear();
 
-        prepareTileSprites();
-        prepareEntitySprites();
+        float deltaTime = Gdx.graphics.getDeltaTime();
+        this.animatorLife += deltaTime;
+
+        prepareTileSprites(deltaTime);
+        prepareEntitySprites(deltaTime);
 
         if (naturalRenderOrder) {
             spriteQueue.sort(Comparator.naturalOrder());

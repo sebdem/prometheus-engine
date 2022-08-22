@@ -6,6 +6,8 @@ import dbast.prometheus.engine.entity.Entity;
 import dbast.prometheus.engine.entity.components.CollisionBox;
 import dbast.prometheus.engine.entity.components.Component;
 import dbast.prometheus.engine.entity.components.PositionComponent;
+import dbast.prometheus.engine.events.Event;
+import dbast.prometheus.engine.events.EventBus;
 
 import java.util.Arrays;
 import java.util.HashMap;
@@ -49,6 +51,8 @@ public class CollisionDetectionSystem extends ComponentSystem {
                         Gdx.app.getApplicationLogger().log("Collision System:", String.format("Entity %s collides with Entity %s", entityA.getId(),entityB.getId()));
                     }
                     collisionA.setColliding(true);
+                    // TODO trigger event to react to...
+                    //EventBus.trigger(new Event("entity_collision", ));
                 }
             });
             /*

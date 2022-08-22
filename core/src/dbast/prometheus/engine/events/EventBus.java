@@ -1,5 +1,7 @@
 package dbast.prometheus.engine.events;
 
+import com.badlogic.gdx.Gdx;
+
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Stack;
@@ -28,8 +30,12 @@ public class EventBus {
             Event executingEvent = unexecutedEvents.pop();
             SubscriberList eventSubscribers = eventQueue.get(executingEvent.getKey());
             // TODO maybe, this must be reversed?
-            for(int i = 0; i < eventSubscribers.size() && !executingEvent.cancelled; i++) {
-                eventSubscribers.get(i).apply(executingEvent);
+            if (eventSubscribers == null || eventSubscribers.isEmpty()) {
+                Gdx.app.getApplicationLogger().log("EventBus", "Unhandled event due to no subscribers for " + executingEvent.getKey());
+            } else {
+                for(int i = 0; i < eventSubscribers.size() && !executingEvent.cancelled; i++) {
+                    eventSubscribers.get(i).apply(executingEvent);
+                }
             }
         }
     }

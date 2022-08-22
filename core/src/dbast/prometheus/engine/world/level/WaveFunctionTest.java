@@ -1,6 +1,7 @@
 package dbast.prometheus.engine.world.level;
 
 import com.badlogic.gdx.Gdx;
+import com.badlogic.gdx.files.FileHandle;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.math.Vector3;
 import dbast.prometheus.engine.config.PrometheusConfig;
@@ -48,6 +49,7 @@ public class WaveFunctionTest {
         // Step 0: Define tile "rules"
         Map<Tile, List<Tile>> tileRules = new HashMap<>();
         Tile waterTile = TileRegistry.getByTag("water");
+        Tile waterMovingTile = TileRegistry.getByTag("waterM");
         Tile grassTile = TileRegistry.getByTag("grass_0");
         Tile grassHighTile = TileRegistry.getByTag("grass_1");
         Tile dirtTile = TileRegistry.getByTag("dirt_0");
@@ -129,7 +131,6 @@ public class WaveFunctionTest {
                         entrySet.getValue().size() == 1 &&
                                 entrySet.getValue().contains(pathTile)
                 ).map(Map.Entry::getKey)
-                .sorted(new Vector3Comparator.Isometric())
                 .toArray(Vector3[]::new);
 
 
@@ -254,18 +255,18 @@ public class WaveFunctionTest {
                 new PositionComponent(0f, 0f),
                 new InputControllerComponent(),
                 new VelocityComponent(0,0),
-                //new VelocityComponent(3f,5f),
+                new VelocityComponent(3f,5f),
                 new HealthComponent(200f),
-                SpriteComponent.fromFile(Gdx.files.internal(
+                new RenderComponent().registerAnimation(Gdx.files.internal(
                         (useIsometric) ?  "sprites/player/iso_test_01.png" : "sprites/player/test_01.png"
-                ))
+                ), 1, 4, 0.25f, true, "default")
         );
 
 
-        Texture[] blobTextures = new Texture[]{
-                new Texture(Gdx.files.internal("sprites/enemies/" + ((useIsometric) ?  "iso_" : "") + "blob_0.png")),
-                new Texture(Gdx.files.internal("sprites/enemies/" + ((useIsometric) ?  "iso_" : "") + "blob_1.png")),
-                new Texture(Gdx.files.internal("sprites/enemies/" + ((useIsometric) ?  "iso_" : "") + "blob_2.png"))
+        FileHandle[] blobTextures = new FileHandle[]{
+                Gdx.files.internal("sprites/enemies/" + ((useIsometric) ?  "iso_" : "") + "blob_0.png"),
+                Gdx.files.internal("sprites/enemies/" + ((useIsometric) ?  "iso_" : "") + "blob_1.png"),
+                Gdx.files.internal("sprites/enemies/" + ((useIsometric) ?  "iso_" : "") + "blob_2.png")
         };
 
         float maxSpeed = 8f;
@@ -274,11 +275,27 @@ public class WaveFunctionTest {
                     CollisionBox.createBasic(),
                     SizeComponent.createBasic(),
                     PositionComponent.initial(),
-                    SpriteComponent.fromTexture(blobTextures[(int)(Math.random() * blobTextures.length)]),
+                    new RenderComponent().setDefaultTexture(GeneralUtils.randomElement(blobTextures)),
+                    //SpriteComponent.fromTexture(new Texture(blobTextures[(int)(Math.random() * blobTextures.length)])),
                     new VelocityComponent((float)((Math.random() - 0.5f) * maxSpeed),(float)((Math.random() - 0.5f) * maxSpeed))
             );
         }
 
+        StateComponent stateComponent = new StateComponent();
+        worldSpace.entities.addNewEntity(
+                CollisionBox.createBasic().setPermeable(false),
+                SizeComponent.createBasic(),
+                new PositionComponent(4f, 1f, 1f),
+                stateComponent,
+                new RenderComponent()
+                    .setDefaultTexture(Gdx.files.internal("world/objects/iso/chest_active.png"))
+                    .registerAnimation(Gdx.files.internal("world/objects/iso/chest_open.png"), 3, 1, 2.5f, true, "colliding")
+                /*StateBasedSpriteComponent
+                        .fromFile(Gdx.files.internal("world/objects/iso/chest_active.png"))
+                        .addState("colliding", Gdx.files.internal("world/objects/iso/chest_active.png"))
+                        .addState("open", Gdx.files.internal("world/objects/chest_active.png"))
+                        .bindTo(stateComponent)*/
+        );
         return worldSpace;
     }
 

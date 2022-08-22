@@ -34,6 +34,9 @@ public class GeneralUtils {
     public static <T> T randomElement(Collection<T> collection) {
         return (T)collection.toArray()[(int) (collection.size() * Math.random())];
     }
+    public static <T> T randomElement(T[] array) {
+        return array[(int) (array.length * Math.random())];
+    }
 
     public static <N extends Number> boolean isBetween(N value, N rangeStart, N rangeEnd, boolean includeRange) {
         if (includeRange) {

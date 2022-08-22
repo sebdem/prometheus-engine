@@ -2,6 +2,7 @@ package dbast.prometheus.engine.entity.components;
 
 import com.badlogic.gdx.graphics.g2d.Sprite;
 
+@Deprecated
 public class SpriteBoundSizeComponent extends SizeComponent{
 
     protected float nativeUnit;

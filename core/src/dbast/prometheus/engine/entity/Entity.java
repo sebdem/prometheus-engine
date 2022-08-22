@@ -3,10 +3,8 @@ package dbast.prometheus.engine.entity;
 import dbast.prometheus.engine.entity.components.Component;
 
 import java.beans.Transient;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
-import java.util.Optional;
+import java.lang.reflect.Field;
+import java.util.*;
 
 public class Entity {
 
@@ -54,5 +52,24 @@ public class Entity {
     }
     public boolean hasComponents(List<Class<? extends Component>> targets) {
         return targets.stream().allMatch(targetClass -> this.properties.stream().anyMatch(targetClass::isInstance));
+    }
+
+    // for serialization and debug purpose
+    public Map<String, Object> getData() {
+        Map<String, Object> propertyData = new HashMap<>();
+        this.properties.forEach(component -> {
+            for(Field componentField : component.getClass().getFields()) {
+                if (!componentField.getName().equals("entity")) {
+                    Object data = null;
+                    try {
+                        data = componentField.get(component);
+                    } catch (IllegalAccessException e) {
+                        e.printStackTrace();
+                    }
+                    propertyData.put(componentField.getName(), data);
+                }
+            }
+        });
+        return propertyData;
     }
 }
