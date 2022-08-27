@@ -4,7 +4,11 @@ import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.GL20;
 import com.badlogic.gdx.graphics.GL30;
+import com.badlogic.gdx.scenes.scene2d.Action;
+import com.badlogic.gdx.scenes.scene2d.actions.RepeatAction;
+import com.badlogic.gdx.scenes.scene2d.ui.HorizontalGroup;
 import com.badlogic.gdx.scenes.scene2d.ui.Label;
+import com.badlogic.gdx.utils.Align;
 import dbast.prometheus.engine.base.IKeyed;
 import dbast.prometheus.engine.gui.GUI;
 
@@ -26,10 +30,27 @@ public abstract class AbstractScene implements IKeyed {
     public AbstractScene create(){
         this.gui = new GUI();
 
-        fpsCounter = new Label("0 FPS", gui.skin);
-        fpsCounter.setColor(Color.GREEN);
+        HorizontalGroup fpsCounterGroup = new HorizontalGroup();
+        fpsCounterGroup.setPosition(0f, 0f);
 
-        this.gui.addActor(fpsCounter);
+        fpsCounter = new Label("0", gui.skin);
+
+        fpsCounter.addAction(new Action() {
+            @Override
+            public boolean act(float delta) {
+                ((Label)this.actor).setText(Gdx.graphics.getFramesPerSecond());
+                return false;
+            }
+        });
+        fpsCounter.setColor(Color.GREEN);
+        fpsCounterGroup.addActor(fpsCounter);
+
+        Label fpsLabel = new Label("FPS", gui.skin);
+        fpsCounterGroup.addActor(fpsLabel);
+        fpsCounterGroup.align(Align.bottomLeft);
+        fpsLabel.setColor(Color.ORANGE);
+
+        this.gui.addActor(fpsCounterGroup);
         Label sceneName = new Label(getKey(), gui.skin);
         sceneName.setPosition(Gdx.graphics.getWidth() - sceneName.getWidth(),Gdx.graphics.getHeight() - sceneName.getHeight());
         this.gui.addActor(sceneName);

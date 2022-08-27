@@ -45,6 +45,47 @@ public class GenerationUtils {
 
         };
     }
+    public static Vector3[] nearby4Of(Vector3 center, float offset) {
+        return new Vector3[]{
+                center.cpy().add(0, offset, 0),
+                center.cpy().add(0, -offset, 0),
+                center.cpy().add(-offset, 0, 0),
+                center.cpy().add(offset, 0, 0),
+        };
+    }
+
+    public static Vector3[] nearby6Of(Vector3 center, float offset) {
+        return new Vector3[]{
+                center.cpy().add(0, offset, 0),
+                center.cpy().add(0, -offset, 0),
+                center.cpy().add(-offset, 0, 0),
+                center.cpy().add(offset, 0, 0),
+                center.cpy().add(0, 0, offset),
+                center.cpy().add(0, 0, -offset),
+        };
+    }
+    public static Vector3[] nearby18Of(Vector3 center, float offset) {
+        return new Vector3[]{
+                center.cpy().add(0, offset, 0),
+                center.cpy().add(0, -offset, 0),
+                center.cpy().add(offset, 0, 0),
+                center.cpy().add(offset, offset, 0),
+                center.cpy().add(offset, -offset, 0),
+                center.cpy().add(-offset, offset, 0),
+                center.cpy().add(-offset, -offset, 0),
+                center.cpy().add(-offset, 0, 0),
+                center.cpy().add(-offset, 0, offset),
+                center.cpy().add(-offset, 0, -offset),
+                center.cpy().add(0, 0, offset),
+                center.cpy().add(0, 0, -offset),
+                center.cpy().add(offset, 0, offset),
+                center.cpy().add(offset, 0, -offset),
+                center.cpy().add(0, -offset, offset),
+                center.cpy().add(0, -offset, -offset),
+                center.cpy().add(0, offset, offset),
+                center.cpy().add(0, offset, -offset)
+        };
+    }
 
     public static List<Vector3> findPath(Vector3 startPoint, Vector3 endPoint) {
         return findPath(startPoint, endPoint, 1f, (value) -> true);
@@ -58,18 +99,19 @@ public class GenerationUtils {
     }
 
     public static List<Vector3> findPath(Vector3 startPoint, Vector3 endPoint, float steps, Function<Vector3, Boolean> stepValidation) {
-        SortedSet<AstarNode<Vector3>> openList = new TreeSet<>(AstarNode::compareTo);
+        SortedSet<AstarNode<Vector3>> openList = new TreeSet<>(AstarNode::compareByF);
         List<AstarNode<Vector3>> closedList = new ArrayList<>();
 
         openList.add(new AstarNode<>(startPoint, 0f, 0f));
 
-        AstarNode<Vector3> endNode = new AstarNode<>(endPoint, 0f, 0f);
+        AstarNode<Vector3> endNode = new AstarNode<>(endPoint, Float.MAX_VALUE, Float.MAX_VALUE);
 
         boolean targetFound = false;
         while(!(openList.isEmpty() || targetFound)) {
             AstarNode<Vector3> qNode = qNode = openList.first();
             openList.remove(qNode);
 
+            // TODO test what happens if we add to Z
             Vector3[] successors = GenerationUtils.nearby8Of(qNode.reference, steps);
 
             for (Vector3 sucVec: successors) {
@@ -98,6 +140,6 @@ public class GenerationUtils {
             }
             closedList.add(qNode);
         }
-        return  endNode.getParents().stream().map(node -> node.reference).collect(Collectors.toList());
+        return  endNode.getTree().stream().map(node -> node.reference).collect(Collectors.toList());
     }
 }

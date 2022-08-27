@@ -1,0 +1,17 @@
+{
+	"name": "test",
+	"tag": "test",
+	"renderData": {
+		"default": {
+			"path": "",
+			"animated": false
+		},
+		"animation": {
+			"path": "",
+			"animated": true,
+			"columns": 2,
+			"rows": 2,
+			"frameDuration": 0.025
+		}
+	}
+}

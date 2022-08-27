@@ -29,6 +29,7 @@ public class WaveFunctionTest {
     public List<PlaceFeature> features;
     public int numberOfFeatures;
     public int entitiesToGenerate;
+    private boolean asMountain = false;
 
     public WaveFunctionTest(int width, int height, int numberOfRandomBlocks, boolean simpleSmoothing, boolean growthSmoothing, List<PlaceFeature> features, int numberOfFeatures, int entitiesToGenerate) {
         this.width = width;
@@ -62,7 +63,7 @@ public class WaveFunctionTest {
                 waterTile, waterTile, grassTile
         ));
         tileRules.put(dirtTile, Arrays.asList(
-                dirtTile, dirtTile, dirtTile, grassTile
+                dirtTile, dirtTile, grassTile
         ));
         tileRules.put(treeTile, Arrays.asList(
                 treeTile, bigTree, grassTile
@@ -219,6 +220,11 @@ public class WaveFunctionTest {
             }
             Tile tile = GeneralUtils.randomElement(allowed);
             float z = position.z;
+            if (asMountain) {
+                z += 0.125f * (-Math.abs(position.x - worldSpace.width * 0.5f) + worldSpace.width * 0.5f)
+                        * 0.125f * (-Math.abs(position.y - worldSpace.height * 0.5f) + worldSpace.height * 0.5f);
+            }
+
             if (tile.equals(treeTile)) {
                 worldSpace.placeTile(treeTile, position.x, position.y, z + 1);
                 tile = grassTile;
@@ -230,6 +236,11 @@ public class WaveFunctionTest {
             if (tile.equals(waterTile)) {
                 worldSpace.placeTile(dirtTile, position.x, position.y, z - 1);
                 worldSpace.placeTile(tile, position.x, position.y, z);
+            } else if (tile.equals(dirtTile)) {
+                worldSpace.placeTile(dirtTile, position.x, position.y, z - 1);
+                worldSpace.placeTile(dirtTile, position.x, position.y, z);
+                worldSpace.placeTile(dirtTile, position.x, position.y, z + 1);
+                worldSpace.placeTile(grassTile, position.x, position.y, z + 2);
             } else {
                 worldSpace.placeTile(dirtTile, position.x, position.y, z - 1);
                 worldSpace.placeTile(tile, position.x, position.y, z);
@@ -252,14 +263,18 @@ public class WaveFunctionTest {
                 1L,
                 new CollisionBox(1f,1f,false),
                 new SizeComponent(1f,1f),
-                new PositionComponent(0f, 0f),
+                new PositionComponent(0f, 0f, 1f),
                 new InputControllerComponent(),
                 new VelocityComponent(0,0),
-                new VelocityComponent(3f,5f),
                 new HealthComponent(200f),
-                new RenderComponent().registerAnimation(Gdx.files.internal(
-                        (useIsometric) ?  "sprites/player/iso_test_01.png" : "sprites/player/test_01.png"
-                ), 1, 4, 0.25f, true, "default")
+                new StateComponent(),
+                new RenderComponent()
+                        .setDefaultTexture(Gdx.files.internal(
+                                (useIsometric) ?  "sprites/player/iso_test_01.png" :  "sprites/player/test_01.png"
+                        ))
+                        .registerAnimation(Gdx.files.internal(
+                            (useIsometric) ?  "sprites/player/iso_test_01_moving.png" : "sprites/player/test_01.png"
+                ), 1, 4, 0.25f, true, "moving")
         );
 
 
@@ -274,13 +289,17 @@ public class WaveFunctionTest {
             worldSpace.entities.addNewEntity(
                     CollisionBox.createBasic(),
                     SizeComponent.createBasic(),
-                    PositionComponent.initial(),
+                    new PositionComponent(1f, 1f, 1f),
+                    new StateComponent(),
                     new RenderComponent().setDefaultTexture(GeneralUtils.randomElement(blobTextures)),
                     //SpriteComponent.fromTexture(new Texture(blobTextures[(int)(Math.random() * blobTextures.length)])),
-                    new VelocityComponent((float)((Math.random() - 0.5f) * maxSpeed),(float)((Math.random() - 0.5f) * maxSpeed))
+                    new VelocityComponent(0f,0f,0f),
+                   new TargetTraverseComponent()
+                   // new VelocityComponent((float)((Math.random() - 0.5f) * maxSpeed),(float)((Math.random() - 0.5f) * maxSpeed))
             );
         }
 
+        /*
         StateComponent stateComponent = new StateComponent();
         worldSpace.entities.addNewEntity(
                 CollisionBox.createBasic().setPermeable(false),
@@ -289,13 +308,9 @@ public class WaveFunctionTest {
                 stateComponent,
                 new RenderComponent()
                     .setDefaultTexture(Gdx.files.internal("world/objects/iso/chest_active.png"))
-                    .registerAnimation(Gdx.files.internal("world/objects/iso/chest_open.png"), 3, 1, 2.5f, true, "colliding")
-                /*StateBasedSpriteComponent
-                        .fromFile(Gdx.files.internal("world/objects/iso/chest_active.png"))
-                        .addState("colliding", Gdx.files.internal("world/objects/iso/chest_active.png"))
-                        .addState("open", Gdx.files.internal("world/objects/chest_active.png"))
-                        .bindTo(stateComponent)*/
+                    .registerAnimation(Gdx.files.internal("world/objects/iso/chest_open.png"), 3, 1, 0.5f, false, "colliding")
         );
+*/
         return worldSpace;
     }
 

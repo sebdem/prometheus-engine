@@ -1,0 +1,10 @@
+{
+	"name": "brickF",
+	"tag": "brickF",
+	"renderData": {
+		"default": {
+			"path": "world/terrain/iso/brick_full.png",
+			"animated": false
+		}
+	}
+}

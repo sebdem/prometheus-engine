@@ -3,9 +3,13 @@ package dbast.prometheus.engine.scene;
 import com.badlogic.gdx.ApplicationLogger;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Input;
-import com.badlogic.gdx.graphics.*;
-import com.badlogic.gdx.graphics.g2d.*;
-import com.badlogic.gdx.math.Matrix3;
+import com.badlogic.gdx.graphics.Color;
+import com.badlogic.gdx.graphics.Pixmap;
+import com.badlogic.gdx.graphics.Texture;
+import com.badlogic.gdx.graphics.TextureData;
+import com.badlogic.gdx.graphics.g2d.BitmapFont;
+import com.badlogic.gdx.graphics.g2d.Sprite;
+import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.math.Rectangle;
 import com.badlogic.gdx.math.Vector3;
 import com.badlogic.gdx.scenes.scene2d.InputEvent;
@@ -14,20 +18,16 @@ import dbast.prometheus.engine.LockOnCamera;
 import dbast.prometheus.engine.config.PrometheusConfig;
 import dbast.prometheus.engine.entity.Entity;
 import dbast.prometheus.engine.entity.components.*;
-import dbast.prometheus.engine.entity.systems.CollisionDetectionSystem;
-import dbast.prometheus.engine.entity.systems.MovementSystem;
-import dbast.prometheus.engine.entity.systems.PlayerInputSystem;
-import dbast.prometheus.engine.entity.systems.StateUpdateSystem;
+import dbast.prometheus.engine.entity.systems.*;
 import dbast.prometheus.engine.events.Event;
 import dbast.prometheus.engine.events.EventBus;
+import dbast.prometheus.engine.serializing.builder.TileBuilder;
 import dbast.prometheus.engine.world.WorldSpace;
+import dbast.prometheus.engine.world.generation.features.CastleTower;
 import dbast.prometheus.engine.world.level.WaveFunctionTest;
 import dbast.prometheus.engine.world.tile.Tile;
 import dbast.prometheus.engine.world.tile.TileRegistry;
 import dbast.prometheus.utils.SpriteBuffer;
-import dbast.prometheus.utils.Vector3Comparator;
-import javafx.collections.transformation.SortedList;
-import net.dermetfan.gdx.graphics.g2d.AnimatedSprite;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -43,6 +43,7 @@ public class WorldScene extends AbstractScene{
     private PlayerInputSystem playerInputSystem;
     private MovementSystem movementSystem;
     private StateUpdateSystem stateSystem;
+    private AIInputSystem aiInputSystem;
 
     private List<Class<? extends Component>> entityRenderComponents;
 
@@ -64,36 +65,29 @@ public class WorldScene extends AbstractScene{
         this.background = Color.valueOf("0077FF");
 
         // ==== [ load files ] ============================
-        if (useIsometric) {
-            TileRegistry.register(
-                    new Tile("water", Gdx.files.internal("world/terrain/iso/water.png"), 8, 1, 0.25f),
-                    new Tile("waterM", Gdx.files.internal("world/terrain/iso/water_moving.png"), 8, 1, 0.125f),
-                    new Tile("waterD", Gdx.files.internal("world/terrain/iso/water_deep.png")),
-                    new Tile("dirt_0", Gdx.files.internal("world/terrain/iso/dirt_full.png")),
-                    new Tile("grass_0", Gdx.files.internal("world/terrain/iso/grass.png")),
-                    new Tile("grass_top", Gdx.files.internal("world/terrain/iso/grass_top.png")),
-                    new Tile("grass_1", Gdx.files.internal("world/terrain/iso/grass_high.png")),
-                    new Tile("debug", Gdx.files.internal("world/terrain/debug_tile.png")),
-                    new Tile("brickF", Gdx.files.internal("world/terrain/iso/brick_full.png")),
-                    new Tile("glass_top", Gdx.files.internal("world/terrain/iso/glass.png")),
-                    new Tile("tree", Gdx.files.internal("world/environment/"+ ((useIsometric) ?  "iso_" : "") +"tree.png")),
-                    new Tile("treeS", Gdx.files.internal("world/environment/"+ ((useIsometric) ?  "iso_" : "") +"tree_short.png")),
-                    new Tile("cube", Gdx.files.internal("iso_cube.png")),
-                    new Tile("path_dirt", Gdx.files.internal("world/terrain/iso/path_stone.png"))
-            );
-        } else {
-            TileRegistry.register(
-                new Tile("water", Gdx.files.internal("world/terrain/water.png")),
-                new Tile("dirt_0", Gdx.files.internal("world/terrain/dirt_full.png")),
-                new Tile("grass_0", Gdx.files.internal("world/terrain/grass.png")),
-                new Tile("debug", Gdx.files.internal("world/terrain/debug_tile.png")),
-                new Tile("tree", Gdx.files.internal("world/environment/tree.png")),
-                new Tile("treeS", Gdx.files.internal("world/environment/tree.png"))
-            );
-        }
 
+        TileRegistry.registerPath(Gdx.files.local("data/tiles"));
+        TileRegistry.output();
+       /* TileRegistry.register(
+                TileBuilder.fromJson(Gdx.files.internal("data/tiles/water_moving.json")),
+                TileBuilder.fromJson(Gdx.files.internal("data/tiles/water_deep.json")),
+                TileBuilder.fromJson(Gdx.files.internal("data/tiles/dirt.json")),
+                TileBuilder.fromJson(Gdx.files.internal("data/tiles/grass.json")),
+                TileBuilder.fromJson(Gdx.files.internal("data/tiles/grass_high.json")),
+                TileBuilder.fromJson(Gdx.files.internal("data/tiles/grass_top.json")),
+                TileBuilder.fromJson(Gdx.files.internal("data/tiles/iso_cube.json")),
+                TileBuilder.fromJson(Gdx.files.internal("data/tiles/path_stone.json")),
+                TileBuilder.fromJson(Gdx.files.internal("data/tiles/brick_dark.json")),
+                TileBuilder.fromJson(Gdx.files.internal("data/tiles/tree_tall.json")),
+                TileBuilder.fromJson(Gdx.files.internal("data/tiles/tree_short.json")),
+        );
+*/
         // ==== [ prepare world ] ============================
-        world = new WaveFunctionTest(50,50, 25, false, true, null, 0,10).setup();
+        world = new WaveFunctionTest(100,100, 20, false, true,
+                Arrays.asList(
+                        new CastleTower("brickF"),
+                        new CastleTower("dirt_0")
+                ), 5,1).setup();
 
         // ==== [ camera setup ] ============================
         Entity cameraFocus = world.entities.stream().filter(entity -> entity.hasComponent(InputControllerComponent.class)).findAny().orElse(world.entities.get(0));
@@ -109,6 +103,7 @@ public class WorldScene extends AbstractScene{
         // ==== [ enable ECS ] ============================
         collisionDetectionSystem = new CollisionDetectionSystem();
         playerInputSystem = new PlayerInputSystem();
+        aiInputSystem = new AIInputSystem(this.world);
         movementSystem = new MovementSystem(new Rectangle(0f,0f, world.width, world.height));
         stateSystem = new StateUpdateSystem();
 
@@ -294,7 +289,7 @@ TODO somehow translate mouse selection into world object selection?
         world.terrainTiles.forEach((tilePos, tile)-> {
             if (lockOnPosition.isNearby(tilePos.x, tilePos.y, renderDistance)) {
 
-                Sprite tileSprite = new Sprite(tile.renderComponent.getTexture(animatorLife));
+                Sprite tileSprite = new Sprite(tile.renderComponent.getTexture(animatorLife,"default"));
 
                 float spriteX = tilePos.x;
                 float spriteY = tilePos.y;
@@ -343,6 +338,8 @@ TODO somehow translate mouse selection into world object selection?
 
     private Set<Integer> debuggedSprites = new HashSet<>();
 
+
+    // TODO delegate to AnimatorSystem or whatever we'll call it, or replace with a state life when extending StateComponent
     private float animatorLife = 0f;
 
     public void prepareEntitySprites(float deltaTime) {
@@ -361,7 +358,7 @@ TODO somehow translate mouse selection into world object selection?
 
             // TODO might needs cpy()
             Vector3 entityPos = positionComponent.position;
-            world.toNextUpperLevel(entityPos);
+            //world.toNextUpperLevel(entityPos);
             float spriteX = entityPos.x;
             float spriteY = entityPos.y;
 
@@ -461,6 +458,10 @@ TODO somehow translate mouse selection into world object selection?
             float intendedX = spriteData.spritePos3D.x;
             float intendedY = spriteData.spritePos3D.y;
             // Gdx.app.getApplicationLogger().log("render pipeline", String.format("[sprite %s 1/2] intendedX %s | intendedY %s", spriteData.hashCode(), intendedX, intendedY));
+            if (!useIsometric) {
+             //   intendedY += spriteData.spritePos3D.z;
+            }
+
             if (useGridSnapping) {
                 double xPos = Math.round(intendedX);
                 double yPos = Math.round(intendedY);
@@ -511,16 +512,16 @@ TODO somehow translate mouse selection into world object selection?
            // spriteData.sprite.draw(batch, distanceToFocus );
            // spriteData.sprite.draw(batch, distanceToFocus > renderDistance ? 0.5f : 1f);
         });
-
-
     }
 
     public void update(float deltaTime){
         super.update(deltaTime);
         EventBus.update(deltaTime);
 
+        // TODO can this be simplified? Instead of passing lists of entities to all systems, iterate entities and pass to systems if qualified components are here
         collisionDetectionSystem.execute(deltaTime, collisionDetectionSystem.onlyQualified(world.entities));
         playerInputSystem.execute(deltaTime, playerInputSystem.onlyQualified(world.entities));
+        aiInputSystem.execute(deltaTime, aiInputSystem.onlyQualified(world.entities));
         movementSystem.execute(deltaTime, movementSystem.onlyQualified(world.entities));
         stateSystem.execute(deltaTime, stateSystem.onlyQualified(world.entities));
 

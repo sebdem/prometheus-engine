@@ -53,14 +53,12 @@ public class LockOnCamera extends PerspectiveCamera implements PositionProvider 
     }
 
     public boolean lockOnEntity(Entity entity) {
-        PositionComponent targetComponent = entity.getComponent(PositionComponent.class);
-        if (targetComponent != null) {
+        entity.executeFor(PositionComponent.class, targetComponent -> {
             this.lockOnEntity = entity;
             this.lockOnComponent = targetComponent;
             this.recalcOffset = true;
-            return true;
-        }
-        return false;
+        });
+        return this.lockOnEntity != null;
     }
 
     public Entity getLockOnEntity() {

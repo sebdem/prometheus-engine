@@ -1,12 +1,15 @@
 package dbast.prometheus.engine.entity;
 
 import dbast.prometheus.engine.entity.components.Component;
+import dbast.prometheus.engine.entity.components.ComponentProvider;
 
 import java.beans.Transient;
 import java.lang.reflect.Field;
 import java.util.*;
+import java.util.function.Consumer;
+import java.util.function.Function;
 
-public class Entity {
+public class Entity implements ComponentProvider {
 
     private Long id; // todo? string id
 
@@ -43,15 +46,20 @@ public class Entity {
     public <CT extends Component> CT getComponent(Class<CT> classOf) {
         return classOf.cast(properties.stream().filter(classOf::isInstance).findFirst().orElse(null));
     }
-    public <CT extends Component> Optional<CT> optionalComponent(Class<CT> classOf) {
-        return (Optional<CT>)properties.stream().filter(classOf::isInstance).findFirst();
-    }
 
     public boolean hasComponent(Class<? extends Component> target) {
         return  this.properties.stream().anyMatch(target::isInstance);
     }
     public boolean hasComponents(List<Class<? extends Component>> targets) {
         return targets.stream().allMatch(targetClass -> this.properties.stream().anyMatch(targetClass::isInstance));
+    }
+
+    public <CT extends Component> void executeFor(Class<CT> classOf, Consumer<CT> componentExecution) {
+        this.properties.forEach(component -> {
+            if (classOf.isInstance(component)) {
+                componentExecution.accept(classOf.cast(component));
+            }
+        });
     }
 
     // for serialization and debug purpose

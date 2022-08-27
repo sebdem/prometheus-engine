@@ -4,6 +4,7 @@ import com.badlogic.gdx.Files;
 import com.badlogic.gdx.backends.lwjgl.LwjglApplication;
 import com.badlogic.gdx.backends.lwjgl.LwjglApplicationConfiguration;
 import dbast.prometheus.PrometheusGame;
+import dbast.prometheus.SimpleDecalTest;
 import dbast.prometheus.engine.config.PrometheusConfig;
 
 import java.time.LocalDateTime;
@@ -33,9 +34,9 @@ public class DesktopLauncher {
 		}
 
 		LwjglApplicationConfiguration config = new LwjglApplicationConfiguration();
-		config.addIcon("misc/flame128.png", Files.FileType.Internal);
-		config.addIcon("misc/flame32.png", Files.FileType.Internal);
-		config.addIcon("misc/flame16.png", Files.FileType.Internal);
+		config.addIcon("resources/native/icons/flame128.png", Files.FileType.Internal);
+		config.addIcon("resources/native/icons/flame32.png", Files.FileType.Internal);
+		config.addIcon("resources/native/icons/flame16.png", Files.FileType.Internal);
 
 		// hdready
 		config.height = 720;

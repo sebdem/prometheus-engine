@@ -1,0 +1,14 @@
+{
+	"name": "tree_small",
+	"tag": "treeS",
+	"renderData": {
+		"default": {
+			"path": "world/environment/iso_tree_short.png",
+			"animated": false
+		},
+		"stump": {
+			"path": "world/environment/iso_tree_stump.png",
+			"animated": false
+		}
+	}
+}

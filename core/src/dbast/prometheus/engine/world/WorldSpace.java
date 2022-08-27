@@ -2,13 +2,16 @@ package dbast.prometheus.engine.world;
 
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.files.FileHandle;
+import com.badlogic.gdx.math.MathUtils;
 import com.badlogic.gdx.math.Vector3;
 import com.google.gson.Gson;
 import dbast.prometheus.engine.entity.EntityRegistry;
 import dbast.prometheus.engine.serializing.data.WorldData;
 import dbast.prometheus.engine.world.tile.Tile;
 import dbast.prometheus.engine.world.tile.TileRegistry;
+import dbast.prometheus.utils.GeneralUtils;
 import dbast.prometheus.utils.Vector3Comparator;
+import dbast.prometheus.utils.Vector3IndexMap;
 
 import java.util.Map;
 import java.util.TreeMap;
@@ -18,13 +21,13 @@ public class WorldSpace {
 
     public int height;
     public int width;
-    public Map<Vector3, Tile> terrainTiles;
+    public Vector3IndexMap<Tile> terrainTiles;
     public EntityRegistry entities;
 
     public WorldSpace(int width, int height) {
         this.width = width;
         this.height = height;
-        this.terrainTiles = new TreeMap<>(new Vector3Comparator.Planar());
+        this.terrainTiles = new Vector3IndexMap<>(new Vector3Comparator.Planar());
     }
 
     public WorldSpace placeTile(int tileId, float x, float y, float z) {
@@ -38,11 +41,23 @@ public class WorldSpace {
     public Tile lookupTile(float x, float y, float z) {
         return this.terrainTiles.getOrDefault(new Vector3(x, y, z), null);
     }
+    public Tile lookupTile(Vector3 vector3) {
+        return this.terrainTiles.getOrDefault(vector3,  null);
+    }
 
 
     public WorldSpace removeTile(float x, float y, float z) {
         this.terrainTiles.remove(new Vector3(x, y, z));
         return this;
+    }
+
+    public boolean isValidPosition(Vector3 position) {
+       /* Tile positionTile = lookupTile(position);
+
+        return positionTile != null;//&& !positionTile.tag.equals("water");*/
+
+        return GeneralUtils.isBetween(position.x, 0, this.width -1, true)
+                && GeneralUtils.isBetween(position.y, 0, this.height -1, true);
     }
 
     public void persist() {

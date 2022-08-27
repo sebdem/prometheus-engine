@@ -1,0 +1,14 @@
+{
+	"name": "tree_tall",
+	"tag": "tree",
+	"renderData": {
+		"default": {
+			"path": "world/environment/iso_tree_long.png",
+			"animated": false
+		},
+		"stump": {
+			"path": "world/environment/iso_tree_stump.png",
+			"animated": false
+		}
+	}
+}

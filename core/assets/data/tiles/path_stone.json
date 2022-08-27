@@ -1,0 +1,10 @@
+{
+	"name": "path_block",
+	"tag": "path_dirt",
+	"renderData": {
+		"default": {
+			"path": "world/terrain/iso/path_stone.png",
+			"animated": false
+		}
+	}
+}

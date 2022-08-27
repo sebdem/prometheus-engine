@@ -1,0 +1,10 @@
+{
+	"name": "cube",
+	"tag": "cube",
+	"renderData": {
+		"default": {
+			"path": "resources/native/tiles/iso_cube.png",
+			"animated": false
+		}
+	}
+}

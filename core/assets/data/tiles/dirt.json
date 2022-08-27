@@ -1,0 +1,10 @@
+{
+	"name": "dirt",
+	"tag": "dirt_0",
+	"renderData": {
+		"default": {
+			"path": "world/terrain/iso/dirt_full.png",
+			"animated": false
+		}
+	}
+}

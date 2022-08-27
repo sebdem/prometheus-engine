@@ -1,8 +1,10 @@
 package dbast.prometheus.engine.entity.systems;
 
+import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.math.Rectangle;
 import dbast.prometheus.engine.entity.Entity;
 import dbast.prometheus.engine.entity.components.*;
+import dbast.prometheus.engine.world.WorldSpace;
 
 import java.util.Arrays;
 import java.util.List;
@@ -10,6 +12,7 @@ import java.util.List;
 public class MovementSystem extends ComponentSystem {
 
     private Rectangle boundaries;
+    protected WorldSpace worldSpace;
 
     public MovementSystem(Rectangle boundaries) {
         this.boundaries = boundaries;
@@ -24,6 +27,9 @@ public class MovementSystem extends ComponentSystem {
 
             float newXpos = positionComponent.getX() + velocity.getVelocity_x() * updateDelta;
             float newYpos = positionComponent.getY() + velocity.getVelocity_y() * updateDelta;
+            float newZpos = positionComponent.getZ() + velocity.getVelocity_z() * updateDelta;
+            Gdx.app.getApplicationLogger().log("MovementSystem", String.format("Velocity for entity %s is %s/%s/%s", entity.getId(), velocity.getVelocity_x(), velocity.getVelocity_y(), velocity.getVelocity_z()));
+
             // TODO ignore entity collisionBox for now, might even have to merge with CollisionDetectionSystem...
             // TODO [AI System]: Fetch Targets, if any, and calculate velocity needed to reach it.
 
@@ -44,6 +50,8 @@ public class MovementSystem extends ComponentSystem {
                 velocity.setVelocity_y(-velocity.getVelocity_y());
             }
             positionComponent.setY(newYpos);
+
+            positionComponent.setZ(newZpos);
         }
     }
 

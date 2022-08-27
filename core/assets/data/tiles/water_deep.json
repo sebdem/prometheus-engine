@@ -1,0 +1,10 @@
+{
+	"name": "water_deep",
+	"tag": "waterD",
+	"renderData": {
+		"default": {
+			"path": "world/terrain/iso/water_deep.png",
+			"animated": false
+		}
+	}
+}

@@ -6,7 +6,9 @@ import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.Animation;
 import com.badlogic.gdx.graphics.g2d.Sprite;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
+import net.dermetfan.gdx.graphics.g2d.AnimatedSprite;
 
+import javax.swing.plaf.nimbus.State;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -14,28 +16,45 @@ import java.util.Map;
 public class RenderComponent extends Component {
     protected Map<String, Animation<TextureRegion>> animations;
     protected TextureRegion defaultTexture;
-    public String state;
-    public float stateAge;
 
     public RenderComponent() {
         this.defaultTexture = new TextureRegion( new Texture(Gdx.files.internal("missing.png")));
         this.animations = new HashMap<>();
-        this.state = "default";
     }
 
     public TextureRegion getTexture(float stateTime) {
-        return this.getTexture(stateTime, this.state);
+        StateComponent entityState = null;
+        float stateAge = 0f;
+        // Component is also currently assigned to Tile instances
+        if (entity != null) {
+            entityState = entity.getComponent(StateComponent.class);
+        }
+
+        Animation<TextureRegion> currentAnimation = null;
+        if (entityState != null) {
+            stateAge = entityState.getCurrentAge();
+            currentAnimation = animations.getOrDefault(entityState.getState(), null);
+        }
+        if (currentAnimation == null ) {
+            currentAnimation = animations.getOrDefault("default", null);
+        }
+
+        if (currentAnimation != null) {
+            return currentAnimation.getKeyFrame(stateAge);
+        }
+
+        return this.defaultTexture;
     }
 
+    // TODO think about Tiles, maybe they can keep this separate call. Somehow they should have the option to
+    @Deprecated
     public TextureRegion getTexture(float stateTime, String stateAnimation) {
         Animation<TextureRegion> currentAnimation = animations.getOrDefault(stateAnimation, animations.getOrDefault("default", null));
 
-        stateAge = stateTime;
         if (currentAnimation == null) {
-            this.state = "default";
             return this.defaultTexture;
         } else {
-            return currentAnimation.getKeyFrame(stateAge);
+            return currentAnimation.getKeyFrame(stateTime);
         }
     }
 

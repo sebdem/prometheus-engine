@@ -1,0 +1,10 @@
+{
+	"name": "high_grass",
+	"tag": "grass_1",
+	"renderData": {
+		"default": {
+			"path": "world/terrain/iso/grass_high.png",
+			"animated": false
+		}
+	}
+}
