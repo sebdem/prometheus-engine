@@ -66,7 +66,7 @@ public class WaveFunctionTest {
                 dirtTile, dirtTile, grassTile
         ));
         tileRules.put(treeTile, Arrays.asList(
-                treeTile, bigTree, grassTile
+                treeTile, bigTree, grassTile, grassHighTile
         ));
         tileRules.put(bigTree, Arrays.asList(
                 bigTree, treeTile
@@ -78,7 +78,7 @@ public class WaveFunctionTest {
                 waterTile
         ));
         tileRules.put(grassHighTile, Arrays.asList(
-                grassTile, grassHighTile, grassHighTile
+                grassTile, grassHighTile, grassHighTile, treeTile
         ));
         tileRules.put(pathTile, Arrays.asList(
                 grassTile
@@ -269,12 +269,12 @@ public class WaveFunctionTest {
                 new HealthComponent(200f),
                 new StateComponent(),
                 new RenderComponent()
-                        .setDefaultTexture(Gdx.files.internal(
-                                (useIsometric) ?  "sprites/player/iso_test_01.png" :  "sprites/player/test_01.png"
-                        ))
                         .registerAnimation(Gdx.files.internal(
-                            (useIsometric) ?  "sprites/player/iso_test_01_moving.png" : "sprites/player/test_01.png"
-                ), 1, 4, 0.25f, true, "moving")
+                                (useIsometric) ?  "sprites/player/player_idle.png" : "sprites/player/test_01.png"
+                        ), 8, 1, 1.25f, true, "default")
+                        .registerAnimation(Gdx.files.internal(
+                            (useIsometric) ?  "sprites/player/player_moving_down.png" : "sprites/player/test_01.png"
+                ), 8, 1, 0.125f, true, "moving")
         );
 
 

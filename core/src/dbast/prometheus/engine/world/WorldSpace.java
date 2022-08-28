@@ -60,6 +60,25 @@ public class WorldSpace {
                 && GeneralUtils.isBetween(position.y, 0, this.height -1, true);
     }
 
+    public Vector3 getSpawnPoint() {
+
+
+        boolean isValidPosition = false;
+        Vector3 targetPosition = new Vector3(0,0,0);
+        int attempts = 0;
+        do {
+            targetPosition.set(
+                    (float) (MathUtils.random(0, this.width)),
+                    (float) (MathUtils.random(0, this.height)),
+                    1f
+            );
+            attempts++;
+            isValidPosition = this.isValidPosition(targetPosition);
+        } while (!isValidPosition && attempts < 100);
+        return targetPosition;
+    }
+
+
     public void persist() {
         FileHandle file = Gdx.files.local("save/world_" + (System.nanoTime() / 1000) + ".json");
         file.writeString(new Gson().toJson(new WorldData(this)), false);

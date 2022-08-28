@@ -33,17 +33,7 @@ public class AIInputSystem extends ComponentSystem{
                 if ((Math.random() * 100) / updateDelta > 98 / updateDelta) {
 
                     Gdx.app.getApplicationLogger().log("AISystem", String.format("1. Getting new target for entity %s at %s", entity.getId(), currentPosition.toString()));
-                    Vector3 targetPosition = null;
-                    boolean isValidPosition = false;
-                    do {
-                        targetPosition = new Vector3(
-                                (float) (MathUtils.random(-20, 20) + Math.floor(currentPosition.x)),
-                                (float) (MathUtils.random(-20, 20) + Math.floor(currentPosition.y)),
-                                currentPosition.z
-                        );
-                        isValidPosition = worldSpace.isValidPosition(targetPosition);
-                        Gdx.app.getApplicationLogger().log("AISystem", String.format("2. Found Position: %s - is it valid; %s", targetPosition.toString(), isValidPosition));
-                    } while (!isValidPosition);
+                    Vector3 targetPosition = worldSpace.getSpawnPoint();
 
                     calculateNewPath(entity, positionComponent, targetTraverseComponent, currentPosition, targetPosition);
                     Gdx.app.getApplicationLogger().log("AISystem", String.format("3. Found target %s for entity %s", targetTraverseComponent.finalTarget.toString(), entity.getId()));
@@ -82,7 +72,7 @@ public class AIInputSystem extends ComponentSystem{
 
                     Gdx.app.getApplicationLogger().log("AISystem", String.format("5. Distance from previous %s to target %s for entity %s ---- X: %s, Y: %s, Z: %s", targetTraverseComponent.previousTarget.toString(), targetTraverseComponent.currentTarget.toString(), entity.getId(), velocityX, velocityY, velocityZ));
 
-                    velocityZ = 0f;
+                   // velocityZ = 0f;
                 }
                 velocityComponent.setVelocity_x(velocityX);
                 velocityComponent.setVelocity_y(velocityY);
@@ -96,7 +86,7 @@ public class AIInputSystem extends ComponentSystem{
                                  TargetTraverseComponent targetTraverse,
                                  Vector3 start,
                                  Vector3 end) {
-        List<Vector3> path = GenerationUtils.findPath(start, end,
+        List<Vector3> path = GenerationUtils.find3DPath(start, end,
                 // TODO path validation
               //  (vector3)->worldSpace.isValidPosition(vector3)
                 (vector3)->Boolean.TRUE

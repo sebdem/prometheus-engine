@@ -12,6 +12,13 @@ import java.util.stream.Collectors;
 
 public class GenerationUtils {
 
+    public static interface GetNearby extends Function<Vector3, Vector3[]>{
+        default Vector3[] apply(Vector3 vector3) {
+            return this.apply(vector3, 1f);
+        }
+        Vector3[] apply(Vector3 t, float offset);
+    }
+
     public static Vector3[] nearby8Of(Vector3 center) {
         return new Vector3[]{
                 center.cpy().add(1, -1, 0),
@@ -88,17 +95,21 @@ public class GenerationUtils {
     }
 
     public static List<Vector3> findPath(Vector3 startPoint, Vector3 endPoint) {
-        return findPath(startPoint, endPoint, 1f, (value) -> true);
+        return findPath(startPoint, endPoint, 1f, (value) -> true, GenerationUtils::nearby8Of);
     }
-    public static List<Vector3> findPath(Vector3 startPoint, Vector3 endPoint, float step) {
-        return findPath(startPoint, endPoint, step, (value) -> true);
+    public static List<Vector3> find3DPath(Vector3 startPoint, Vector3 endPoint, Function<Vector3, Boolean> stepValidation) {
+            return findPath(startPoint, endPoint, 1f, stepValidation, GenerationUtils::nearby18Of);
     }
 
-    public static List<Vector3> findPath(Vector3 startPoint, Vector3 endPoint, Function<Vector3, Boolean> stepValidation) {
-        return findPath(startPoint, endPoint, 1f, stepValidation);
+    public static List<Vector3> findPath(Vector3 startPoint, Vector3 endPoint, float step) {
+        return findPath(startPoint, endPoint, step, (value) -> true, GenerationUtils::nearby8Of);
     }
 
     public static List<Vector3> findPath(Vector3 startPoint, Vector3 endPoint, float steps, Function<Vector3, Boolean> stepValidation) {
+        return findPath(startPoint, endPoint, steps, stepValidation, GenerationUtils::nearby8Of);
+    }
+
+    public static List<Vector3> findPath(Vector3 startPoint, Vector3 endPoint, float steps, Function<Vector3, Boolean> stepValidation, GetNearby successorGet) {
         SortedSet<AstarNode<Vector3>> openList = new TreeSet<>(AstarNode::compareByF);
         List<AstarNode<Vector3>> closedList = new ArrayList<>();
 
@@ -107,15 +118,15 @@ public class GenerationUtils {
         AstarNode<Vector3> endNode = new AstarNode<>(endPoint, Float.MAX_VALUE, Float.MAX_VALUE);
 
         boolean targetFound = false;
+
         while(!(openList.isEmpty() || targetFound)) {
-            AstarNode<Vector3> qNode = qNode = openList.first();
+            AstarNode<Vector3> qNode = openList.first();
             openList.remove(qNode);
 
             // TODO test what happens if we add to Z
-            Vector3[] successors = GenerationUtils.nearby8Of(qNode.reference, steps);
+            Vector3[] successors = successorGet.apply(qNode.reference, steps);
 
             for (Vector3 sucVec: successors) {
-
                 if (!targetFound && stepValidation.apply(sucVec)) {
                     if (sucVec.equals(endPoint)) {
                         targetFound = true;
