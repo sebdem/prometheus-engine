@@ -98,7 +98,8 @@ public class GenerationUtils {
         return findPath(startPoint, endPoint, 1f, (value) -> true, GenerationUtils::nearby8Of);
     }
     public static List<Vector3> find3DPath(Vector3 startPoint, Vector3 endPoint, Function<Vector3, Boolean> stepValidation) {
-            return findPath(startPoint, endPoint, 1f, stepValidation, GenerationUtils::nearby18Of);
+        return findPath(startPoint, endPoint, 1f, stepValidation, GenerationUtils::nearby8Of);
+       // return findPath(startPoint, endPoint, 1f, stepValidation, GenerationUtils::nearby18Of);
     }
 
     public static List<Vector3> findPath(Vector3 startPoint, Vector3 endPoint, float step) {
@@ -144,7 +145,7 @@ public class GenerationUtils {
                         if (closedList.stream().anyMatch(node->node.sameAndLowerF(sucNode))) {
                             continue;
                         } else {
-                            openList.add(sucNode);
+                            openList.add(sucNode);//openList.add(sucNode);
                         }
                     }
                 }

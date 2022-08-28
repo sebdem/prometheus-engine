@@ -66,13 +66,13 @@ public class AIInputSystem extends ComponentSystem{
                     velocityY = (targetTraverseComponent.currentTarget.y - targetTraverseComponent.previousTarget.y) * baseSpeed;
                     velocityZ = (targetTraverseComponent.currentTarget.z - targetTraverseComponent.previousTarget.z) * baseSpeed;
 
+                    // TODO find a way to "normalize" directional speed
+
                     velocityX /= updateDelta;
                     velocityY /= updateDelta;
                     velocityZ /= updateDelta;
 
                     Gdx.app.getApplicationLogger().log("AISystem", String.format("5. Distance from previous %s to target %s for entity %s ---- X: %s, Y: %s, Z: %s", targetTraverseComponent.previousTarget.toString(), targetTraverseComponent.currentTarget.toString(), entity.getId(), velocityX, velocityY, velocityZ));
-
-                   // velocityZ = 0f;
                 }
                 velocityComponent.setVelocity_x(velocityX);
                 velocityComponent.setVelocity_y(velocityY);
