@@ -28,7 +28,7 @@ public class MovementSystem extends ComponentSystem {
             float newXpos = positionComponent.getX() + velocity.getVelocity_x() * updateDelta;
             float newYpos = positionComponent.getY() + velocity.getVelocity_y() * updateDelta;
             float newZpos = positionComponent.getZ() + velocity.getVelocity_z() * updateDelta;
-            Gdx.app.getApplicationLogger().log("MovementSystem", String.format("Velocity for entity %s is %s/%s/%s", entity.getId(), velocity.getVelocity_x(), velocity.getVelocity_y(), velocity.getVelocity_z()));
+           // Gdx.app.getApplicationLogger().log("MovementSystem", String.format("Velocity for entity %s is %s/%s/%s", entity.getId(), velocity.getVelocity_x(), velocity.getVelocity_y(), velocity.getVelocity_z()));
 
             // TODO ignore entity collisionBox for now, might even have to merge with CollisionDetectionSystem...
             // TODO [AI System]: Fetch Targets, if any, and calculate velocity needed to reach it.

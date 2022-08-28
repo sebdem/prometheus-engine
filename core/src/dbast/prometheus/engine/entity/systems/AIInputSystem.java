@@ -36,7 +36,6 @@ public class AIInputSystem extends ComponentSystem{
                     Vector3 targetPosition = worldSpace.getSpawnPoint();
 
                     calculateNewPath(entity, positionComponent, targetTraverseComponent, currentPosition, targetPosition);
-                    Gdx.app.getApplicationLogger().log("AISystem", String.format("3. Found target %s for entity %s", targetTraverseComponent.finalTarget.toString(), entity.getId()));
                 }
             }
             if (targetTraverseComponent.finalTarget != null) {
@@ -89,9 +88,9 @@ public class AIInputSystem extends ComponentSystem{
         List<Vector3> path = GenerationUtils.find3DPath(start, end,
                 // TODO path validation
               //  (vector3)->worldSpace.isValidPosition(vector3)
-                (vector3)->Boolean.TRUE
+                (vector3)->worldSpace.canStandOn(vector3)
         );
-        if (path.size() > 0) {
+        if (path.size() > 1) {
             Gdx.app.getApplicationLogger().log("AISystem", "found Path with " + path.size()+
                     " steps: " + String.join(
                             "->",
@@ -102,6 +101,7 @@ public class AIInputSystem extends ComponentSystem{
             // initial node is always start target
             targetTraverse.nextTarget();
             targetTraverse.finalTarget = path.get(path.size() - 1);
+            Gdx.app.getApplicationLogger().log("AISystem", String.format("3. Found target %s for entity %s", targetTraverse.finalTarget.toString(), entity.getId()));
         }
     }
 

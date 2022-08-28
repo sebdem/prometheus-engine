@@ -59,10 +59,22 @@ public class WorldSpace {
         return GeneralUtils.isBetween(position.x, 0, this.width -1, true)
                 && GeneralUtils.isBetween(position.y, 0, this.height -1, true);
     }
+    public boolean isOccupied(Vector3 position) {
+        return lookupTile(position) == null;
+       /* Tile positionTile = lookupTile(position);
+
+        return positionTile != null;//&& !positionTile.tag.equals("water");*/
+    }
+    public boolean canStandOn(Vector3 position) {
+        Tile atPosition = lookupTile(position);
+        Tile underPosition = lookupTile(position.cpy().sub(0,0,1f));
+        return atPosition == null & !(underPosition == null || underPosition.tag.equals("water"));
+       /* Tile positionTile = lookupTile(position);
+
+        return positionTile != null;//&& !positionTile.tag.equals("water");*/
+    }
 
     public Vector3 getSpawnPoint() {
-
-
         boolean isValidPosition = false;
         Vector3 targetPosition = new Vector3(0,0,0);
         int attempts = 0;
@@ -73,7 +85,7 @@ public class WorldSpace {
                     1f
             );
             attempts++;
-            isValidPosition = this.isValidPosition(targetPosition);
+            isValidPosition = this.isValidPosition(targetPosition) && this.canStandOn(targetPosition);
         } while (!isValidPosition && attempts < 100);
         return targetPosition;
     }

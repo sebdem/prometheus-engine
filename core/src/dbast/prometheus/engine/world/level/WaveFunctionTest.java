@@ -263,7 +263,7 @@ public class WaveFunctionTest {
                 1L,
                 new CollisionBox(1f,1f,false),
                 new SizeComponent(1f,1f),
-                new PositionComponent(0f, 0f, 1f),
+                new PositionComponent(worldSpace.getSpawnPoint()),
                 new InputControllerComponent(),
                 new VelocityComponent(0,0),
                 new HealthComponent(200f),
@@ -289,7 +289,7 @@ public class WaveFunctionTest {
             worldSpace.entities.addNewEntity(
                     CollisionBox.createBasic(),
                     SizeComponent.createBasic(),
-                    new PositionComponent(1f, 1f, 1f),
+                    new PositionComponent(worldSpace.getSpawnPoint()),
                     new StateComponent(),
                     new RenderComponent().setDefaultTexture(GeneralUtils.randomElement(blobTextures)),
                     //SpriteComponent.fromTexture(new Texture(blobTextures[(int)(Math.random() * blobTextures.length)])),

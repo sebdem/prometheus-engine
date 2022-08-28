@@ -98,7 +98,7 @@ public class GenerationUtils {
         return findPath(startPoint, endPoint, 1f, (value) -> true, GenerationUtils::nearby8Of);
     }
     public static List<Vector3> find3DPath(Vector3 startPoint, Vector3 endPoint, Function<Vector3, Boolean> stepValidation) {
-        return findPath(startPoint, endPoint, 1f, stepValidation, GenerationUtils::nearby8Of);
+        return findPath(startPoint, endPoint, 1f, stepValidation, GenerationUtils::nearby4Of);
        // return findPath(startPoint, endPoint, 1f, stepValidation, GenerationUtils::nearby18Of);
     }
 
