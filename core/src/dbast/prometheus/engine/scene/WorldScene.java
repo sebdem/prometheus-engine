@@ -83,11 +83,11 @@ public class WorldScene extends AbstractScene{
         );
 */
         // ==== [ prepare world ] ============================
-        world = new WaveFunctionTest(40,40, 20, false, true,
+        world = new WaveFunctionTest(200,200, 20, false, true,
                 Arrays.asList(
                         new CastleTower("brickF"),
                         new CastleTower("dirt_0")
-                ), 0,30).setup();
+                ), 0,80).setup();
 
         // ==== [ camera setup ] ============================
         Entity cameraFocus = world.entities.stream().filter(entity -> entity.hasComponent(InputControllerComponent.class)).findAny().orElse(world.entities.get(0));
@@ -518,6 +518,7 @@ TODO somehow translate mouse selection into world object selection?
         super.update(deltaTime);
         EventBus.update(deltaTime);
 
+        collisionDetectionSystem.entityHitboxCache.clear();
         // TODO can this be simplified? Instead of passing lists of entities to all systems, iterate entities and pass to systems if qualified components are here
         collisionDetectionSystem.execute(deltaTime, collisionDetectionSystem.onlyQualified(world.entities));
         playerInputSystem.execute(deltaTime, playerInputSystem.onlyQualified(world.entities));

@@ -5,6 +5,7 @@ import com.badlogic.gdx.math.Vector3;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 
 public class AstarNode <T> implements Comparable{
     public AstarNode<T> parent;

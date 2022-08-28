@@ -5,6 +5,7 @@ import com.badlogic.gdx.files.FileHandle;
 import com.badlogic.gdx.math.MathUtils;
 import com.badlogic.gdx.math.Vector3;
 import com.google.gson.Gson;
+import dbast.prometheus.engine.entity.Entity;
 import dbast.prometheus.engine.entity.EntityRegistry;
 import dbast.prometheus.engine.serializing.data.WorldData;
 import dbast.prometheus.engine.world.tile.Tile;
@@ -68,7 +69,7 @@ public class WorldSpace {
     public boolean canStandOn(Vector3 position) {
         Tile atPosition = lookupTile(position);
         Tile underPosition = lookupTile(position.cpy().sub(0,0,1f));
-        return atPosition == null & !(underPosition == null || underPosition.tag.equals("water"));
+        return atPosition == null && !(underPosition == null || underPosition.tag.equals("water"));
        /* Tile positionTile = lookupTile(position);
 
         return positionTile != null;//&& !positionTile.tag.equals("water");*/
@@ -90,6 +91,24 @@ public class WorldSpace {
         return targetPosition;
     }
 
+    public Vector3 getRandomInRangeOf(Entity entity, Vector3 currentPosition, int range) {
+        boolean isValidPosition = false;
+        Vector3 targetPosition;
+        int attempts = 0;
+        do {
+            targetPosition = currentPosition.cpy().add(
+                    (float) (MathUtils.random(-range, range)),
+                    (float) (MathUtils.random(-range, range)),
+                    0f
+            );
+            attempts++;
+            isValidPosition = this.isValidPosition(targetPosition) && this.canStandOn(targetPosition);
+        } while (!isValidPosition && attempts < 100);
+        // TODO fallback for when no valid position was found
+        Gdx.app.getApplicationLogger().log("WorldSpace", String.format("Entity %s Found target %s in range for origin %s", entity.getId(), targetPosition.toString(), currentPosition.toString()));
+        return targetPosition;
+    }
+
 
     public void persist() {
         FileHandle file = Gdx.files.local("save/world_" + (System.nanoTime() / 1000) + ".json");
@@ -108,5 +127,4 @@ public class WorldSpace {
             .orElse(new Vector3(0,0,0));
         entityPos.z = topMost.z + 1f;
     }
-
 }

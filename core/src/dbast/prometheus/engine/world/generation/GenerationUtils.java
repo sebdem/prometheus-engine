@@ -114,7 +114,8 @@ public class GenerationUtils {
         SortedSet<AstarNode<Vector3>> openList = new TreeSet<>(AstarNode::compareByF);
         List<AstarNode<Vector3>> closedList = new ArrayList<>();
 
-        openList.add(new AstarNode<>(startPoint, 0f, 0f));
+        AstarNode<Vector3> startNode = new AstarNode<>(startPoint, 0f, 0f);
+        openList.add(startNode);
 
         AstarNode<Vector3> endNode = new AstarNode<>(endPoint, Float.MAX_VALUE, Float.MAX_VALUE);
 
@@ -151,6 +152,10 @@ public class GenerationUtils {
                 }
             }
             closedList.add(qNode);
+            // no more successors available
+            if (!targetFound && openList.isEmpty()) {
+                endNode = closedList.stream().filter(node->!node.equals(startNode)).min(AstarNode::compareByH).get();
+            }
         }
         return  endNode.getTree().stream().map(node -> node.reference).collect(Collectors.toList());
     }

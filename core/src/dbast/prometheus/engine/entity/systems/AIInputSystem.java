@@ -7,17 +7,24 @@ import dbast.prometheus.engine.entity.Entity;
 import dbast.prometheus.engine.entity.components.*;
 import dbast.prometheus.engine.world.WorldSpace;
 import dbast.prometheus.engine.world.generation.GenerationUtils;
+import sun.nio.ch.ThreadPool;
 
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.Executor;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 public class AIInputSystem extends ComponentSystem{
 
     public WorldSpace worldSpace;
 
     public Set<Entity> pathCalcInProcess = new HashSet<>();
+    protected ExecutorService executor;
+
     public AIInputSystem(WorldSpace worldSpace) {
         this.worldSpace = worldSpace;
+        this.executor = Executors.newFixedThreadPool(2);
     }
 
     @Override
@@ -29,16 +36,16 @@ public class AIInputSystem extends ComponentSystem{
 
             Vector3 currentPosition = positionComponent.position;
             if (targetTraverseComponent.finalTarget == null && !pathCalcInProcess.contains(entity)) {
-                if (Math.random() * (100 / updateDelta) > 98 / updateDelta) {
-                    //new Thread().start();
+                if (Math.random() * (100 / updateDelta) > 90 / updateDelta) {
                     pathCalcInProcess.add(entity);
+                    final Entity currentEntity = entity;
                     CompletableFuture.runAsync(()-> {
                       //  Gdx.app.getApplicationLogger().log("AISystem", String.format("1. Getting new target for entity %s at %s", entity.getId(), currentPosition.toString()));
-                        Vector3 targetPosition = worldSpace.getSpawnPoint();
+                        Vector3 targetPosition = worldSpace.getRandomInRangeOf(currentEntity, currentPosition, 20);
 
-                        calculateNewPath(entity, positionComponent, targetTraverseComponent, currentPosition, targetPosition);
-                        pathCalcInProcess.remove(entity);
-                    });
+                        calculateNewPath(currentEntity, positionComponent, targetTraverseComponent, currentPosition, targetPosition);
+                        pathCalcInProcess.remove(currentEntity);
+                    }, executor);
                 }
             }
             if (targetTraverseComponent.finalTarget != null) {

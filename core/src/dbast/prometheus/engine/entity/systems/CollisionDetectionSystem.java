@@ -18,18 +18,17 @@ public class CollisionDetectionSystem extends ComponentSystem {
 
     private static boolean LOG_COLLISIONS = false;
 
+    public Map<Long, Rectangle> entityHitboxCache = new HashMap<>();
     @Override
     public void execute(float updateDelta, List<Entity> entities) {
-        Map<Long, Rectangle> entityHitboxes = new HashMap<>();
-
         // TODO i believe this can be optimized for local comparing of collisions
 
         for(Entity entityA : entities) {
             PositionComponent positionA = entityA.getComponent(PositionComponent.class);
             CollisionBox collisionA = entityA.getComponent(CollisionBox.class);
 
-            Rectangle hitboxA = new Rectangle(positionA.getX(), positionA.getY(), collisionA.getWidth(), collisionA.getHeight());
-            entityHitboxes.put(entityA.getId(), hitboxA);
+            Rectangle hitboxA = entityHitboxCache.getOrDefault(entityA.getId(), new Rectangle(positionA.getX(), positionA.getY(), collisionA.getWidth(), collisionA.getHeight()));
+            entityHitboxCache.putIfAbsent(entityA.getId(), hitboxA);
 
             collisionA.setColliding(false);
 
@@ -40,11 +39,8 @@ public class CollisionDetectionSystem extends ComponentSystem {
                 PositionComponent positionB = entityB.getComponent(PositionComponent.class);
                 CollisionBox collisionB = entityB.getComponent(CollisionBox.class);
 
-                Rectangle hitboxB = entityHitboxes.get(entityB.getId());
-                if (hitboxB == null) {
-                    hitboxB = new Rectangle(positionB.getX(), positionB.getY(), collisionB.getWidth(), collisionB.getHeight());
-                    entityHitboxes.put(entityB.getId(), hitboxB);
-                }
+                Rectangle hitboxB = entityHitboxCache.getOrDefault(entityB.getId(), new Rectangle(positionB.getX(), positionB.getY(), collisionB.getWidth(), collisionB.getHeight()));
+                entityHitboxCache.putIfAbsent(entityB.getId(), hitboxB);
 
                 if (hitboxA.overlaps(hitboxB)) {
                     if (LOG_COLLISIONS) {
