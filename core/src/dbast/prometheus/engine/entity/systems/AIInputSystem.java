@@ -8,15 +8,14 @@ import dbast.prometheus.engine.entity.components.*;
 import dbast.prometheus.engine.world.WorldSpace;
 import dbast.prometheus.engine.world.generation.GenerationUtils;
 
-import java.util.Arrays;
-import java.util.List;
-import java.util.Vector;
-import java.util.stream.Collectors;
+import java.util.*;
+import java.util.concurrent.CompletableFuture;
 
 public class AIInputSystem extends ComponentSystem{
 
     public WorldSpace worldSpace;
 
+    public Set<Entity> pathCalcInProcess = new HashSet<>();
     public AIInputSystem(WorldSpace worldSpace) {
         this.worldSpace = worldSpace;
     }
@@ -29,13 +28,17 @@ public class AIInputSystem extends ComponentSystem{
             TargetTraverseComponent targetTraverseComponent = entity.getComponent(TargetTraverseComponent.class);
 
             Vector3 currentPosition = positionComponent.position;
-            if (targetTraverseComponent.finalTarget == null) {
-                if ((Math.random() * 100) / updateDelta > 98 / updateDelta) {
+            if (targetTraverseComponent.finalTarget == null && !pathCalcInProcess.contains(entity)) {
+                if (Math.random() * (100 / updateDelta) > 98 / updateDelta) {
+                    //new Thread().start();
+                    pathCalcInProcess.add(entity);
+                    CompletableFuture.runAsync(()-> {
+                      //  Gdx.app.getApplicationLogger().log("AISystem", String.format("1. Getting new target for entity %s at %s", entity.getId(), currentPosition.toString()));
+                        Vector3 targetPosition = worldSpace.getSpawnPoint();
 
-                    Gdx.app.getApplicationLogger().log("AISystem", String.format("1. Getting new target for entity %s at %s", entity.getId(), currentPosition.toString()));
-                    Vector3 targetPosition = worldSpace.getSpawnPoint();
-
-                    calculateNewPath(entity, positionComponent, targetTraverseComponent, currentPosition, targetPosition);
+                        calculateNewPath(entity, positionComponent, targetTraverseComponent, currentPosition, targetPosition);
+                        pathCalcInProcess.remove(entity);
+                    });
                 }
             }
             if (targetTraverseComponent.finalTarget != null) {
@@ -45,16 +48,16 @@ public class AIInputSystem extends ComponentSystem{
                 //Vector3 pathDistance = targetTraverseComponent.currentTarget.cpy().sub(targetTraverseComponent.previousTarget)
                 //Vector3 currentDistance = targetTraverseComponent.currentTarget.cpy().sub(currentPosition)
 
-                Gdx.app.getApplicationLogger().log("AISystem", String.format("4.Distance from %s to target %s for entity %s ---- X: %s, Y: %s, Z: %s", currentPosition.toString(), targetTraverseComponent.currentTarget.toString(), entity.getId(), distanceX, distanceY, distanceZ));
+               // Gdx.app.getApplicationLogger().log("AISystem", String.format("4.Distance from %s to target %s for entity %s ---- X: %s, Y: %s, Z: %s", currentPosition.toString(), targetTraverseComponent.currentTarget.toString(), entity.getId(), distanceX, distanceY, distanceZ));
 
                 // if position was reached
                 float velocityX = 0f, velocityY = 0f, velocityZ = 0f;
 
                 if (distanceX == 0 && distanceY == 0f && distanceZ == 0) {
                     targetTraverseComponent.nextTarget();
-                    if (targetTraverseComponent.currentTarget != null) {
+                  /*  if (targetTraverseComponent.currentTarget != null) {
                         Gdx.app.getApplicationLogger().log("AISystem", String.format("6. Next target step %s for entity %s", targetTraverseComponent.currentTarget.toString(), entity.getId()));
-                    }
+                    }*/
 
                     if (currentPosition.equals(targetTraverseComponent.finalTarget)) {
                         targetTraverseComponent.reachedTarget();
@@ -71,12 +74,12 @@ public class AIInputSystem extends ComponentSystem{
                     velocityY /= updateDelta;
                     velocityZ /= updateDelta;
 
-                    Gdx.app.getApplicationLogger().log("AISystem", String.format("5. Distance from previous %s to target %s for entity %s ---- X: %s, Y: %s, Z: %s", targetTraverseComponent.previousTarget.toString(), targetTraverseComponent.currentTarget.toString(), entity.getId(), velocityX, velocityY, velocityZ));
+                   // Gdx.app.getApplicationLogger().log("AISystem", String.format("5. Distance from previous %s to target %s for entity %s ---- X: %s, Y: %s, Z: %s", targetTraverseComponent.previousTarget.toString(), targetTraverseComponent.currentTarget.toString(), entity.getId(), velocityX, velocityY, velocityZ));
                 }
                 velocityComponent.setVelocity_x(velocityX);
                 velocityComponent.setVelocity_y(velocityY);
                 velocityComponent.setVelocity_z(velocityZ);
-                Gdx.app.getApplicationLogger().log("AISystem", String.format("Velocity for entity %s is %s/%s/%s", entity.getId(), velocityX, velocityY, velocityZ));
+                //Gdx.app.getApplicationLogger().log("AISystem", String.format("Velocity for entity %s is %s/%s/%s", entity.getId(), velocityX, velocityY, velocityZ));
             }
         }
     }

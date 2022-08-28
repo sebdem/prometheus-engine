@@ -83,11 +83,11 @@ public class WorldScene extends AbstractScene{
         );
 */
         // ==== [ prepare world ] ============================
-        world = new WaveFunctionTest(100,100, 20, false, true,
+        world = new WaveFunctionTest(40,40, 20, false, true,
                 Arrays.asList(
                         new CastleTower("brickF"),
                         new CastleTower("dirt_0")
-                ), 5,1).setup();
+                ), 0,30).setup();
 
         // ==== [ camera setup ] ============================
         Entity cameraFocus = world.entities.stream().filter(entity -> entity.hasComponent(InputControllerComponent.class)).findAny().orElse(world.entities.get(0));
