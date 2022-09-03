@@ -1,0 +1,10 @@
+{
+	"name": "grass_water_north",
+	"tag": "grass_water_010",
+	"renderData": {
+		"default": {
+			"path": "world/terrain/iso/grass_water_010.png",
+			"animated": false
+		}
+	}
+}

@@ -1,17 +1,14 @@
 package dbast.prometheus.engine.entity.systems;
 
 import com.badlogic.gdx.Gdx;
-import com.badlogic.gdx.math.MathUtils;
 import com.badlogic.gdx.math.Vector3;
 import dbast.prometheus.engine.entity.Entity;
 import dbast.prometheus.engine.entity.components.*;
 import dbast.prometheus.engine.world.WorldSpace;
 import dbast.prometheus.engine.world.generation.GenerationUtils;
-import sun.nio.ch.ThreadPool;
 
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.Executor;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -24,7 +21,7 @@ public class AIInputSystem extends ComponentSystem{
 
     public AIInputSystem(WorldSpace worldSpace) {
         this.worldSpace = worldSpace;
-        this.executor = Executors.newFixedThreadPool(2);
+        this.executor = Executors.newSingleThreadExecutor();
     }
 
     @Override
@@ -39,13 +36,14 @@ public class AIInputSystem extends ComponentSystem{
                 if (Math.random() * (100 / updateDelta) > 90 / updateDelta) {
                     pathCalcInProcess.add(entity);
                     final Entity currentEntity = entity;
-                    CompletableFuture.runAsync(()-> {
-                      //  Gdx.app.getApplicationLogger().log("AISystem", String.format("1. Getting new target for entity %s at %s", entity.getId(), currentPosition.toString()));
-                        Vector3 targetPosition = worldSpace.getRandomInRangeOf(currentEntity, currentPosition, 20);
+                    Vector3 targetPosition = worldSpace.getRandomInRangeOf(currentEntity, currentPosition, 20);
 
-                        calculateNewPath(currentEntity, positionComponent, targetTraverseComponent, currentPosition, targetPosition);
-                        pathCalcInProcess.remove(currentEntity);
-                    }, executor);
+                    if (!targetPosition.equals(currentPosition)) {
+                        CompletableFuture.runAsync(()-> {
+                            calculateNewPath(currentEntity, positionComponent, targetTraverseComponent, currentPosition, targetPosition);
+                            pathCalcInProcess.remove(currentEntity);
+                        }, executor);
+                    }
                 }
             }
             if (targetTraverseComponent.finalTarget != null) {
@@ -96,9 +94,8 @@ public class AIInputSystem extends ComponentSystem{
                                  Vector3 start,
                                  Vector3 end) {
         List<Vector3> path = GenerationUtils.find3DPath(start, end,
-                // TODO path validation
-              //  (vector3)->worldSpace.isValidPosition(vector3)
-                (vector3)->worldSpace.canStandOn(vector3)
+                (vector3)->worldSpace.isValidPosition(vector3),
+                (vector3)->worldSpace.canStandIn(vector3)
         );
         if (path.size() > 1) {
             Gdx.app.getApplicationLogger().log("AISystem", "found Path with " + path.size()+
@@ -111,7 +108,7 @@ public class AIInputSystem extends ComponentSystem{
             // initial node is always start target
             targetTraverse.nextTarget();
             targetTraverse.finalTarget = path.get(path.size() - 1);
-            Gdx.app.getApplicationLogger().log("AISystem", String.format("3. Found target %s for entity %s", targetTraverse.finalTarget.toString(), entity.getId()));
+           // Gdx.app.getApplicationLogger().log("AISystem", String.format("3. Found target %s for entity %s", targetTraverse.finalTarget.toString(), entity.getId()));
         }
     }
 

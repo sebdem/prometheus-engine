@@ -59,7 +59,7 @@ public class AstarNode <T> implements Comparable{
     }
 
     public String toString() {
-        return getClass().getName() + String.format("@(ref: %s with distanceToPrevious: %s,  distanceToTarget: %s and f: %s)", this.reference.toString(), g, h, f);
+        return getClass().getSimpleName() + String.format("@(ref: %s with distanceToPrevious: %s,  distanceToTarget: %s and f: %s)", this.reference.toString(), g, h, f);
     }
 
     public boolean sameAndLowerF(AstarNode<T> otherNode) {

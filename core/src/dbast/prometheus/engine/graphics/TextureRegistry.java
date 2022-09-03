@@ -12,7 +12,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 @Deprecated
-// TODO migrate this to sprites. Who the fuck would store raw textures??!?!
+// TODO should probably migrate turn this into some extension of the default TextureAtlas stuff...
 public class TextureRegistry {
     private static Map<String, Texture> registry;
 

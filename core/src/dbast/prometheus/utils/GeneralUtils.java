@@ -32,7 +32,13 @@ public class GeneralUtils {
     }
 
     public static <T> T randomElement(Collection<T> collection) {
+        if (collection instanceof WeightedRandomBag) {
+            return randomElement((WeightedRandomBag<T>) collection);
+        }
         return (T)collection.toArray()[(int) (collection.size() * Math.random())];
+    }
+    public static <T> T randomElement(WeightedRandomBag<T> bag) {
+        return bag.getRandom();
     }
     public static <T> T randomElement(T[] array) {
         return array[(int) (array.length * Math.random())];

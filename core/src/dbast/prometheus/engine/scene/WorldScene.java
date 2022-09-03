@@ -68,26 +68,13 @@ public class WorldScene extends AbstractScene{
 
         TileRegistry.registerPath(Gdx.files.local("data/tiles"));
         TileRegistry.output();
-       /* TileRegistry.register(
-                TileBuilder.fromJson(Gdx.files.internal("data/tiles/water_moving.json")),
-                TileBuilder.fromJson(Gdx.files.internal("data/tiles/water_deep.json")),
-                TileBuilder.fromJson(Gdx.files.internal("data/tiles/dirt.json")),
-                TileBuilder.fromJson(Gdx.files.internal("data/tiles/grass.json")),
-                TileBuilder.fromJson(Gdx.files.internal("data/tiles/grass_high.json")),
-                TileBuilder.fromJson(Gdx.files.internal("data/tiles/grass_top.json")),
-                TileBuilder.fromJson(Gdx.files.internal("data/tiles/iso_cube.json")),
-                TileBuilder.fromJson(Gdx.files.internal("data/tiles/path_stone.json")),
-                TileBuilder.fromJson(Gdx.files.internal("data/tiles/brick_dark.json")),
-                TileBuilder.fromJson(Gdx.files.internal("data/tiles/tree_tall.json")),
-                TileBuilder.fromJson(Gdx.files.internal("data/tiles/tree_short.json")),
-        );
-*/
+
         // ==== [ prepare world ] ============================
-        world = new WaveFunctionTest(200,200, 20, false, true,
+        world = new WaveFunctionTest(100, 100, -1, false, true,
                 Arrays.asList(
                         new CastleTower("brickF"),
                         new CastleTower("dirt_0")
-                ), 0,80).setup();
+                ), 0,1).setup();
 
         // ==== [ camera setup ] ============================
         Entity cameraFocus = world.entities.stream().filter(entity -> entity.hasComponent(InputControllerComponent.class)).findAny().orElse(world.entities.get(0));

@@ -14,9 +14,6 @@ import dbast.prometheus.utils.GeneralUtils;
 import dbast.prometheus.utils.Vector3Comparator;
 import dbast.prometheus.utils.Vector3IndexMap;
 
-import java.util.Map;
-import java.util.TreeMap;
-
 // TODO WorldSpace builder from a level file
 public class WorldSpace {
 
@@ -56,9 +53,8 @@ public class WorldSpace {
        /* Tile positionTile = lookupTile(position);
 
         return positionTile != null;//&& !positionTile.tag.equals("water");*/
-
-        return GeneralUtils.isBetween(position.x, 0, this.width -1, true)
-                && GeneralUtils.isBetween(position.y, 0, this.height -1, true);
+        return  position.x >= 0 && position.x < this.width &&
+                position.y >= 0 && position.y < this.height;
     }
     public boolean isOccupied(Vector3 position) {
         return lookupTile(position) == null;
@@ -66,10 +62,9 @@ public class WorldSpace {
 
         return positionTile != null;//&& !positionTile.tag.equals("water");*/
     }
-    public boolean canStandOn(Vector3 position) {
-        Tile atPosition = lookupTile(position);
+    public boolean canStandIn(Vector3 position) {
         Tile underPosition = lookupTile(position.cpy().sub(0,0,1f));
-        return atPosition == null && !(underPosition == null || underPosition.tag.equals("water"));
+        return !(underPosition == null || underPosition.tag.equals("water")) && lookupTile(position) == null;
        /* Tile positionTile = lookupTile(position);
 
         return positionTile != null;//&& !positionTile.tag.equals("water");*/
@@ -86,7 +81,7 @@ public class WorldSpace {
                     1f
             );
             attempts++;
-            isValidPosition = this.isValidPosition(targetPosition) && this.canStandOn(targetPosition);
+            isValidPosition = this.isValidPosition(targetPosition) && this.canStandIn(targetPosition);
         } while (!isValidPosition && attempts < 100);
         return targetPosition;
     }
@@ -102,10 +97,12 @@ public class WorldSpace {
                     0f
             );
             attempts++;
-            isValidPosition = this.isValidPosition(targetPosition) && this.canStandOn(targetPosition);
+            isValidPosition = this.isValidPosition(targetPosition) && this.canStandIn(targetPosition);
         } while (!isValidPosition && attempts < 100);
-        // TODO fallback for when no valid position was found
-        Gdx.app.getApplicationLogger().log("WorldSpace", String.format("Entity %s Found target %s in range for origin %s", entity.getId(), targetPosition.toString(), currentPosition.toString()));
+        //Gdx.app.getApplicationLogger().log("WorldSpace", String.format("Entity %s Found valid?%s target %s in range for origin %s", entity.getId(), isValidPosition, targetPosition.toString(), currentPosition.toString()));
+        if (!isValidPosition) {
+            targetPosition = currentPosition;
+        }
         return targetPosition;
     }
 
