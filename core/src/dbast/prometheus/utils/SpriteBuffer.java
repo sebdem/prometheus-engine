@@ -30,7 +30,8 @@ public class SpriteBuffer extends ArrayList<SpriteBuffer.SpriteData> {
             // as grid origin is the closest point to the camera, x + y needs to be inversed
             //this.orderIndex = -(spriteOrigin.x + spriteOrigin.y) + spriteOrigin.z;
             // proper solution for entities...
-            this.orderIndex = -(spritePos3D.x + sprite.getOriginX() + spritePos3D.y) + spritePos3D.z + sprite.getOriginY();
+            // TODO ADJUST Z MULTIPLIER!!!
+            this.orderIndex = -(spritePos3D.x + sprite.getOriginX() + spritePos3D.y) + spritePos3D.z * 0.125f + sprite.getOriginY();
             // almost solution for terrain...
            // this.orderIndex = -(spritePos3D.x + sprite.getOriginX() + spritePos3D.y) + (spritePos3D.z / (spritePos3D.x + spritePos3D.y)) + sprite.getOriginY();
             //this.orderIndex = -(spritePos3D.x + sprite.getOriginX() + spritePos3D.y) + ((spritePos3D.z+ sprite.getOriginY()) / (spritePos3D.x + spritePos3D.y)) ;

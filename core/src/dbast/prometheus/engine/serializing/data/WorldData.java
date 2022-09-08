@@ -36,6 +36,6 @@ public class WorldData implements Serializable {
             tiles.put(entry.getValue().tag, positionsOfTile);
         }
         // entities
-        this.entities = worldSpace.entities.stream().map(EntityData::new).collect(Collectors.toList());
+        this.entities = worldSpace.entities.values().stream().map(EntityData::new).collect(Collectors.toList());
     }
 }

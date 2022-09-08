@@ -1,10 +1,11 @@
-package dbast.prometheus.engine.serializing.builder;
+package dbast.prometheus.engine.serializing;
 
 import com.badlogic.gdx.files.FileHandle;
 import com.google.gson.Gson;
+import dbast.prometheus.engine.serializing.data.RenderComponentMap;
 import dbast.prometheus.engine.world.tile.Tile;
 
-public class TileBuilder {
+public class TileLoader extends AbstractLoader<Tile> {
 
     public String name;
     public String tag;
@@ -18,8 +19,7 @@ public class TileBuilder {
         return tile;
     }
 
-    public static Tile fromJson(FileHandle fileHandle) {
-        TileBuilder builder = new Gson().fromJson(fileHandle.reader(), TileBuilder.class);
-        return builder.build();
+    public static TileLoader fromJson(FileHandle fileHandle) {
+        return new Gson().fromJson(fileHandle.reader(), TileLoader.class);
     }
 }

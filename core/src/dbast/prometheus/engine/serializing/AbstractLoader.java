@@ -1,4 +1,10 @@
 package dbast.prometheus.engine.serializing;
 
-public class AbstractLoader {
+import com.badlogic.gdx.files.FileHandle;
+import com.google.gson.Gson;
+
+public abstract class AbstractLoader <T> {
+
+    public abstract T build();
+
 }

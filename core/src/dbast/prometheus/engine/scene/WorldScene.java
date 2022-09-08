@@ -3,6 +3,7 @@ package dbast.prometheus.engine.scene;
 import com.badlogic.gdx.ApplicationLogger;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Input;
+import com.badlogic.gdx.audio.Music;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.Pixmap;
 import com.badlogic.gdx.graphics.Texture;
@@ -21,12 +22,10 @@ import dbast.prometheus.engine.entity.components.*;
 import dbast.prometheus.engine.entity.systems.*;
 import dbast.prometheus.engine.events.Event;
 import dbast.prometheus.engine.events.EventBus;
-import dbast.prometheus.engine.serializing.builder.TileBuilder;
+import dbast.prometheus.engine.serializing.WorldMapLoader;
 import dbast.prometheus.engine.world.WorldSpace;
-import dbast.prometheus.engine.world.generation.features.CastleTower;
-import dbast.prometheus.engine.world.level.WaveFunctionTest;
-import dbast.prometheus.engine.world.tile.Tile;
 import dbast.prometheus.engine.world.tile.TileRegistry;
+import dbast.prometheus.utils.GeneralUtils;
 import dbast.prometheus.utils.SpriteBuffer;
 
 import java.util.*;
@@ -53,6 +52,7 @@ public class WorldScene extends AbstractScene{
         super(key);
     }
 
+    public Music bgmMusic;
     @Override
     public WorldScene create() {
         super.create();
@@ -69,15 +69,19 @@ public class WorldScene extends AbstractScene{
         TileRegistry.registerPath(Gdx.files.local("data/tiles"));
         TileRegistry.output();
 
+        bgmMusic = Gdx.audio.newMusic(Gdx.files.local("resources/sounds/song.wav"));
+        bgmMusic.setLooping(true);
+
         // ==== [ prepare world ] ============================
-        world = new WaveFunctionTest(100, 100, -1, false, true,
+        /*world = new WaveFunctionTest(100, 100, -1, false, true,
                 Arrays.asList(
                         new CastleTower("brickF"),
                         new CastleTower("dirt_0")
-                ), 0,1).setup();
+                ), 0,1).setup(); */
+        world = WorldMapLoader.fromJson(Gdx.files.local("save/world_38571562605.json")).build();
 
         // ==== [ camera setup ] ============================
-        Entity cameraFocus = world.entities.stream().filter(entity -> entity.hasComponent(InputControllerComponent.class)).findAny().orElse(world.entities.get(0));
+        Entity cameraFocus = world.getCameraFocus();
         //Entity cameraFocus = world.entities.get((int) (Math.random()*world.entities.size()));
        // cam = new LockOnCamera(90f, 16 ,9);
         cam = new LockOnCamera(90f, 16 ,9);
@@ -109,10 +113,10 @@ public class WorldScene extends AbstractScene{
                 naturalRenderOrder = !naturalRenderOrder;
             }
             if (keycode == Input.Keys.F6) {
-                cam.lockOnEntity(world.entities.get((int) (Math.random()*world.entities.size())));
+                cam.lockOnEntity(GeneralUtils.randomElement(world.entities.values()));
             }
             if (keycode == Input.Keys.F7) {
-                cam.lockOnEntity(world.entities.stream().filter(entity -> entity.hasComponent(InputControllerComponent.class)).findAny().orElse(world.entities.get(0)));
+                cam.lockOnEntity(world.getCameraFocus());
             }
             if (keycode == Input.Keys.PAGE_UP) {
                 cam.setViewingAngle(Math.toRadians(Math.toDegrees(cam.getViewingAngle()) + 15f));
@@ -247,6 +251,7 @@ TODO somehow translate mouse selection into world object selection?
         batch = new SpriteBatch();
         spriteQueue = new SpriteBuffer();
 
+        //bgmMusic.play();
         return this;
     }
 
@@ -333,7 +338,7 @@ TODO somehow translate mouse selection into world object selection?
         Entity cameraLockOn = cam.getLockOnEntity();
         PositionComponent lockOnPosition = cameraLockOn.getComponent(PositionComponent.class);
 
-        List<Entity> entities = world.entities.stream().filter(entity ->
+        List<Entity> entities = world.entities.values().stream().filter(entity ->
                 entity.hasComponents(entityRenderComponents) && lockOnPosition.isNearby(entity.getComponent(PositionComponent.class),renderDistance)
         ).collect(Collectors.toList());
 
@@ -436,8 +441,11 @@ TODO somehow translate mouse selection into world object selection?
             spriteQueue.sort(Comparator.reverseOrder());
         }
 
-        Entity cameraLockOn = cam.getLockOnEntity();
-        PositionComponent lockOnPosition = cameraLockOn.getComponent(PositionComponent.class);
+        PositionComponent lockOnPosition =  cam.getLockOnEntity().getComponent(PositionComponent.class);
+        Vector3 lockOnVector = lockOnPosition.position;
+        Vector3 viewVector = lockOnVector.cpy().sub(cam.getPosition());
+        Vector3 lockOn2d = lockOnPosition.position.cpy().scl(1,1,0f);
+
 
         spriteQueue.forEach((spriteData)-> {
             // begin of render pipeline...
@@ -492,7 +500,7 @@ TODO somehow translate mouse selection into world object selection?
                 intendedY
             );
 
-            float distanceToFocus = 1- (lockOnPosition.position.cpy().scl(1,1,0f).dst(spriteData.spritePos3D.cpy().scl(1,1,0f)) / renderDistance);//tilePos.x, tilePos.y, tilePos.z*0.5f));
+            float distanceToFocus = 1- (lockOnVector.dst(spriteData.spritePos3D.cpy().scl(1,1,1f)) / renderDistance);//tilePos.x, tilePos.y, tilePos.z*0.5f));
             //Gdx.app.getApplicationLogger().log("Render Pipeline", String.format("distance of tile %s to focus is %s", tile.tag, distanceToFocus));
 
             spriteData.sprite.draw(batch, distanceToFocus > 0.3f ? 1f : distanceToFocus > 0.20 ? 0.5f : distanceToFocus > 0.10 ? 0.25f : 0f);
@@ -507,11 +515,11 @@ TODO somehow translate mouse selection into world object selection?
 
         collisionDetectionSystem.entityHitboxCache.clear();
         // TODO can this be simplified? Instead of passing lists of entities to all systems, iterate entities and pass to systems if qualified components are here
-        collisionDetectionSystem.execute(deltaTime, collisionDetectionSystem.onlyQualified(world.entities));
-        playerInputSystem.execute(deltaTime, playerInputSystem.onlyQualified(world.entities));
-        aiInputSystem.execute(deltaTime, aiInputSystem.onlyQualified(world.entities));
-        movementSystem.execute(deltaTime, movementSystem.onlyQualified(world.entities));
-        stateSystem.execute(deltaTime, stateSystem.onlyQualified(world.entities));
+        collisionDetectionSystem.execute(deltaTime, world.entities.compatibleWith(collisionDetectionSystem) );
+        playerInputSystem.execute(deltaTime, world.entities.compatibleWith(playerInputSystem));
+        aiInputSystem.execute(deltaTime, world.entities.compatibleWith(aiInputSystem));
+        movementSystem.execute(deltaTime, world.entities.compatibleWith(movementSystem));
+        stateSystem.execute(deltaTime, world.entities.compatibleWith(stateSystem));
 
         cam.update();
     }

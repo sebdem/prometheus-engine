@@ -11,12 +11,7 @@ public abstract class ComponentSystem {
 
     public List<Entity> onlyQualified(List<Entity> entities) {
         final List<Class<? extends Component>> components = neededComponents();
-        return entities.stream().filter(new Predicate<Entity>() {
-            @Override
-            public boolean test(Entity entity) {
-                return entity.hasComponents(components);
-            }
-        }).collect(Collectors.toList());
+        return entities.stream().filter(entity -> entity.hasComponents(components)).collect(Collectors.toList());
     }
 
     /**

@@ -1,4 +1,4 @@
-package dbast.prometheus.engine.serializing.builder;
+package dbast.prometheus.engine.serializing.data;
 
 public class RenderComponentData {
     public String path;

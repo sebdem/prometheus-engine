@@ -1,4 +1,4 @@
-package dbast.prometheus.engine.serializing.builder;
+package dbast.prometheus.engine.serializing.data;
 
 import com.badlogic.gdx.Gdx;
 import dbast.prometheus.engine.entity.components.RenderComponent;

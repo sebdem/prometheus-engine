@@ -4,15 +4,22 @@ import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.files.FileHandle;
 import com.badlogic.gdx.math.MathUtils;
 import com.badlogic.gdx.math.Vector3;
+import com.badlogic.gdx.physics.box2d.World;
 import com.google.gson.Gson;
 import dbast.prometheus.engine.entity.Entity;
 import dbast.prometheus.engine.entity.EntityRegistry;
+import dbast.prometheus.engine.entity.components.InputControllerComponent;
+import dbast.prometheus.engine.entity.components.PositionComponent;
+import dbast.prometheus.engine.entity.components.SizeComponent;
 import dbast.prometheus.engine.serializing.data.WorldData;
 import dbast.prometheus.engine.world.tile.Tile;
 import dbast.prometheus.engine.world.tile.TileRegistry;
 import dbast.prometheus.utils.GeneralUtils;
 import dbast.prometheus.utils.Vector3Comparator;
 import dbast.prometheus.utils.Vector3IndexMap;
+
+import java.util.Arrays;
+import java.util.stream.Stream;
 
 // TODO WorldSpace builder from a level file
 public class WorldSpace {
@@ -123,5 +130,17 @@ public class WorldSpace {
                 .max((key1, key2) -> Float.compare(key1.z, key2.z))
             .orElse(new Vector3(0,0,0));
         entityPos.z = topMost.z + 1f;
+    }
+
+    public Entity getCameraFocus() {
+        return this.entities.values().stream().filter(entity ->
+                entity.hasComponent(InputControllerComponent.class) && entity.getComponent(InputControllerComponent.class).active
+        ).findAny().orElse(
+                this.entities.values().stream().filter(entity ->
+                        entity.hasComponents(Arrays.asList(SizeComponent.class, PositionComponent.class))
+                ).findAny().orElse(
+                        this.entities.values().toArray(new Entity[0])[0]
+                )
+        );
     }
 }

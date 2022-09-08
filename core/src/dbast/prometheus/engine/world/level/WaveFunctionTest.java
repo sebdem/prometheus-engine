@@ -34,7 +34,7 @@ public class WaveFunctionTest {
     public int numberOfFeatures;
     public int entitiesToGenerate;
     private boolean asMountain = false;
-    private boolean drawRiver = false;
+    private boolean drawRiver = true;
     private boolean drawPaths = true;
 
     public WaveFunctionTest(int width, int height, int numberOfRandomBlocks, boolean simpleSmoothing, boolean growthSmoothing, List<PlaceFeature> features, int numberOfFeatures, int entitiesToGenerate) {
@@ -64,6 +64,7 @@ public class WaveFunctionTest {
        // Tile waterMovingTile = TileRegistry.getByTag("waterM");
         Tile grassTile = TileRegistry.getByTag("grass_0");
         Tile grassToWaterNorth = TileRegistry.getByTag("grass_water_010");
+        Tile grassToWaterEast = TileRegistry.getByTag("grass_water_100");
         Tile grassHighTile = TileRegistry.getByTag("grass_1");
         Tile dirtTile = TileRegistry.getByTag("dirt_0");
         Tile bigTree = TileRegistry.getByTag("tree");
@@ -85,6 +86,7 @@ public class WaveFunctionTest {
         TileRuleEntry bigTreeRules = tileRules.forTile(bigTree);
         TileRuleEntry treeRules = tileRules.forTile(treeTile);
         TileRuleEntry grassToWaterNorthRules = tileRules.forTile(grassToWaterNorth);
+        TileRuleEntry grassToWaterEastRules = tileRules.forTile(grassToWaterEast);
         //TileRuleEntry pathTileRules = tileRules.forTile(pathTile);
 
         List<Vector3> nearby = Arrays.asList(GenerationUtils.nearby4Of(new Vector3(0, 0, 0)));
@@ -93,9 +95,10 @@ public class WaveFunctionTest {
         waterChances.addEntry(grassTile, 5);
         waterChances.addEntry(waterTile, 95);
         nearby.forEach(offset ->
-                waterRules.put(offset, grassTile, waterTile, grassToWaterNorth)
+                waterRules.put(offset, grassTile, waterTile, grassToWaterNorth, grassToWaterEast)
         );
-        waterRules.put(TileRuleEntry.Direction.SOUTH.dir, grassTile, waterTile);
+        waterRules.put(TileRuleEntry.Direction.SOUTH.dir, grassTile, waterTile, grassToWaterEast);
+        waterRules.put(TileRuleEntry.Direction.WEST.dir, grassTile, waterTile, grassToWaterNorth);
 
 
       /*  nearby.forEach(offset ->
@@ -103,8 +106,8 @@ public class WaveFunctionTest {
         );
 */
         WeightedRandomBag<Tile> dirtChances = new WeightedRandomBag<>();
+        dirtChances.addEntry(dirtTile, 5);
         dirtChances.addEntry(grassTile, 30);
-        dirtChances.addEntry(dirtTile, 70);
         nearby.forEach(offset ->
                 dirtRules.put(offset, dirtChances)
         );
@@ -126,18 +129,26 @@ public class WaveFunctionTest {
                 grassRules.put(offset, grassChances)
         );
         grassRules.remove(TileRuleEntry.Direction.SOUTH.dir);
-        grassRules.put(TileRuleEntry.Direction.SOUTH.dir, Arrays.asList(grassHighTile, grassTile, dirtTile, grassToWaterNorth));
+        grassRules.put(TileRuleEntry.Direction.SOUTH.dir, Arrays.asList(grassHighTile, grassTile, dirtTile, grassToWaterNorth, grassToWaterEast));
 
         grassRules.remove(TileRuleEntry.Direction.EAST.dir);
         grassRules.put(TileRuleEntry.Direction.EAST.dir, Arrays.asList(grassHighTile, grassTile, dirtTile, grassToWaterNorth));
 
+        grassRules.remove(TileRuleEntry.Direction.NORTH.dir);
+        grassRules.put(TileRuleEntry.Direction.EAST.dir, Arrays.asList(grassHighTile, grassTile, dirtTile, grassToWaterEast));
+
         grassRules.remove(TileRuleEntry.Direction.WEST.dir);
-        grassRules.put(TileRuleEntry.Direction.WEST.dir, Arrays.asList(grassHighTile, grassTile, dirtTile, grassToWaterNorth));
+        grassRules.put(TileRuleEntry.Direction.WEST.dir, Arrays.asList(grassHighTile, grassTile, dirtTile, grassToWaterNorth, grassToWaterEast));
 
         grassToWaterNorthRules.put(TileRuleEntry.Direction.NORTH.dir, grassTile);
         grassToWaterNorthRules.put(TileRuleEntry.Direction.SOUTH.dir, waterTile);
         grassToWaterNorthRules.put(TileRuleEntry.Direction.EAST.dir, grassTile, waterTile, grassToWaterNorth);
         grassToWaterNorthRules.put(TileRuleEntry.Direction.WEST.dir, grassTile, waterTile, grassToWaterNorth);
+
+        grassToWaterEastRules.put(TileRuleEntry.Direction.EAST.dir, grassTile);
+        grassToWaterEastRules.put(TileRuleEntry.Direction.WEST.dir, waterTile);
+        grassToWaterEastRules.put(TileRuleEntry.Direction.NORTH.dir, grassTile, waterTile, grassToWaterEast);
+        grassToWaterEastRules.put(TileRuleEntry.Direction.SOUTH.dir, grassTile, waterTile, grassToWaterEast);
 
         nearby.forEach(offset ->
                 grassHighRules.put(offset, Arrays.asList(grassTile, grassHighTile, treeTile))
@@ -283,6 +294,9 @@ public class WaveFunctionTest {
                         allowedTiles.put(uncollapsed, Collections.singletonList(positionTile));
                         collapsedPositions.add(uncollapsed);
                         updateNearbyTiles(worldSpace, allowedTiles, uncollapsed, getAllowedFromNeighbors);
+                    } else {
+                        allowedTiles.put(uncollapsed, Collections.singletonList(grassTile));
+                        collapsedPositions.add(uncollapsed);
                     }
                     // Gdx.app.getApplicationLogger().log("World Setup", String.format("Position %s has %s number of valid tiles", position, allowedForPosition.size()));
                 }

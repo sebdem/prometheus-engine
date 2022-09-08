@@ -2,12 +2,9 @@ package dbast.prometheus.engine.world.tile;
 
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.files.FileHandle;
-import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
-import dbast.prometheus.engine.serializing.builder.TileBuilder;
+import dbast.prometheus.engine.serializing.TileLoader;
 
-import java.io.IOException;
-import java.util.Arrays;
 import java.util.Map;
 import java.util.TreeMap;
 
@@ -54,7 +51,7 @@ public class TileRegistry {
                 }
             } else {
                 try {
-                    TileRegistry.register(TileBuilder.fromJson(registryHandle));
+                    TileRegistry.register(TileLoader.fromJson(registryHandle).build());
                 } catch (Exception e) {
                     e.printStackTrace();
                     Gdx.app.getApplicationLogger().log("TileRegistry", String.format("Failed to register file: %s", registryHandle.path()));
