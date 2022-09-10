@@ -1,6 +1,7 @@
 package dbast.prometheus.engine.world;
 
 import com.badlogic.gdx.Gdx;
+import com.badlogic.gdx.math.Vector3;
 import dbast.prometheus.engine.entity.EntityRegistry;
 import dbast.prometheus.engine.entity.components.*;
 
@@ -46,7 +47,7 @@ public class WorldSpaceDeprecated {
         worldSpaceDeprecated.entities = new EntityRegistry();
         worldSpaceDeprecated.entities.addNewEntity(
                 1L,
-                new CollisionBox(0.9f,1.45f,false),
+                new CollisionBox(new Vector3(0.9f,1.45f, 0.9f), false),
                 new SizeComponent(1f,1.5f),
                 PositionComponent.initial(),
                 new InputControllerComponent(),

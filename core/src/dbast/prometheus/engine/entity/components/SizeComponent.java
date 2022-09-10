@@ -2,6 +2,8 @@ package dbast.prometheus.engine.entity.components;
 
 import com.badlogic.gdx.math.Vector3;
 
+// TODO This can be deprecated i think
+//@Deprecated
 public class SizeComponent extends Component {
     protected float width;
     protected float height;

@@ -24,6 +24,10 @@ import dbast.prometheus.engine.events.Event;
 import dbast.prometheus.engine.events.EventBus;
 import dbast.prometheus.engine.serializing.WorldMapLoader;
 import dbast.prometheus.engine.world.WorldSpace;
+import dbast.prometheus.engine.world.generation.features.CastleTower;
+import dbast.prometheus.engine.world.generation.features.Hole;
+import dbast.prometheus.engine.world.level.Superflat;
+import dbast.prometheus.engine.world.level.WaveFunctionTest;
 import dbast.prometheus.engine.world.tile.TileRegistry;
 import dbast.prometheus.utils.GeneralUtils;
 import dbast.prometheus.utils.SpriteBuffer;
@@ -35,6 +39,7 @@ public class WorldScene extends AbstractScene{
 
     protected BitmapFont font;
     protected SpriteBatch batch;
+
     protected WorldSpace world;
     private LockOnCamera cam;
 
@@ -73,12 +78,14 @@ public class WorldScene extends AbstractScene{
         bgmMusic.setLooping(true);
 
         // ==== [ prepare world ] ============================
-        /*world = new WaveFunctionTest(100, 100, -1, false, true,
+        /*world = new WaveFunctionTest(100, 100, 20, false, true,
                 Arrays.asList(
                         new CastleTower("brickF"),
-                        new CastleTower("dirt_0")
-                ), 0,1).setup(); */
-        world = WorldMapLoader.fromJson(Gdx.files.local("save/world_38571562605.json")).build();
+                        new CastleTower("dirt_0"),
+                        new Hole()
+                ), 6,20).setup();*/
+        world = new Superflat(256, 256).setup();
+        //world = WorldMapLoader.fromJson(Gdx.files.local("save/world_38571562605.json")).build();
 
         // ==== [ camera setup ] ============================
         Entity cameraFocus = world.getCameraFocus();
@@ -95,7 +102,7 @@ public class WorldScene extends AbstractScene{
         collisionDetectionSystem = new CollisionDetectionSystem();
         playerInputSystem = new PlayerInputSystem();
         aiInputSystem = new AIInputSystem(this.world);
-        movementSystem = new MovementSystem(new Rectangle(0f,0f, world.width, world.height));
+        movementSystem = new MovementSystem(this.world);
         stateSystem = new StateUpdateSystem();
 
         entityRenderComponents = Arrays.asList(RenderComponent.class, PositionComponent.class, SizeComponent.class);
@@ -420,6 +427,7 @@ TODO somehow translate mouse selection into world object selection?
     protected static float gridSnapIncrement = (Float)PrometheusConfig.conf.getOrDefault("gridSnapIncrement", 0.0625f);
     protected static boolean useGridSnapping = (Boolean)PrometheusConfig.conf.getOrDefault("gridSnapping", false);
     protected static boolean useIsometric = (Boolean)PrometheusConfig.conf.getOrDefault("isometric", false);
+    protected static boolean useWorldTimeShading = (Boolean)PrometheusConfig.conf.getOrDefault("useWorldTimeShading", false);
 
     public  static boolean naturalRenderOrder = true;
 
@@ -446,6 +454,8 @@ TODO somehow translate mouse selection into world object selection?
         Vector3 viewVector = lockOnVector.cpy().sub(cam.getPosition());
         Vector3 lockOn2d = lockOnPosition.position.cpy().scl(1,1,0f);
 
+        float fogOfWarRange = world.getSightRange();
+        Color lightingColor = world.currentTime.getLightingColor(world.age);
 
         spriteQueue.forEach((spriteData)-> {
             // begin of render pipeline...
@@ -483,15 +493,13 @@ TODO somehow translate mouse selection into world object selection?
                 intendedX -= spriteData.sprite.getOriginX() - 0.5f;
                // intendedX -= spriteData.sprite.getOriginX();
 
-                int sx = (int) spriteData.spritePos3D.x;
-                int sy = (int) spriteData.spritePos3D.y;
-                if ((int)higlightThis.x == sx && (int)higlightThis.y == sy) {
+                if ((int)higlightThis.x == (int) spriteData.spritePos3D.x
+                        && (int)higlightThis.y == (int) spriteData.spritePos3D.y) {
                     intendedY += 0.125f; //* spriteData.sprite.getWidth();
                 }
             } else {
-                int sx = (int) spriteData.spritePos3D.x;
-                int sy = (int) spriteData.spritePos3D.y;
-                if ((int)higlightThis.x == sx && (int)higlightThis.y == sy) {
+                if ((int)higlightThis.x == (int) spriteData.spritePos3D.x
+                        && (int)higlightThis.y == (int) spriteData.spritePos3D.y) {
                     spriteData.sprite.rotate(45);
                 }
             }
@@ -500,12 +508,21 @@ TODO somehow translate mouse selection into world object selection?
                 intendedY
             );
 
-            float distanceToFocus = 1- (lockOnVector.dst(spriteData.spritePos3D.cpy().scl(1,1,1f)) / renderDistance);//tilePos.x, tilePos.y, tilePos.z*0.5f));
+            float distanceFromFocus = lockOnVector.dst(spriteData.spritePos3D);
+            float distanceToFocus = 1- (distanceFromFocus / renderDistance);//tilePos.x, tilePos.y, tilePos.z*0.5f));
             //Gdx.app.getApplicationLogger().log("Render Pipeline", String.format("distance of tile %s to focus is %s", tile.tag, distanceToFocus));
 
+
+            float distanceFog =1 - (distanceFromFocus / fogOfWarRange);
+
+            // this should definitely be delegated to a some shader...
+            if (useWorldTimeShading) {
+                spriteData.sprite.setColor(this.background.cpy().lerp(lightingColor, 0.5f).mul(distanceFog, distanceFog, distanceFog, 1));
+            } else {
+                spriteData.sprite.setColor(new Color(distanceFog, distanceFog, distanceFog, 1f));
+            }
+
             spriteData.sprite.draw(batch, distanceToFocus > 0.3f ? 1f : distanceToFocus > 0.20 ? 0.5f : distanceToFocus > 0.10 ? 0.25f : 0f);
-           // spriteData.sprite.draw(batch, distanceToFocus );
-           // spriteData.sprite.draw(batch, distanceToFocus > renderDistance ? 0.5f : 1f);
         });
     }
 
@@ -513,6 +530,10 @@ TODO somehow translate mouse selection into world object selection?
         super.update(deltaTime);
         EventBus.update(deltaTime);
 
+        world.update(deltaTime);
+        this.background = world.getSkyboxColor();
+
+        // ECS updates - TODO might have to delegate this to worlds update?
         collisionDetectionSystem.entityHitboxCache.clear();
         // TODO can this be simplified? Instead of passing lists of entities to all systems, iterate entities and pass to systems if qualified components are here
         collisionDetectionSystem.execute(deltaTime, world.entities.compatibleWith(collisionDetectionSystem) );

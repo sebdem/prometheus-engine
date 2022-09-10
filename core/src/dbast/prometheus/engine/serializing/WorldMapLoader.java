@@ -2,6 +2,7 @@ package dbast.prometheus.engine.serializing;
 
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.files.FileHandle;
+import com.badlogic.gdx.physics.bullet.collision.Collision;
 import com.google.gson.Gson;
 import dbast.prometheus.engine.entity.EntityRegistry;
 import dbast.prometheus.engine.entity.components.*;
@@ -33,7 +34,7 @@ public class WorldMapLoader extends AbstractLoader<WorldSpace> {
         buildResult.entities = new EntityRegistry();
         buildResult.entities.addNewEntity(
                 1L,
-                new CollisionBox(1f,1f,false),
+                CollisionBox.createBasic(),
                 new SizeComponent(1f,1f),
                 new PositionComponent(buildResult.getSpawnPoint()),
                 new InputControllerComponent(),

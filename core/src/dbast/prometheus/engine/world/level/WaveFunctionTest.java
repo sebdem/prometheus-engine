@@ -34,8 +34,8 @@ public class WaveFunctionTest {
     public int numberOfFeatures;
     public int entitiesToGenerate;
     private boolean asMountain = false;
-    private boolean drawRiver = true;
-    private boolean drawPaths = true;
+    private boolean drawRiver = false;
+    private boolean drawPaths = false;
 
     public WaveFunctionTest(int width, int height, int numberOfRandomBlocks, boolean simpleSmoothing, boolean growthSmoothing, List<PlaceFeature> features, int numberOfFeatures, int entitiesToGenerate) {
         this.width = width;
@@ -204,9 +204,7 @@ public class WaveFunctionTest {
         for(int i = 0; i < numberOfRandomBlocks; i++) {
             float y = (float) Math.floor((Math.random()*worldSpace.height));
             float x = (float) Math.floor((Math.random()*worldSpace.width));
-            /*
-            float y = (float) Math.floor((Math.random()*20));
-            float x = (float) Math.floor((Math.random()*20));*/
+
             float z = 0f;
 
             Vector3 position = new Vector3(x, y, z);
@@ -216,6 +214,10 @@ public class WaveFunctionTest {
             updateNearbyTiles(worldSpace, allowedTiles, position, getAllowedFromNeighbors);
         }
 
+      /*  Vector3 underground = new Vector3(0,0,-7f);
+        allowedTiles.put(underground, Collections.singletonList(dirtTile));
+        updateNearbyTiles(worldSpace, allowedTiles, underground, getAllowedFromNeighbors);
+*/
         // step 1.5 manually place blocks to try how things adapt
         // draw a "river"
         if (drawRiver) {
@@ -554,7 +556,7 @@ public class WaveFunctionTest {
         worldSpace.entities = new EntityRegistry();
         worldSpace.entities.addNewEntity(
                 1L,
-                new CollisionBox(1f,1f,false),
+                CollisionBox.createBasic(),
                 new SizeComponent(1f,1f),
                 new PositionComponent(worldSpace.getSpawnPoint()),
                 new InputControllerComponent(),

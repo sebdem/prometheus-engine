@@ -1,41 +1,58 @@
 package dbast.prometheus.engine.entity.components;
 
+import com.badlogic.gdx.math.Polygon;
+import com.badlogic.gdx.math.Vector3;
+
+// TODO migrate to Polygon?
 public class CollisionBox extends Component {
-    private float width;
-    private float height;
+
+    private Vector3 boundaries;
 
     private boolean permeable;
 
     private boolean isColliding;
 
+    @Deprecated
     public CollisionBox(float width, float height, boolean permeable) {
-        this.width = width;
-        this.height = height;
+        this.boundaries = new Vector3(width, height, 1f);
+        this.permeable = permeable;
+    }
+    public CollisionBox(Vector3 boundaries, boolean permeable) {
+        this.boundaries = boundaries;
         this.permeable = permeable;
     }
 
     public static CollisionBox createBasic() {
-        return new CollisionBox(1f,1f,false);
+        return new CollisionBox(new Vector3(0.99f,0.99f,0.99f), false);
     }
 
 
     public float getWidth() {
-        return width;
+        return boundaries.x;
     }
 
     public CollisionBox setWidth(float width) {
-        this.width = width;
+        this.boundaries.x = width;
         return this;
     }
 
     public float getHeight() {
-        return height;
+        return boundaries.y;
     }
 
     public CollisionBox setHeight(float height) {
-        this.height = height;
+        this.boundaries.y = height;
         return this;
     }
+    public float getDepth() {
+        return boundaries.z;
+    }
+
+    public CollisionBox setDepth(float depth) {
+        this.boundaries.z = depth;
+        return this;
+    }
+
 
     public boolean isPermeable() {
         return permeable;
@@ -53,5 +70,19 @@ public class CollisionBox extends Component {
     public CollisionBox setColliding(boolean colliding) {
         this.isColliding = colliding;
         return this;
+    }
+
+    // TODO consider offset?
+    public Vector3[] getCorners(Vector3 origin) {
+        return new Vector3[]{
+                origin,
+                origin.cpy().add(boundaries.x, 0, 0),
+                origin.cpy().add(boundaries.x, 0, boundaries.z),
+                origin.cpy().add(boundaries.x, boundaries.y, 0),
+                origin.cpy().add(boundaries.x, boundaries.y, boundaries.z),
+                origin.cpy().add(0,  boundaries.y, 0),
+                origin.cpy().add(0,  boundaries.y, boundaries.z),
+                origin.cpy().add(0,  0, boundaries.z),
+        };
     }
 }

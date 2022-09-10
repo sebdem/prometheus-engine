@@ -1,5 +1,6 @@
 package dbast.prometheus.utils;
 
+import com.badlogic.gdx.math.Vector3;
 import net.dermetfan.utils.ArrayUtils;
 
 import java.util.Arrays;
@@ -50,5 +51,12 @@ public class GeneralUtils {
         } else {
             return value.doubleValue() > rangeStart.doubleValue() && value.doubleValue() < rangeEnd.doubleValue();
         }
+    }
+
+    public static Vector3 floorVector3(Vector3 vector3) {
+        return vector3.set(
+                (float)Math.floor(vector3.x),
+                (float)Math.floor(vector3.y),
+                (float)Math.floor(vector3.z));
     }
 }

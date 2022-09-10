@@ -2,6 +2,7 @@ package dbast.prometheus.engine.world;
 
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.files.FileHandle;
+import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.math.MathUtils;
 import com.badlogic.gdx.math.Vector3;
 import com.badlogic.gdx.physics.box2d.World;
@@ -13,6 +14,7 @@ import dbast.prometheus.engine.entity.components.PositionComponent;
 import dbast.prometheus.engine.entity.components.SizeComponent;
 import dbast.prometheus.engine.serializing.data.WorldData;
 import dbast.prometheus.engine.world.tile.Tile;
+import dbast.prometheus.engine.world.tile.TileData;
 import dbast.prometheus.engine.world.tile.TileRegistry;
 import dbast.prometheus.utils.GeneralUtils;
 import dbast.prometheus.utils.Vector3Comparator;
@@ -27,12 +29,33 @@ public class WorldSpace {
     public int height;
     public int width;
     public Vector3IndexMap<Tile> terrainTiles;
+    public Vector3IndexMap<TileData> tileDataMap;
     public EntityRegistry entities;
+
+    public float age = 720;
+    public long realTime;
+    public WorldTime currentTime;
 
     public WorldSpace(int width, int height) {
         this.width = width;
         this.height = height;
         this.terrainTiles = new Vector3IndexMap<>(new Vector3Comparator.Planar());
+    }
+
+    public void update(float updateDelta) {
+        this.age += updateDelta;
+        this.realTime = System.currentTimeMillis();
+        this.currentTime = WorldTime.get(this.age);
+    //   Gdx.app.getApplicationLogger().log("World", String.format("Current age: %s | RealTime: %s | CurrentTime: %s | currentOClock %s", this.age, realTime, currentTime.name(), (this.age / 60) % 24 ));
+    }
+
+
+    public Color getSkyboxColor() {
+        return this.currentTime.getSkyboxColor(this.age);
+    }
+
+    public float getSightRange() {
+        return this.currentTime.getSightRange(this.age);
     }
 
     public WorldSpace placeTile(int tileId, float x, float y, float z) {
