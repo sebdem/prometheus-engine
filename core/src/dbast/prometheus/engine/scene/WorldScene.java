@@ -11,8 +11,10 @@ import com.badlogic.gdx.graphics.TextureData;
 import com.badlogic.gdx.graphics.g2d.BitmapFont;
 import com.badlogic.gdx.graphics.g2d.Sprite;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
+import com.badlogic.gdx.math.MathUtils;
 import com.badlogic.gdx.math.Rectangle;
 import com.badlogic.gdx.math.Vector3;
+import com.badlogic.gdx.math.collision.Ray;
 import com.badlogic.gdx.scenes.scene2d.InputEvent;
 import com.badlogic.gdx.scenes.scene2d.InputListener;
 import dbast.prometheus.engine.LockOnCamera;
@@ -175,41 +177,65 @@ public class WorldScene extends AbstractScene{
                // logger.log("Input event: ","Offset Mouse position to center is " + mousePos.toString());
                 // focus on middle
                 mousePos.add(-0.5f, -0.5f,0f);
+
                 logger.log("Input event: ","Offset Mouse position to center is " + mousePos.toString());
 
-                if (useIsometric) {
-                    Vector3 boundaries = new Vector3(cam.viewportWidth, cam.viewportHeight, 0f);
-                    logger.log("Input event: ","boundaries is " + boundaries.toString());
-                    boundaries.prj(LockOnCamera.isoTransform);
-                    logger.log("Input event: ","boundaries is " + boundaries.toString());
+                byte version = 3;
 
-                    boolean useIsoTransformForScreen = true;
-                    if (useIsoTransformForScreen) {
-                        mousePos.prj(LockOnCamera.isoTransform);
+                if (version == 3) {
+                    // adjust for tiles on screen "quadrant"
+                    float ratioWidthToHeight = (cam.viewportWidth/cam.viewportHeight);
+                    float ratioHeightToWidth = (cam.viewportHeight/cam.viewportWidth);
 
-                        // for some odd reason these two appear to be switched...
-                        float mouseX = mousePos.x;
-                        mousePos.x = mousePos.y;
-                        mousePos.y = -mouseX;
+                    float halfX = (cam.viewportWidth / 2) * ratioWidthToHeight;
+                    float halfY = cam.viewportHeight / ratioHeightToWidth;
+                    float distortionOffset = 1f;
+
+                    mousePos.scl(halfX, halfY, 1f);
+                  //  mousePos.scl(cam.getCameraDistance() / 2);
+
+                    mousePos.set(
+                            (mousePos.x / 0.5f + mousePos.y /  0.5f) / 2 + distortionOffset,
+                            ((mousePos.y / 0.5f - (mousePos.x /  0.5f)) / 2) + distortionOffset,
+                            mousePos.z
+                    );
+
+                    mousePos.add(lockOnPosition.position);
+                } else if (version == 2) {
+                    if (useIsometric) {
+                        Vector3 boundaries = new Vector3(cam.viewportWidth, cam.viewportHeight, 0f);
+                        logger.log("Input event: ","boundaries is " + boundaries.toString());
+                        boundaries.prj(LockOnCamera.isoTransform);
+                        logger.log("Input event: ","boundaries is " + boundaries.toString());
+
+                        boolean useIsoTransformForScreen = true;
+                        if (useIsoTransformForScreen) {
+                           /* mousePos.prj(LockOnCamera.isoTransform);
+
+                            // for some odd reason these two appear to be switched...
+                            float mouseX = mousePos.x;
+                            mousePos.x = mousePos.y;
+                            mousePos.y = -mouseX;*/
+                        } else {
+                            // use original transform matrix that seems to logically be incorrect for it's actual purpose????
+                            mousePos.prj(LockOnCamera.screenToGridTransform);
+                        }
+                        mousePos.scl(cam.getCameraDistance());
+                        //mousePos.scl(boundaries);
+                        mousePos.scl( boundaries);
+
+
+                        mousePos.add(lockOnPosition.position);
+                        // mousePos.scl(renderDistance);
+                        logger.log("Input event: ","transformed Mouse position to center is " + mousePos.toString());
                     } else {
-                        // use original transform matrix that seems to logically be incorrect for it's actual purpose????
-                        mousePos.prj(LockOnCamera.screenToGridTransform);
+                        mousePos.scl(cam.viewportWidth, cam.viewportHeight, 1f);
+                        mousePos.scl(1.75f);
+                        mousePos.add(lockOnPosition.position);
                     }
-                    mousePos.scl(cam.getCameraDistance());
-                    //mousePos.scl(boundaries);
-                    mousePos.scl( boundaries);
+                    logger.log("Input event: ", String.format("Camera angled at %s", ((float)Math.sin(cam.getViewingAngle())) * cam.getCameraDistance()));
 
-
-                    mousePos.add(lockOnPosition.position);
-                    // mousePos.scl(renderDistance);
-                    logger.log("Input event: ","transformed Mouse position to center is " + mousePos.toString());
-                } else {
-                    mousePos.scl(cam.viewportWidth, cam.viewportHeight, 1f);
-                    mousePos.scl(1.75f);
-                    mousePos.add(lockOnPosition.position);
                 }
-                logger.log("Input event: ", String.format("Camera angled at %s", ((float)Math.sin(cam.getViewingAngle())) * cam.getCameraDistance()));
-
                 higlightThis.set(mousePos);
 
 /*

@@ -14,6 +14,11 @@ import java.util.List;
 
 public class PlayerInputSystem extends ComponentSystem {
 
+    /**
+     * Stores screen coordinates of cursor
+     */
+    public Vector2 cursorInput = new Vector2(0,0);
+
     @Override
     public void execute(float updateDelta, List<Entity> entities) {
         InputProcessor inputProcessor = Gdx.input.getInputProcessor();
@@ -49,6 +54,8 @@ public class PlayerInputSystem extends ComponentSystem {
             velocityY *= sprint;
             velocityZ *= sprint;
         }
+
+        this.cursorInput.set(Gdx.input.getX(), Gdx.input.getY());
 
        /* if (velocityX != 0 & velocityY != 0) {
             velocityX /= 1.41421356237;
