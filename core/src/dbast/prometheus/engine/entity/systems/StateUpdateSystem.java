@@ -1,12 +1,22 @@
 package dbast.prometheus.engine.entity.systems;
 
+import com.badlogic.gdx.math.Vector3;
 import dbast.prometheus.engine.entity.Entity;
 import dbast.prometheus.engine.entity.components.*;
+import dbast.prometheus.engine.world.WorldSpace;
+import dbast.prometheus.engine.world.tile.Tile;
+import dbast.prometheus.engine.world.tile.TileData;
 
 import java.util.Collections;
 import java.util.List;
 
 public class StateUpdateSystem extends ComponentSystem {
+
+    public WorldSpace world;
+
+    public StateUpdateSystem(WorldSpace world) {
+        this.world = world;
+    }
 
     @Override
     public void execute(float updateDelta, List<Entity> qualifiedEntities) {
@@ -43,6 +53,24 @@ public class StateUpdateSystem extends ComponentSystem {
                     // do nothing
                 }
             });
+
+            /*// TODO improve???
+            entity.executeFor(PositionComponent.class, positionComponent -> {
+                Vector3 underPosition = new Vector3(
+                        (float)Math.floor(positionComponent.getX()),
+                        (float)Math.floor(positionComponent.getY()),
+                        positionComponent.getZ() - 1f
+                );
+                Tile standingOn = world.lookupTile(underPosition);
+                if (standingOn != null) {
+                    TileData standingOnData = world.tileDataMap.get(underPosition);
+                    if (standingOnData == null) {
+                        standingOnData = new TileData();
+                        world.tileDataMap.put(underPosition, standingOnData);
+                    }
+                    standingOnData.state = "steppedOn";
+                }
+            });*/
         };
     }
 

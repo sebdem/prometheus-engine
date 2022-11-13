@@ -1,11 +1,19 @@
 package dbast.prometheus.engine.entity.systems;
 
 import com.badlogic.gdx.Gdx;
+import com.badlogic.gdx.math.Intersector;
+import com.badlogic.gdx.math.Polygon;
 import com.badlogic.gdx.math.Rectangle;
 import com.badlogic.gdx.math.Vector3;
+import com.badlogic.gdx.math.collision.BoundingBox;
+import com.badlogic.gdx.math.collision.Sphere;
+import com.badlogic.gdx.physics.bullet.Bullet;
+import com.badlogic.gdx.physics.bullet.collision.SWIGTYPE_p_f_p_q_const__btCollisionShape_p_q_const__btCollisionShape__bool;
+import com.badlogic.gdx.physics.bullet.collision.btAABB;
 import dbast.prometheus.engine.entity.Entity;
 import dbast.prometheus.engine.entity.components.*;
 import dbast.prometheus.engine.world.WorldSpace;
+import dbast.prometheus.engine.world.tile.Tile;
 import dbast.prometheus.utils.GeneralUtils;
 
 import java.util.Arrays;
@@ -27,29 +35,79 @@ public class MovementSystem extends ComponentSystem {
             PositionComponent positionComponent = entity.getComponent(PositionComponent.class);
             CollisionBox collisionBox = entity.getComponent(CollisionBox.class);
             VelocityComponent velocity = entity.getComponent(VelocityComponent.class);
+/*
+            Tile tileUnder = worldSpace.lookupTile(new Vector3(Math.round(positionComponent.position.x), Math.round(positionComponent.position.y), positionComponent.position.z -1f));
+            if (tileUnder == null || tileUnder.height != 1) {
+                velocity.setVelocity_z(velocity.getVelocity_z() - 1f);
+            }
+*/
 
+            float oldXpos = positionComponent.getX();
             float newXpos = positionComponent.getX() + velocity.getVelocity_x() * updateDelta;
+            float oldYpos = positionComponent.getY();
             float newYpos = positionComponent.getY() + velocity.getVelocity_y() * updateDelta;
+            float oldZpos = positionComponent.getZ();
             float newZpos = positionComponent.getZ() + velocity.getVelocity_z() * updateDelta;
            // Gdx.app.getApplicationLogger().log("MovementSystem", String.format("Velocity for entity %s is %s/%s/%s", entity.getId(), velocity.getVelocity_x(), velocity.getVelocity_y(), velocity.getVelocity_z()));
 
             Vector3 newPos = new Vector3(newXpos, newYpos, newZpos);
-            boolean canMoveTo = worldSpace.isValidPosition(newPos);
+            boolean canMoveTo = worldSpace.isPositionInWorld(newPos);
 
-            if (collisionBox != null && !collisionBox.isPermeable()) {
-                /*if (collisionBox.isColliding()) {
-                    canMoveTo = false;
-                }*/
+            if (canMoveTo && collisionBox != null && !collisionBox.isPermeable()) {
+                BoundingBox entityBoundary = new BoundingBox(newPos, collisionBox.getMax(newPos));
+           /* TODO check this idea later...
+                float allowedStep = 0.5f;
+                Vector3 newPosHigher = newPos.cpy().add(0,0,allowedStep);
+                Vector3 newPosLower = newPos.cpy().add(0,0,-allowedStep);
+                BoundingBox entityBoundaryHigher = new BoundingBox(newPosHigher, collisionBox.getMax(newPosHigher));
+                BoundingBox entityBoundaryLower= new BoundingBox(newPosLower, collisionBox.getMax(newPosLower));
+*/
+                Vector3 chunkPosition = worldSpace.getChunkFor(newPos);
+                List<BoundingBox> chunkBounds = worldSpace.boundariesPerChunk.get(chunkPosition);
+                for(BoundingBox bb : chunkBounds) {
+                    if (bb.intersects(entityBoundary)) {
+                        canMoveTo = false;
+                        Gdx.app.getApplicationLogger().log("Movement", "Player corner " + newPos.toString() + " intersects with bounds " + bb.toString());
+                    }
+                }/*
+
                 Vector3[] corners = collisionBox.getCorners(newPos);
                 for(int i = 0; i < corners.length && canMoveTo; i++ ) {
                     Vector3 cornerVector = GeneralUtils.floorVector3(corners[i]);
-                    if (!(worldSpace.isValidPosition(cornerVector)
-                            && worldSpace.isOccupied(cornerVector)
+
+
+                    // New Rules should be:
+                    *//*
+                        0. All corner locations should be in the world?
+                        => For Each location under entity: {
+                            
+                        }
+
+
+                     *//*
+                    if (worldSpace.isPositionInWorld(cornerVector)) {
+                        *//*Tile tileAt = worldSpace.lookupTile(cornerVector);
+
+                        if (tileAt != null) {
+                            canMoveTo = false;
+                        } else {
+                            if (velocity.getVelocity_z() == 0 && !worldSpace.canStandIn(cornerVector)) {
+                                canMoveTo = false;
+                            }
+                            // entity is good to go
+
+                        }*//*
+                    } else {
+                        canMoveTo = false;
+                    }
+
+                    *//*if (!(worldSpace.isPositionInWorld(cornerVector)
+                           // && worldSpace.isPositionFree(cornerVector)
                             && (velocity.getVelocity_z() != 0 || worldSpace.canStandIn(cornerVector))
                     )) {
                         canMoveTo = false;
-                    }
-                }
+                    }*//*
+                }*/
             }
 
             //Vector3 newPosRounded = new Vector3(Math.round(newXpos), Math.round(newYpos), Math.round(newZpos));

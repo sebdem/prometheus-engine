@@ -2,11 +2,11 @@ package dbast.prometheus.utils;
 
 import com.badlogic.gdx.graphics.g2d.Sprite;
 import com.badlogic.gdx.math.Vector3;
+import com.badlogic.gdx.utils.PooledLinkedList;
 
 import java.util.ArrayList;
 
-public class SpriteBuffer extends ArrayList<SpriteBuffer.SpriteData> {
-
+public class SpriteDataQueue extends ArrayList<SpriteDataQueue.SpriteData> {
 
 
     public void add(Vector3 spritePos3D, Sprite Sprite) {
@@ -16,14 +16,14 @@ public class SpriteBuffer extends ArrayList<SpriteBuffer.SpriteData> {
     public static class SpriteData implements Comparable<SpriteData> {
         public Float orderIndex;
         public Sprite sprite;
-        public Vector3 spritePos3D;
+        public Vector3 position;
         //public Vector3 spriteOrigin;
 
-        public SpriteData(Sprite sprite, Vector3 spritePos3D) {
+        public SpriteData(Sprite sprite, Vector3 orderPosition) {
             // factually correct
             //this.spriteOrigin = spritePos3D.cpy().add(sprite.getOriginX(), 0,  sprite.getOriginY());
             this.sprite = sprite;
-            this.spritePos3D = spritePos3D;
+            this.position = orderPosition;
             recalcOrderIndex();
         }
         public float recalcOrderIndex() {
@@ -31,7 +31,7 @@ public class SpriteBuffer extends ArrayList<SpriteBuffer.SpriteData> {
             //this.orderIndex = -(spriteOrigin.x + spriteOrigin.y) + spriteOrigin.z;
             // proper solution for entities...
             // TODO ADJUST Z MULTIPLIER!!!
-            this.orderIndex = -(spritePos3D.x + sprite.getOriginX() + spritePos3D.y) + spritePos3D.z * 0.125f + sprite.getOriginY();
+            this.orderIndex = -(position.x + sprite.getOriginX() + position.y) + position.z * 0.125f + sprite.getOriginY();
             // almost solution for terrain...
            // this.orderIndex = -(spritePos3D.x + sprite.getOriginX() + spritePos3D.y) + (spritePos3D.z / (spritePos3D.x + spritePos3D.y)) + sprite.getOriginY();
             //this.orderIndex = -(spritePos3D.x + sprite.getOriginX() + spritePos3D.y) + ((spritePos3D.z+ sprite.getOriginY()) / (spritePos3D.x + spritePos3D.y)) ;
@@ -39,7 +39,7 @@ public class SpriteBuffer extends ArrayList<SpriteBuffer.SpriteData> {
         }
 
         public void update(Vector3 newPositon) {
-            this.spritePos3D = newPositon;
+            this.position = newPositon;
             this.recalcOrderIndex();
         }
         public void update(Sprite newSprite) {

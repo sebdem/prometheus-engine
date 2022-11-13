@@ -9,6 +9,8 @@ import dbast.prometheus.engine.config.PrometheusConfig;
 import dbast.prometheus.engine.entity.Entity;
 import dbast.prometheus.engine.entity.components.PositionComponent;
 
+import javax.xml.ws.Provider;
+
 public class LockOnCamera extends PerspectiveCamera implements PositionProvider {
 
     protected Entity lockOnEntity;
@@ -130,6 +132,18 @@ public class LockOnCamera extends PerspectiveCamera implements PositionProvider 
 
     @Override
     public void update() {
+        int largestFactor = 16;
+        int height =  Gdx.graphics.getHeight();
+        int width =  Gdx.graphics.getWidth();
+        float ratio = ((float)Math.min(height, width) / (float)Math.max(height, width));
+        if (width >= height) {
+            this.viewportHeight = largestFactor * ratio;
+            this.viewportWidth = largestFactor;
+        } else {
+            this.viewportWidth = largestFactor * ratio;
+            this.viewportHeight = largestFactor;
+        }
+
         if (lockOnEntity != null) {
             if (this.recalcOffset) {
                 this.recalcOffset = false;

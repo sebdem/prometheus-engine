@@ -3,7 +3,7 @@ package dbast.prometheus.engine.entity.components;
 import com.badlogic.gdx.math.Polygon;
 import com.badlogic.gdx.math.Vector3;
 
-// TODO migrate to Polygon?
+// TODO migrate to BoundingBox?
 public class CollisionBox extends Component {
 
     private Vector3 boundaries;
@@ -53,6 +53,9 @@ public class CollisionBox extends Component {
         return this;
     }
 
+    public Vector3 getBoundaries() {
+        return this.boundaries;
+    }
 
     public boolean isPermeable() {
         return permeable;
@@ -84,5 +87,10 @@ public class CollisionBox extends Component {
                 origin.cpy().add(0,  boundaries.y, boundaries.z),
                 origin.cpy().add(0,  0, boundaries.z),
         };
+    }
+
+    @Deprecated
+    public Vector3 getMax(Vector3 toMin) {
+        return toMin.cpy().add(boundaries);
     }
 }

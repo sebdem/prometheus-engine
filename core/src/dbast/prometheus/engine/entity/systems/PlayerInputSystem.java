@@ -6,6 +6,8 @@ import com.badlogic.gdx.InputProcessor;
 import com.badlogic.gdx.graphics.Camera;
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.math.Vector3;
+import dbast.prometheus.engine.LockOnCamera;
+import dbast.prometheus.engine.config.PrometheusConfig;
 import dbast.prometheus.engine.entity.Entity;
 import dbast.prometheus.engine.entity.components.*;
 
@@ -18,6 +20,15 @@ public class PlayerInputSystem extends ComponentSystem {
      * Stores screen coordinates of cursor
      */
     public Vector2 cursorInput = new Vector2(0,0);
+    public Vector3 inWorldPos = new Vector3(0,0,0);
+
+    public static float levelOffset = -1f;
+
+    public LockOnCamera camera;
+
+    public PlayerInputSystem(LockOnCamera camera) {
+        this.camera = camera;
+    }
 
     @Override
     public void execute(float updateDelta, List<Entity> entities) {
@@ -55,8 +66,6 @@ public class PlayerInputSystem extends ComponentSystem {
             velocityZ *= sprint;
         }
 
-        this.cursorInput.set(Gdx.input.getX(), Gdx.input.getY());
-
        /* if (velocityX != 0 & velocityY != 0) {
             velocityX /= 1.41421356237;
             velocityY /= 1.41421356237;
@@ -80,6 +89,46 @@ public class PlayerInputSystem extends ComponentSystem {
                 //velocity.normalize();
             }
         }
+
+        // update ui stuff...
+
+        this.cursorInput.set(Gdx.input.getX(), Gdx.input.getY());
+
+        camera.getLockOnEntity().executeFor(PositionComponent.class, lockOnPosition -> {
+            Vector3 mousePos = new Vector3(
+                    this.cursorInput.x / (float)Gdx.graphics.getWidth(),
+                    1f -(this.cursorInput.y / (float)Gdx.graphics.getHeight()),
+                    PlayerInputSystem.levelOffset
+            );
+            // focus on middle
+            mousePos.add(-0.5f, -0.5f,0f);
+
+            float ratioWidthToHeight = (camera.viewportWidth/camera.viewportHeight);
+            float ratioHeightToWidth = (camera.viewportHeight/camera.viewportWidth);
+
+            if (PrometheusConfig.get("isometric", Boolean.class, true)) {
+                // TODO consider camera distance...
+                float halfX = (camera.viewportWidth / 2) * ratioWidthToHeight;
+                float halfY = camera.viewportHeight / ratioHeightToWidth;
+
+                float distortionOffset = 1f;
+
+                mousePos.scl(halfX, halfY, 1f);
+                // mousePos.scl(cam.getCameraDistance() / 2);
+
+                mousePos.set(
+                        (mousePos.x / 0.5f + mousePos.y /  0.5f) / 2 + distortionOffset,
+                        ((mousePos.y / 0.5f - (mousePos.x /  0.5f)) / 2) + distortionOffset,
+                        mousePos.z
+                );
+            } else {
+                mousePos.scl(camera.viewportWidth, camera.viewportHeight, 1f);
+                mousePos.scl(ratioWidthToHeight);
+            }
+
+            mousePos.add(lockOnPosition.position);
+            inWorldPos.set(mousePos);
+        });
     }
 
     @Override

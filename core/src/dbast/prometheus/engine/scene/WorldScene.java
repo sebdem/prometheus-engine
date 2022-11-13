@@ -3,20 +3,25 @@ package dbast.prometheus.engine.scene;
 import com.badlogic.gdx.ApplicationLogger;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Input;
+import com.badlogic.gdx.ai.GdxAI;
+import com.badlogic.gdx.ai.GdxFileSystem;
 import com.badlogic.gdx.audio.Music;
-import com.badlogic.gdx.graphics.Color;
-import com.badlogic.gdx.graphics.Pixmap;
-import com.badlogic.gdx.graphics.Texture;
-import com.badlogic.gdx.graphics.TextureData;
+import com.badlogic.gdx.graphics.*;
 import com.badlogic.gdx.graphics.g2d.BitmapFont;
+import com.badlogic.gdx.graphics.g2d.Gdx2DPixmap;
 import com.badlogic.gdx.graphics.g2d.Sprite;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
+import com.badlogic.gdx.graphics.g3d.utils.shapebuilders.FrustumShapeBuilder;
+import com.badlogic.gdx.math.Frustum;
+import com.badlogic.gdx.math.Intersector;
 import com.badlogic.gdx.math.MathUtils;
-import com.badlogic.gdx.math.Rectangle;
 import com.badlogic.gdx.math.Vector3;
+import com.badlogic.gdx.math.collision.BoundingBox;
 import com.badlogic.gdx.math.collision.Ray;
+import com.badlogic.gdx.math.collision.Segment;
 import com.badlogic.gdx.scenes.scene2d.InputEvent;
 import com.badlogic.gdx.scenes.scene2d.InputListener;
+import com.badlogic.gdx.utils.GdxBuild;
 import dbast.prometheus.engine.LockOnCamera;
 import dbast.prometheus.engine.config.PrometheusConfig;
 import dbast.prometheus.engine.entity.Entity;
@@ -24,15 +29,12 @@ import dbast.prometheus.engine.entity.components.*;
 import dbast.prometheus.engine.entity.systems.*;
 import dbast.prometheus.engine.events.Event;
 import dbast.prometheus.engine.events.EventBus;
-import dbast.prometheus.engine.serializing.WorldMapLoader;
 import dbast.prometheus.engine.world.WorldSpace;
-import dbast.prometheus.engine.world.generation.features.CastleTower;
-import dbast.prometheus.engine.world.generation.features.Hole;
 import dbast.prometheus.engine.world.level.Superflat;
-import dbast.prometheus.engine.world.level.WaveFunctionTest;
+import dbast.prometheus.engine.world.tile.TileData;
 import dbast.prometheus.engine.world.tile.TileRegistry;
 import dbast.prometheus.utils.GeneralUtils;
-import dbast.prometheus.utils.SpriteBuffer;
+import dbast.prometheus.utils.SpriteDataQueue;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -86,14 +88,14 @@ public class WorldScene extends AbstractScene{
                         new CastleTower("dirt_0"),
                         new Hole()
                 ), 6,20).setup();*/
-        world = new Superflat(256, 256).setup();
+        world = new Superflat(48, 48).setup();
         //world = WorldMapLoader.fromJson(Gdx.files.local("save/world_38571562605.json")).build();
 
         // ==== [ camera setup ] ============================
         Entity cameraFocus = world.getCameraFocus();
         //Entity cameraFocus = world.entities.get((int) (Math.random()*world.entities.size()));
-       // cam = new LockOnCamera(90f, 16 ,9);
         cam = new LockOnCamera(90f, 16 ,9);
+        //cam = new LockOnCamera(90f, Gdx.graphics.getWidth() ,Gdx.graphics.getHeight());
         cam.lockOnEntity(cameraFocus);
         cam.setEntityOffset(cameraFocus.getComponent(SizeComponent.class).toVector3().scl(0.5f,0.25f,0.5f));//.scl(0.5f));
         cam.setCameraDistance(7f);
@@ -102,10 +104,10 @@ public class WorldScene extends AbstractScene{
 
         // ==== [ enable ECS ] ============================
         collisionDetectionSystem = new CollisionDetectionSystem();
-        playerInputSystem = new PlayerInputSystem();
+        playerInputSystem = new PlayerInputSystem(this.cam);
         aiInputSystem = new AIInputSystem(this.world);
         movementSystem = new MovementSystem(this.world);
-        stateSystem = new StateUpdateSystem();
+        stateSystem = new StateUpdateSystem(this.world);
 
         entityRenderComponents = Arrays.asList(RenderComponent.class, PositionComponent.class, SizeComponent.class);
 
@@ -165,130 +167,32 @@ public class WorldScene extends AbstractScene{
                 return super.keyTyped(event, character);
             }
 
-
-
             @Override
-            public boolean mouseMoved(InputEvent event, float x, float y) {
-                boolean defaultHandle = super.mouseMoved(event, x, y);
-                Entity cameraLockOn = cam.getLockOnEntity();
-                PositionComponent lockOnPosition = cameraLockOn.getComponent(PositionComponent.class);
+            public boolean scrolled(InputEvent event, float x, float y, int amount) {
+               // PlayerInputSystem.levelOffset += amount;
 
-                Vector3 mousePos = new Vector3((float)Gdx.input.getX() / (float)Gdx.graphics.getWidth(), 1f -((float)Gdx.input.getY() / (float)Gdx.graphics.getHeight()), 0);
-               // logger.log("Input event: ","Offset Mouse position to center is " + mousePos.toString());
-                // focus on middle
-                mousePos.add(-0.5f, -0.5f,0f);
-
-                logger.log("Input event: ","Offset Mouse position to center is " + mousePos.toString());
-
-                byte version = 3;
-
-                if (version == 3) {
-                    // adjust for tiles on screen "quadrant"
-                    float ratioWidthToHeight = (cam.viewportWidth/cam.viewportHeight);
-                    float ratioHeightToWidth = (cam.viewportHeight/cam.viewportWidth);
-
-                    float halfX = (cam.viewportWidth / 2) * ratioWidthToHeight;
-                    float halfY = cam.viewportHeight / ratioHeightToWidth;
-                    float distortionOffset = 1f;
-
-                    mousePos.scl(halfX, halfY, 1f);
-                  //  mousePos.scl(cam.getCameraDistance() / 2);
-
-                    mousePos.set(
-                            (mousePos.x / 0.5f + mousePos.y /  0.5f) / 2 + distortionOffset,
-                            ((mousePos.y / 0.5f - (mousePos.x /  0.5f)) / 2) + distortionOffset,
-                            mousePos.z
-                    );
-
-                    mousePos.add(lockOnPosition.position);
-                } else if (version == 2) {
-                    if (useIsometric) {
-                        Vector3 boundaries = new Vector3(cam.viewportWidth, cam.viewportHeight, 0f);
-                        logger.log("Input event: ","boundaries is " + boundaries.toString());
-                        boundaries.prj(LockOnCamera.isoTransform);
-                        logger.log("Input event: ","boundaries is " + boundaries.toString());
-
-                        boolean useIsoTransformForScreen = true;
-                        if (useIsoTransformForScreen) {
-                           /* mousePos.prj(LockOnCamera.isoTransform);
-
-                            // for some odd reason these two appear to be switched...
-                            float mouseX = mousePos.x;
-                            mousePos.x = mousePos.y;
-                            mousePos.y = -mouseX;*/
-                        } else {
-                            // use original transform matrix that seems to logically be incorrect for it's actual purpose????
-                            mousePos.prj(LockOnCamera.screenToGridTransform);
-                        }
-                        mousePos.scl(cam.getCameraDistance());
-                        //mousePos.scl(boundaries);
-                        mousePos.scl( boundaries);
-
-
-                        mousePos.add(lockOnPosition.position);
-                        // mousePos.scl(renderDistance);
-                        logger.log("Input event: ","transformed Mouse position to center is " + mousePos.toString());
-                    } else {
-                        mousePos.scl(cam.viewportWidth, cam.viewportHeight, 1f);
-                        mousePos.scl(1.75f);
-                        mousePos.add(lockOnPosition.position);
-                    }
-                    logger.log("Input event: ", String.format("Camera angled at %s", ((float)Math.sin(cam.getViewingAngle())) * cam.getCameraDistance()));
-
+                if (amount > 0) {
+                    cam.setCameraDistance(cam.getCameraDistance() + 0.25f);
+                    renderDistance += 0.25f;
                 }
-                higlightThis.set(mousePos);
-
-/*
-TODO somehow translate mouse selection into world object selection?
-                Entity cameraLockOn = cam.getLockOnEntity();
-                PositionComponent lockOnPosition = cameraLockOn.getComponent(PositionComponent.class);
-
-                //
-                Vector3 mousePos = new Vector3((float)Gdx.input.getX() / (float)Gdx.graphics.getWidth(), 1f-(float)Gdx.input.getY() / (float)Gdx.graphics.getHeight(), 0);
-                logger.log("Input event: ","Original Mouse position is " + mousePos.toString());
-                // focus on middle
-                mousePos.add(-0.5f, -0.5f,0f);
-                logger.log("Input event: ","Offset Mouse position to center is " + mousePos.toString());
-                // do iso transform, if needed...
-                if (useIsometric) {
-                    float unmodifiedX = mousePos.x;
-                    float unmodifiedY = mousePos.y;
-
-
-                    mousePos.prj(LockOnCamera.isoTransform);
-                    float intendedX = mousePos.x * baseSpriteSize;
-                    float intendedY = mousePos.y * baseSpriteSize;
-                    mousePos.scl(baseSpriteSize);
-                   //  intendedX = (float) (unmodifiedX * 0.5  - unmodifiedY * 0.5);
-                   //  intendedY = (float) (unmodifiedX * 0.25  + unmodifiedY * 0.25 );
-
-                    //mousePos.set(intendedX, intendedY, mousePos.z);
-                    logger.log("Input event: ","Mouse position in ISO is " + mousePos.toString());
-                    //mousePos.add(lockOnPosition)
+                if (amount < 0) {
+                    cam.setCameraDistance(cam.getCameraDistance() - 0.25f);
+                    renderDistance -= 0.25f;
                 }
-                // multiply by "distance", as in the "size" of the stuff being shown
-                //mousePos.scl(cam.viewportWidth, cam.viewportHeight, 1f);
-                //mousePos.scl(renderDistance);
-
-                // add lock on position to mousePos
-                mousePos.add(lockOnPosition.position);
-                higlightThis.set(mousePos);
-
-                logger.log("Input event: ","Mouse position is " + mousePos.toString());
-*/
-                return defaultHandle;
+                logger.log("scroll event", String.format("camera distance %s, render distance %s", cam.getCameraDistance(), renderDistance));
+                return super.scrolled(event, x, y, amount);
             }
         });
 
         // ==== [ init batch ] ============================
         batch = new SpriteBatch();
-        spriteQueue = new SpriteBuffer();
+        spriteQueue = new SpriteDataQueue();
+
+        Gdx.graphics.setSystemCursor(Cursor.SystemCursor.Hand);
 
         //bgmMusic.play();
         return this;
     }
-
-    public Vector3 higlightThis = new Vector3(0f,0f,0f);
 
     @Override
     public void render(int windowWidth, int windowHeight, float aspect) {
@@ -301,8 +205,7 @@ TODO somehow translate mouse selection into world object selection?
     }
 
     // TODO move sprite building out of here. Update new reference whenever things actually change. Then just render to batch
-    SpriteBuffer spriteQueue = null;
-    // static float renderDistance = 18f;
+    SpriteDataQueue spriteQueue = null;
     protected static float renderDistance = (Float)PrometheusConfig.conf.getOrDefault("renderDistance",18f);
     protected static float baseSpriteSize = (Float)PrometheusConfig.conf.getOrDefault("baseSpriteSize",16f);
 
@@ -313,8 +216,13 @@ TODO somehow translate mouse selection into world object selection?
         //  logger.log("rendering:", "tiles " + world.terrainTiles.size());
         world.terrainTiles.forEach((tilePos, tile)-> {
             if (lockOnPosition.isNearby(tilePos.x, tilePos.y, renderDistance)) {
+                String tileState = "default";
+                TileData tileData = world.tileDataMap.get(tilePos);
+                if (tileData != null) {
+                    tileState = tileData.state;
+                }
 
-                Sprite tileSprite = new Sprite(tile.renderComponent.getTexture(animatorLife,"default"));
+                Sprite tileSprite = new Sprite(tile.renderComponent.getTexture(animatorLife,tileState));
 
                 float spriteX = tilePos.x;
                 float spriteY = tilePos.y;
@@ -340,7 +248,7 @@ TODO somehow translate mouse selection into world object selection?
 
                     Pixmap pixmap = spriteTexture.consumePixmap();
                     pixmap.setColor(0xCCCCCCCC);
-                    pixmap.drawRectangle(0, 0, pixmap.getWidth(), pixmap.getHeight());
+                    pixmap .drawRectangle(0, 0, pixmap.getWidth(), pixmap.getHeight());
 
                     pixmap.setColor(0xFF0000FF);
                     pixmap.drawPixel(0,0);
@@ -381,7 +289,6 @@ TODO somehow translate mouse selection into world object selection?
             PositionComponent positionComponent = entity.getComponent(PositionComponent.class);
             SizeComponent sizeComponent = entity.getComponent(SizeComponent.class);
 
-            // TODO might needs cpy()
             Vector3 entityPos = positionComponent.position;
             //world.toNextUpperLevel(entityPos);
             float spriteX = entityPos.x;
@@ -477,8 +384,8 @@ TODO somehow translate mouse selection into world object selection?
 
         PositionComponent lockOnPosition =  cam.getLockOnEntity().getComponent(PositionComponent.class);
         Vector3 lockOnVector = lockOnPosition.position;
-        Vector3 viewVector = lockOnVector.cpy().sub(cam.getPosition());
-        Vector3 lockOn2d = lockOnPosition.position.cpy().scl(1,1,0f);
+        Vector3 higlightThis = playerInputSystem.inWorldPos;
+      //  logger.log("Highlight:", String.format("Highlighting %s", higlightThis.toString()));
 
         float fogOfWarRange = world.getSightRange();
         Color lightingColor = world.currentTime.getLightingColor(world.age);
@@ -486,8 +393,8 @@ TODO somehow translate mouse selection into world object selection?
         spriteQueue.forEach((spriteData)-> {
             // begin of render pipeline...
             // TODO can this be delegated to actual shader logic, hopefully sparing sweet CPU calculation time??
-            float intendedX = spriteData.spritePos3D.x;
-            float intendedY = spriteData.spritePos3D.y;
+            float intendedX = spriteData.position.x;
+            float intendedY = spriteData.position.y;
             // Gdx.app.getApplicationLogger().log("render pipeline", String.format("[sprite %s 1/2] intendedX %s | intendedY %s", spriteData.hashCode(), intendedX, intendedY));
             if (!useIsometric) {
              //   intendedY += spriteData.spritePos3D.z;
@@ -512,29 +419,49 @@ TODO somehow translate mouse selection into world object selection?
                 intendedX = unmodified.x ;//* spriteData.sprite.getWidth();
                 intendedY = unmodified.y;// * spriteData.sprite.getWidth();
                 // offset, because why the fuck?
-                intendedY += spriteData.spritePos3D.z * 0.5f - 0.5f;// * spriteData.sprite.getWidth();
+                intendedY += spriteData.position.z * 0.5f /*- 0.6f*/;// * spriteData.sprite.getWidth();
 
                // Gdx.app.getApplicationLogger().log("render pipeline", String.format("[sprite %s 2/2] intendedX %s | intendedY %s", spriteData.hashCode(), intendedX, intendedY));
                 // offset
                 intendedX -= spriteData.sprite.getOriginX() - 0.5f;
                // intendedX -= spriteData.sprite.getOriginX();
 
-                if ((int)higlightThis.x == (int) spriteData.spritePos3D.x
-                        && (int)higlightThis.y == (int) spriteData.spritePos3D.y) {
+                if ((int)higlightThis.x == (int) spriteData.position.x
+                        && (int)higlightThis.y == (int) spriteData.position.y
+                       /* && (int)higlightThis.z == (int) spriteData.position.z*/) {
                     intendedY += 0.125f; //* spriteData.sprite.getWidth();
                 }
             } else {
-                if ((int)higlightThis.x == (int) spriteData.spritePos3D.x
-                        && (int)higlightThis.y == (int) spriteData.spritePos3D.y) {
+                if ((int)higlightThis.x == (int) spriteData.position.x
+                        && (int)higlightThis.y == (int) spriteData.position.y) {
                     spriteData.sprite.rotate(45);
                 }
             }
+            // draw "shadow"
+            // kinda works, but looks absolutely stupid
+            /*
+            spriteData.sprite.setPosition(
+                    intendedX,
+                    intendedY
+            );
+            spriteData.sprite.setScale(spriteData.sprite.getScaleX() + 0.0625f, spriteData.sprite.getScaleY() + 0.0625f);
+
+            Color beforeShadow = spriteData.sprite.getColor();
+
+            spriteData.sprite.setColor(new Color(0f,0f,0f,0.33f));
+            spriteData.sprite.draw(batch);
+
+            // reset
+            spriteData.sprite.setColor(beforeShadow);
+            spriteData.sprite.setScale(spriteData.sprite.getScaleX() - 0.0625f, spriteData.sprite.getScaleY() - 0.0625f);
+            */
+            // draw normal sprite
             spriteData.sprite.setPosition(
                 intendedX,
                 intendedY
             );
 
-            float distanceFromFocus = lockOnVector.dst(spriteData.spritePos3D);
+            float distanceFromFocus = lockOnVector.dst(spriteData.position);
             float distanceToFocus = 1- (distanceFromFocus / renderDistance);//tilePos.x, tilePos.y, tilePos.z*0.5f));
             //Gdx.app.getApplicationLogger().log("Render Pipeline", String.format("distance of tile %s to focus is %s", tile.tag, distanceToFocus));
 
@@ -547,8 +474,22 @@ TODO somehow translate mouse selection into world object selection?
             } else {
                 spriteData.sprite.setColor(new Color(distanceFog, distanceFog, distanceFog, 1f));
             }
-
-            spriteData.sprite.draw(batch, distanceToFocus > 0.3f ? 1f : distanceToFocus > 0.20 ? 0.5f : distanceToFocus > 0.10 ? 0.25f : 0f);
+            // TODO intersection with view camera...
+            int lockonX = (int) (Math.round(lockOnVector.x) - 4f);
+            int lockonY = (int) (Math.round(lockOnVector.y) - 4f);
+            int lockonZ = Math.round(lockOnVector.z);
+            if (
+                    spriteData.position.z > lockonZ  &&
+                    /*spriteData.position.z - lockonZ > 3 && */(
+                        0.5f * ( Math.max(spriteData.position.x, lockonX) - Math.min(spriteData.position.x, lockonX) ) < spriteData.position.z - lockonZ - 1 &&
+                        0.5f * ( Math.max(spriteData.position.y, lockonY) - Math.min(spriteData.position.y, lockonY) ) < spriteData.position.z - lockonZ - 1
+                    )
+                )
+            {
+              //  spriteData.sprite.draw(batch, 0.125f);
+            } else {
+                spriteData.sprite.draw(batch, distanceToFocus > 0.3f ? 1f : distanceToFocus > 0.20 ? 0.5f : distanceToFocus > 0.10 ? 0.25f : 0f);
+            }
         });
     }
 

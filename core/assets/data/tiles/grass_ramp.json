@@ -1,0 +1,28 @@
+{
+	"name": "grass_ramp",
+	"tag": "grass_ramp",
+	"height": 0.5,
+	"bounds": [0,0,0],
+	"renderData": {
+		"default": {
+			"path": "world/terrain/iso/grass_ramp_n.png",
+			"animated": false
+		},
+		"north": {
+			"path": "world/terrain/iso/grass_ramp_n.png",
+			"animated": false
+		},
+		"east": {
+			"path": "world/terrain/iso/grass_ramp_e.png",
+			"animated": false
+		},
+		"south": {
+			"path": "world/terrain/iso/grass_ramp_s.png",
+			"animated": false
+		},
+		"west": {
+			"path": "world/terrain/iso/grass_ramp_w.png",
+			"animated": false
+		}
+	}
+}

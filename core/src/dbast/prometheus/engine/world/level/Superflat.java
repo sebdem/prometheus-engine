@@ -1,10 +1,14 @@
 package dbast.prometheus.engine.world.level;
 
 import com.badlogic.gdx.Gdx;
+import com.badlogic.gdx.files.FileHandle;
+import com.badlogic.gdx.math.Vector3;
 import dbast.prometheus.engine.entity.EntityRegistry;
 import dbast.prometheus.engine.entity.components.*;
 import dbast.prometheus.engine.world.WorldSpace;
+import dbast.prometheus.engine.world.tile.TileData;
 import dbast.prometheus.engine.world.tile.TileRegistry;
+import dbast.prometheus.utils.GeneralUtils;
 
 public class Superflat {
 
@@ -21,16 +25,59 @@ public class Superflat {
         WorldSpace worldSpace = new WorldSpace(width, height);
         for (float y = 0; y < width; y++) {
             for (float x = 0; x < width; x++) {
+                worldSpace.placeTile(TileRegistry.getByTag("dirt_0"), x, y, 8);
+                worldSpace.placeTile(TileRegistry.getByTag("dirt_0"), x, y, 9);
                 worldSpace.placeTile(TileRegistry.getByTag("grass_0"), x, y, 0);
                 worldSpace.placeTile(TileRegistry.getByTag("dirt_0"), x, y, -1);
                 worldSpace.placeTile(TileRegistry.getByTag("dirt_0"), x, y, -2);
             }
         }
+
+        worldSpace.placeTile(TileRegistry.getByTag("stone_cliff_e"), 5, 5 , 1);
+        worldSpace.placeTile(TileRegistry.getByTag("dirt_0"), 6, 5 , 1);
+        worldSpace.placeTile(TileRegistry.getByTag("grass_0"), 6, 5 , 2);
+        worldSpace.placeTile(TileRegistry.getByTag("dirt_0"), 7, 5 , 1);
+        worldSpace.placeTile(TileRegistry.getByTag("grass_0"), 7, 5 , 2);
+
+        worldSpace.placeTile(TileRegistry.getByTag("grass_ramp"), 5, 6 , 1);
+        worldSpace.tileDataMap.put(new Vector3(5,6,1), new TileData("east"));
+        worldSpace.placeTile(TileRegistry.getByTag("dirt_0"), 6, 6 , 1);
+        worldSpace.placeTile(TileRegistry.getByTag("grass_0"), 6, 6 , 2);
+        worldSpace.placeTile(TileRegistry.getByTag("grass_ramp"), 6, 6 , 2);
+        worldSpace.tileDataMap.put(new Vector3(6,6,2), new TileData("east"));
+        worldSpace.placeTile(TileRegistry.getByTag("dirt_0"), 7, 6 , 1);
+        worldSpace.placeTile(TileRegistry.getByTag("grass_0"), 7, 6 , 2);
+
+        worldSpace.placeTile(TileRegistry.getByTag("grass_ramp"), 5, 7 , 1);
+        worldSpace.tileDataMap.put(new Vector3(5,7,1), new TileData("east"));
+        worldSpace.placeTile(TileRegistry.getByTag("dirt_0"), 6, 7 , 1);
+        worldSpace.placeTile(TileRegistry.getByTag("grass_ramp"), 6, 7 , 2);
+        worldSpace.tileDataMap.put(new Vector3(6,7,2), new TileData("east"));
+        worldSpace.placeTile(TileRegistry.getByTag("dirt_0"), 7, 7 , 1);
+        worldSpace.placeTile(TileRegistry.getByTag("grass_0"), 7, 7 , 2);
+
+
+        worldSpace.placeTile(TileRegistry.getByTag("stone_cliff_e"), 4, 8 , 1);
+        worldSpace.placeTile(TileRegistry.getByTag("dirt_0"), 5, 8 , 1);
+        worldSpace.placeTile(TileRegistry.getByTag("grass_0"), 5, 8 , 2);
+        worldSpace.placeTile(TileRegistry.getByTag("dirt_0"), 6, 8 , 1);
+        worldSpace.placeTile(TileRegistry.getByTag("grass_0"), 6, 8 , 2);
+
+
+        worldSpace.placeTile(TileRegistry.getByTag("dirt_0"), 17, 17 , 1);
+        worldSpace.placeTile(TileRegistry.getByTag("dirt_0"), 17, 19 , 1);
+        worldSpace.placeTile(TileRegistry.getByTag("dirt_0"), 17, 17 , 2);
+        worldSpace.placeTile(TileRegistry.getByTag("dirt_0"), 17, 19 , 2);
+        worldSpace.placeTile(TileRegistry.getByTag("dirt_0"), 17, 17 , 3);
+        worldSpace.placeTile(TileRegistry.getByTag("dirt_0"), 17, 18 , 3);
+        worldSpace.placeTile(TileRegistry.getByTag("dirt_0"), 17, 19 , 3);
+
+
         Gdx.app.getApplicationLogger().log("WorldSetup", "Generating Entities");
         worldSpace.entities = new EntityRegistry();
         worldSpace.entities.addNewEntity(
                 1L,
-                CollisionBox.createBasic(),
+                new CollisionBox(new Vector3(0.99f,0.99f,1.49f), false),
                 new SizeComponent(1f,1f),
                 new PositionComponent(worldSpace.getSpawnPoint()),
                 new InputControllerComponent(),
@@ -44,6 +91,28 @@ public class Superflat {
                                "sprites/player/player_moving_down.png"
                         ), 8, 1, 0.125f, true, "moving")
         );
+
+
+        FileHandle[] blobTextures = new FileHandle[]{
+                Gdx.files.internal("sprites/enemies/iso_blob_0.png"),
+                Gdx.files.internal("sprites/enemies/iso_blob_1.png"),
+                Gdx.files.internal("sprites/enemies/iso_blob_2.png")
+        };
+
+        for (int i = 0; i < 8; i++) {
+            worldSpace.entities.addNewEntity(
+                    CollisionBox.createBasic(),
+                    SizeComponent.createBasic(),
+                    new PositionComponent(worldSpace.getSpawnPoint()),
+                    new StateComponent(),
+                    new RenderComponent().setDefaultTexture(GeneralUtils.randomElement(blobTextures)),
+                    //SpriteComponent.fromTexture(new Texture(blobTextures[(int)(Math.random() * blobTextures.length)])),
+                    new VelocityComponent(0f,0f,0f),
+                    new TargetTraverseComponent()
+                    // new VelocityComponent((float)((Math.random() - 0.5f) * maxSpeed),(float)((Math.random() - 0.5f) * maxSpeed))
+            );
+        }
+
         return worldSpace;
     }
 }

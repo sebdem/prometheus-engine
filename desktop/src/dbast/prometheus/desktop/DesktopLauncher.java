@@ -27,7 +27,7 @@ public class DesktopLauncher {
 		//PrometheusConfig.conf.put("gridSnapIncrement", 0.5f); //8 pixel - a bit snappy
 		//PrometheusConfig.conf.put("gridSnapIncrement", 1f); //16 pixel - a bit snappy
 
-		PrometheusConfig.conf.put("useWorldTimeShading", true);
+		PrometheusConfig.conf.put("useWorldTimeShading", false);
 
 		if (PrometheusConfig.conf.get("isometric", Boolean.class)) {
 			PrometheusConfig.conf.put("baseSpriteSize", 32f);
@@ -44,7 +44,7 @@ public class DesktopLauncher {
 		config.height = 720;
 		config.width = 1280;
 
-		config.resizable = false;
+		config.resizable = true;
 		if (arguments.contains("fullscreen")) {
 			config.fullscreen = true;
 

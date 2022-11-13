@@ -1,6 +1,7 @@
 package dbast.prometheus.engine.serializing;
 
 import com.badlogic.gdx.files.FileHandle;
+import com.badlogic.gdx.math.Vector3;
 import com.google.gson.Gson;
 import dbast.prometheus.engine.serializing.data.RenderComponentMap;
 import dbast.prometheus.engine.world.tile.Tile;
@@ -9,12 +10,16 @@ public class TileLoader extends AbstractLoader<Tile> {
 
     public String name;
     public String tag;
+    public Float height = 1f;
+    public float[] bounds = new float[]{1f,1f,1f};
 
     public RenderComponentMap renderData;
 
     public Tile build() {
         Tile tile = new Tile();
         tile.tag = tag;
+        tile.height = height;
+        tile.bounds = new Vector3(bounds);
         tile.renderComponent = this.renderData.build();
         return tile;
     }

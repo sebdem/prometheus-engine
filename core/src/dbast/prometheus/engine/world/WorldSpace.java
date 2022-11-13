@@ -3,10 +3,18 @@ package dbast.prometheus.engine.world;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.files.FileHandle;
 import com.badlogic.gdx.graphics.Color;
+import com.badlogic.gdx.graphics.Mesh;
+import com.badlogic.gdx.graphics.g2d.RepeatablePolygonSprite;
 import com.badlogic.gdx.math.MathUtils;
+import com.badlogic.gdx.math.Polygon;
+import com.badlogic.gdx.math.Rectangle;
 import com.badlogic.gdx.math.Vector3;
+import com.badlogic.gdx.math.collision.BoundingBox;
+import com.badlogic.gdx.math.collision.Segment;
 import com.badlogic.gdx.physics.box2d.World;
+import com.badlogic.gdx.physics.bullet.softbody.btSoftBody;
 import com.google.gson.Gson;
+import com.sun.javafx.geom.Shape;
 import dbast.prometheus.engine.entity.Entity;
 import dbast.prometheus.engine.entity.EntityRegistry;
 import dbast.prometheus.engine.entity.components.InputControllerComponent;
@@ -16,39 +24,87 @@ import dbast.prometheus.engine.serializing.data.WorldData;
 import dbast.prometheus.engine.world.tile.Tile;
 import dbast.prometheus.engine.world.tile.TileData;
 import dbast.prometheus.engine.world.tile.TileRegistry;
-import dbast.prometheus.utils.GeneralUtils;
 import dbast.prometheus.utils.Vector3Comparator;
 import dbast.prometheus.utils.Vector3IndexMap;
+import javafx.scene.shape.Shape3D;
 
-import java.util.Arrays;
-import java.util.stream.Stream;
+import java.util.*;
 
 // TODO WorldSpace builder from a level file
 public class WorldSpace {
 
+    /*
+        Basic World data
+     */
     public int height;
     public int width;
     public Vector3IndexMap<Tile> terrainTiles;
     public Vector3IndexMap<TileData> tileDataMap;
     public EntityRegistry entities;
-
+    int chunkSize = 16;
+    /*
+        Time data
+     */
     public float age = 720;
     public long realTime;
     public WorldTime currentTime;
+
+
+    /*
+        Generic data for runtime
+     */
+    public Vector3IndexMap<List<BoundingBox>> boundariesPerChunk;
+    // TODO It's chunkin' time
+    public Vector3IndexMap<WorldChunk> chunks;
+
+    protected boolean dataUpdate;
 
     public WorldSpace(int width, int height) {
         this.width = width;
         this.height = height;
         this.terrainTiles = new Vector3IndexMap<>(new Vector3Comparator.Planar());
+        this.tileDataMap = new Vector3IndexMap<>(new Vector3Comparator.Planar());
+        this.dataUpdate = true;
+        this.boundariesPerChunk = new Vector3IndexMap<>(new Vector3Comparator.Planar());
     }
 
     public void update(float updateDelta) {
         this.age += updateDelta;
         this.realTime = System.currentTimeMillis();
         this.currentTime = WorldTime.get(this.age);
+
+        if (dataUpdate) {
+            Vector3IndexMap<List<BoundingBox>> tempBoundaries = new Vector3IndexMap<>(new Vector3Comparator.Planar());
+
+            for (Map.Entry<Vector3, Tile> tileEntry : terrainTiles.entrySet()) {
+                Tile tile = tileEntry.getValue();
+                Vector3 position = tileEntry.getKey();
+                Vector3 chunkPosition = getChunkFor(position);
+
+                List<BoundingBox> chunkBoundaries = tempBoundaries.getOrDefault(chunkPosition, new ArrayList<>());
+                BoundingBox tileBounds = tile.getBoundsFor(position);
+                if (tileBounds != null) {
+                    chunkBoundaries.add(tileBounds);
+                    tempBoundaries.put(chunkPosition, chunkBoundaries);
+                }
+            }
+
+            this.boundariesPerChunk = tempBoundaries;
+            dataUpdate = false;
+        }
+
     //   Gdx.app.getApplicationLogger().log("World", String.format("Current age: %s | RealTime: %s | CurrentTime: %s | currentOClock %s", this.age, realTime, currentTime.name(), (this.age / 60) % 24 ));
     }
 
+
+    public Vector3 getChunkFor(Vector3 worldPosition) {
+        return new Vector3(
+                (float)(Math.floor(worldPosition.x / chunkSize) * chunkSize),
+                (float)(Math.floor(worldPosition.y / chunkSize) * chunkSize),
+                0f
+                //(Math.floor(worldPosition.z / chunkSize) * chunkSize),
+        );
+    }
 
     public Color getSkyboxColor() {
         return this.currentTime.getSkyboxColor(this.age);
@@ -59,11 +115,11 @@ public class WorldSpace {
     }
 
     public WorldSpace placeTile(int tileId, float x, float y, float z) {
-        this.terrainTiles.put(new Vector3(x, y, z), TileRegistry.get(tileId));
-        return this;
+        return placeTile(TileRegistry.get(tileId), x, y, z);
     }
     public WorldSpace placeTile(Tile tile, float x, float y, float z) {
         this.terrainTiles.put(new Vector3(x, y, z), tile);
+        this.dataUpdate = true;
         return this;
     }
     public Tile lookupTile(float x, float y, float z) {
@@ -76,17 +132,18 @@ public class WorldSpace {
 
     public WorldSpace removeTile(float x, float y, float z) {
         this.terrainTiles.remove(new Vector3(x, y, z));
+        this.dataUpdate = true;
         return this;
     }
 
-    public boolean isValidPosition(Vector3 position) {
+    public boolean isPositionInWorld(Vector3 position) {
        /* Tile positionTile = lookupTile(position);
 
         return positionTile != null;//&& !positionTile.tag.equals("water");*/
         return  position.x >= 0 && position.x < this.width &&
                 position.y >= 0 && position.y < this.height;
     }
-    public boolean isOccupied(Vector3 position) {
+    public boolean isPositionFree(Vector3 position) {
         return lookupTile(position) == null;
        /* Tile positionTile = lookupTile(position);
 
@@ -94,7 +151,11 @@ public class WorldSpace {
     }
     public boolean canStandIn(Vector3 position) {
         Tile underPosition = lookupTile(position.cpy().sub(0,0,1f));
-        return !(underPosition == null || underPosition.tag.equals("water")) && lookupTile(position) == null;
+        Tile atPosition = lookupTile(position);
+        return !(
+                underPosition == null || underPosition.tag.equals("water")
+        ) && atPosition == null
+        ;
        /* Tile positionTile = lookupTile(position);
 
         return positionTile != null;//&& !positionTile.tag.equals("water");*/
@@ -111,7 +172,7 @@ public class WorldSpace {
                     1f
             );
             attempts++;
-            isValidPosition = this.isValidPosition(targetPosition) && this.canStandIn(targetPosition);
+            isValidPosition = this.isPositionInWorld(targetPosition) && this.canStandIn(targetPosition);
         } while (!isValidPosition && attempts < 100);
         return targetPosition;
     }
@@ -127,7 +188,7 @@ public class WorldSpace {
                     0f
             );
             attempts++;
-            isValidPosition = this.isValidPosition(targetPosition) && this.canStandIn(targetPosition);
+            isValidPosition = this.isPositionInWorld(targetPosition) && this.canStandIn(targetPosition);
         } while (!isValidPosition && attempts < 100);
         //Gdx.app.getApplicationLogger().log("WorldSpace", String.format("Entity %s Found valid?%s target %s in range for origin %s", entity.getId(), isValidPosition, targetPosition.toString(), currentPosition.toString()));
         if (!isValidPosition) {

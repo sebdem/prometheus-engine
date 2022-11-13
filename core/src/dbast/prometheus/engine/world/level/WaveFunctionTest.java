@@ -276,7 +276,7 @@ public class WaveFunctionTest {
 
             long remainingUnresolvedTiles =
                     allowedTiles.entrySet().stream().filter(allowed->
-                            worldSpace.isValidPosition(allowed.getKey()) &&
+                            worldSpace.isPositionInWorld(allowed.getKey()) &&
                                     allowed.getValue().size() > 1
                     ).count();
             Set<Vector3> collapsedPositions = new HashSet<>();
@@ -305,7 +305,7 @@ public class WaveFunctionTest {
 
                 remainingUnresolvedTiles =
                         allowedTiles.entrySet().stream().filter(allowed->
-                                worldSpace.isValidPosition(allowed.getKey()) &&
+                                worldSpace.isPositionInWorld(allowed.getKey()) &&
                                         allowed.getValue().size() > 1
                         ).count();
             }
@@ -358,7 +358,7 @@ public class WaveFunctionTest {
                         Vector3 nearbyTile = position.cpy().add(offset);
                         Gdx.app.getApplicationLogger().log("WorldGen", String.format("- For position %s: Checking neighbor %s", position, nearbyTile));
 
-                        if (worldSpace.isValidPosition(nearbyTile) && !closedList.contains(nearbyTile)) {
+                        if (worldSpace.isPositionInWorld(nearbyTile) && !closedList.contains(nearbyTile)) {
                             VectorListPair<Tile, Collection<Tile>> successor = openList.stream().filter(entry -> entry.getKey().equals(nearbyTile))
                                     .findFirst()
                                     .orElse(
@@ -475,7 +475,7 @@ public class WaveFunctionTest {
 
                 //  if (startPoint.dst(endPoint) < 100f) {
                 List<Vector3> pathSteps = GenerationUtils.findPath(startPoint, endPoint, 1f,
-                        worldSpace::isValidPosition,
+                        worldSpace::isPositionInWorld,
                         // avoid trees and dirt
                         (groundPosition) -> {
 
@@ -615,7 +615,7 @@ public class WaveFunctionTest {
         for(Vector3 offset : GenerationUtils.nearby4Of(new Vector3(0,0,0))) {
             Vector3 nearbyTile = position.cpy().add(offset);
 
-            if (worldSpace.isValidPosition(nearbyTile)) {
+            if (worldSpace.isPositionInWorld(nearbyTile)) {
                 allowedForPosition = allowedTiles.get(nearbyTile);
                 if (allowedForPosition != null && allowedForPosition.size() == 1) {
                     continue;

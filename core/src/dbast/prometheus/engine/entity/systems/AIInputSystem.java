@@ -94,7 +94,7 @@ public class AIInputSystem extends ComponentSystem{
                                  Vector3 start,
                                  Vector3 end) {
         List<Vector3> path = GenerationUtils.find3DPath(start, end,
-                (vector3)->worldSpace.isValidPosition(vector3),
+                (vector3)->worldSpace.isPositionInWorld(vector3),
                 (vector3)->worldSpace.canStandIn(vector3)
         );
         if (path.size() > 1) {

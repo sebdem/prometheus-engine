@@ -17,4 +17,8 @@ public class PrometheusConfig extends HashMap<String, Object> {
         Object value = super.get(key);
         return value == null ? null : valueType.cast(super.get(key));
     }
+
+    public static <E> E get(String key, Class<E> valueType, E defaultIfNull) {
+        return valueType.cast(conf.getOrDefault(key, defaultIfNull));
+    }
 }

@@ -39,6 +39,10 @@ public class VelocityComponent extends Component {
         this.velocity.z = velocity_z;
     }
 
+    public Vector3 getVelocity() {
+        return velocity;
+    }
+
     public boolean isMoving() {
         return velocity.len() > 0;
     }

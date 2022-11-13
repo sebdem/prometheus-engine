@@ -1,0 +1,10 @@
+{
+	"name": "stone_cliff",
+	"tag": "stone_cliff_e",
+	"renderData": {
+		"default": {
+			"path": "world/terrain/iso/hang_e.png",
+			"animated": false
+		}
+	}
+}
