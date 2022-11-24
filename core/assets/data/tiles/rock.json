@@ -1,0 +1,11 @@
+{
+	"name": "rock",
+	"tag": "rock",
+	"bound": [0.125,0.125,0,0.875,0.875,0.5],
+	"renderData": {
+		"default": {
+			"path": "world/terrain/iso/rock_thing.png",
+			"animated": false
+		}
+	}
+}

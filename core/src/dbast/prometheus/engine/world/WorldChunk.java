@@ -5,6 +5,7 @@ package dbast.prometheus.engine.world;
 public class WorldChunk {
 
     protected boolean requiredDataUpdate = true;
+    protected boolean loaded = false;
 
     public void update(float deltaTime) {
         if (requiredDataUpdate) {
@@ -16,6 +17,24 @@ public class WorldChunk {
     }
     // TODO consider dumber version of update, idea is to have update run on any chunks nearby players. Everything else will only simulate. Server may call update on anything anyway?
     public void simulate(float deltaTime) {
+        this.update(deltaTime);
+    }
 
+    /**
+     * loads data from associated source
+     * @return itself
+     */
+    public WorldChunk load() {
+        loaded = true;
+        return this;
+    }
+
+    /**
+     * unloads data
+     * @return itself
+     */
+    public WorldChunk unload() {
+        loaded = false;
+        return this;
     }
 }

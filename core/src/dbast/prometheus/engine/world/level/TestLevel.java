@@ -205,7 +205,7 @@ public class TestLevel {
                 1L,
                 new CollisionBox(1f,1f,false),
                 new SizeComponent(1f,1f),
-                new PositionComponent(0f, 0f),
+                new PositionComponent(worldSpace.getSpawnPoint()),
                 new InputControllerComponent(),
                 new VelocityComponent(0,0),
                 new HealthComponent(200f),
@@ -223,7 +223,7 @@ public class TestLevel {
             worldSpace.entities.addNewEntity(
                     CollisionBox.createBasic(),
                     SizeComponent.createBasic(),
-                    PositionComponent.initial(),
+                    new PositionComponent(worldSpace.getSpawnPoint()),
                     SpriteComponent.fromTexture(blobTextures[(int)(Math.random() * 3)]),
                     new VelocityComponent((float)((Math.random() * 3) - 1f),(float)((Math.random() * 3) - 1f))
             );

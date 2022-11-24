@@ -11,7 +11,7 @@ public class TileLoader extends AbstractLoader<Tile> {
     public String name;
     public String tag;
     public Float height = 1f;
-    public float[] bounds = new float[]{1f,1f,1f};
+    public float[] bounds = new float[]{0f,0f,0f,1f,1f,1f};
 
     public RenderComponentMap renderData;
 
@@ -19,7 +19,7 @@ public class TileLoader extends AbstractLoader<Tile> {
         Tile tile = new Tile();
         tile.tag = tag;
         tile.height = height;
-        tile.bounds = new Vector3(bounds);
+        tile.bounds = bounds;
         tile.renderComponent = this.renderData.build();
         return tile;
     }

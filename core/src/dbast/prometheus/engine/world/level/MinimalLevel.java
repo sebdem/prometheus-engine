@@ -1,6 +1,7 @@
 package dbast.prometheus.engine.world.level;
 
 import com.badlogic.gdx.Gdx;
+import com.badlogic.gdx.math.Vector3;
 import dbast.prometheus.engine.config.PrometheusConfig;
 import dbast.prometheus.engine.entity.EntityRegistry;
 import dbast.prometheus.engine.entity.components.*;
@@ -33,16 +34,21 @@ public class MinimalLevel {
         worldSpace.entities = new EntityRegistry();
         worldSpace.entities.addNewEntity(
                 1L,
-                new CollisionBox(1f,1f,false),
+                new CollisionBox(new Vector3(0.99f,0.99f,1.49f), false),
                 new SizeComponent(1f,1f),
-                PositionComponent.initial(),
+                new PositionComponent(worldSpace.getSpawnPoint()),
                 new InputControllerComponent(),
                 new VelocityComponent(0,0),
                 new HealthComponent(200f),
-                SpriteComponent.fromFile(Gdx.files.internal(
-                        (useIsometric) ?  "sprites/player/iso_test_01.png" : "sprites/player/test_01.png"
-                ))
+                new StateComponent(),
+                new RenderComponent()
+                        .registerAnimation(Gdx.files.internal("sprites/player/player_idle.png"
+                        ), 8, 1, 1.25f, true, "default")
+                        .registerAnimation(Gdx.files.internal(
+                                "sprites/player/player_moving_down.png"
+                        ), 8, 1, 0.125f, true, "moving")
         );
+
 
         //worldSpace.placeTile(TileRegistry.idOfTag("tree"), 2, 2, 1);
         worldSpace.placeTile(TileRegistry.idOfTag("grass_0"), 0,0, 0.75f);

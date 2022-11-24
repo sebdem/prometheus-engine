@@ -9,6 +9,7 @@ import dbast.prometheus.engine.world.WorldSpace;
 import dbast.prometheus.engine.world.tile.TileData;
 import dbast.prometheus.engine.world.tile.TileRegistry;
 import dbast.prometheus.utils.GeneralUtils;
+import net.dermetfan.gdx.math.MathUtils;
 
 public class Superflat {
 
@@ -22,14 +23,18 @@ public class Superflat {
 
 
     public WorldSpace setup() {
-        WorldSpace worldSpace = new WorldSpace(width, height);
-        for (float y = 0; y < width; y++) {
-            for (float x = 0; x < width; x++) {
-                worldSpace.placeTile(TileRegistry.getByTag("dirt_0"), x, y, 8);
-                worldSpace.placeTile(TileRegistry.getByTag("dirt_0"), x, y, 9);
-                worldSpace.placeTile(TileRegistry.getByTag("grass_0"), x, y, 0);
-                worldSpace.placeTile(TileRegistry.getByTag("dirt_0"), x, y, -1);
-                worldSpace.placeTile(TileRegistry.getByTag("dirt_0"), x, y, -2);
+        WorldSpace worldSpace = new WorldSpace(-width, -height, width, height);
+        for (float y = worldSpace.minY; y < worldSpace.height; y++) {
+            for (float x = worldSpace.minX; x < worldSpace.width; x++) {
+                if (!(MathUtils.between(x, 10, 20) && MathUtils.between(y, 20, 28))){
+                    worldSpace.placeTile(TileRegistry.getByTag("grass_0"), x, y, 0);
+                    worldSpace.placeTile(TileRegistry.getByTag("dirt_0"), x, y, -1);
+                };
+              //  worldSpace.placeTile(TileRegistry.getByTag("dirt_0"), x, y, 8);
+               // worldSpace.placeTile(TileRegistry.getByTag("dirt_0"), x, y, 9);
+                worldSpace.placeTile(TileRegistry.getByTag("stone"), x, y, -2);
+                worldSpace.placeTile(TileRegistry.getByTag("stone"), x, y, -3);
+                worldSpace.placeTile(TileRegistry.getByTag("stone"), x, y, -4);
             }
         }
 
@@ -72,12 +77,14 @@ public class Superflat {
         worldSpace.placeTile(TileRegistry.getByTag("dirt_0"), 17, 18 , 3);
         worldSpace.placeTile(TileRegistry.getByTag("dirt_0"), 17, 19 , 3);
 
+        worldSpace.placeTile(TileRegistry.getByTag("slap"), 20, 5 , 1);
+        worldSpace.placeTile(TileRegistry.getByTag("slap"), 0, 0 , 0);
 
         Gdx.app.getApplicationLogger().log("WorldSetup", "Generating Entities");
         worldSpace.entities = new EntityRegistry();
         worldSpace.entities.addNewEntity(
                 1L,
-                new CollisionBox(new Vector3(0.99f,0.99f,1.49f), false),
+                new CollisionBox(new Vector3(0.99f,0.99f,1.49f).scl(0.75f), false),
                 new SizeComponent(1f,1f),
                 new PositionComponent(worldSpace.getSpawnPoint()),
                 new InputControllerComponent(),
@@ -100,7 +107,9 @@ public class Superflat {
         };
 
         for (int i = 0; i < 8; i++) {
-            worldSpace.entities.addNewEntity(
+            Vector3 pos = worldSpace.getSpawnPoint();
+            worldSpace.placeTile(TileRegistry.getByTag("rock"), pos.x, pos.y, pos.z);
+            /*worldSpace.entities.addNewEntity(
                     CollisionBox.createBasic(),
                     SizeComponent.createBasic(),
                     new PositionComponent(worldSpace.getSpawnPoint()),
@@ -110,7 +119,7 @@ public class Superflat {
                     new VelocityComponent(0f,0f,0f),
                     new TargetTraverseComponent()
                     // new VelocityComponent((float)((Math.random() - 0.5f) * maxSpeed),(float)((Math.random() - 0.5f) * maxSpeed))
-            );
+            );*/
         }
 
         return worldSpace;

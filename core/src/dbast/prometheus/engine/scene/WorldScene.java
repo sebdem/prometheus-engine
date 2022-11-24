@@ -3,25 +3,14 @@ package dbast.prometheus.engine.scene;
 import com.badlogic.gdx.ApplicationLogger;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Input;
-import com.badlogic.gdx.ai.GdxAI;
-import com.badlogic.gdx.ai.GdxFileSystem;
 import com.badlogic.gdx.audio.Music;
 import com.badlogic.gdx.graphics.*;
 import com.badlogic.gdx.graphics.g2d.BitmapFont;
-import com.badlogic.gdx.graphics.g2d.Gdx2DPixmap;
 import com.badlogic.gdx.graphics.g2d.Sprite;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
-import com.badlogic.gdx.graphics.g3d.utils.shapebuilders.FrustumShapeBuilder;
-import com.badlogic.gdx.math.Frustum;
-import com.badlogic.gdx.math.Intersector;
-import com.badlogic.gdx.math.MathUtils;
-import com.badlogic.gdx.math.Vector3;
-import com.badlogic.gdx.math.collision.BoundingBox;
-import com.badlogic.gdx.math.collision.Ray;
-import com.badlogic.gdx.math.collision.Segment;
+import com.badlogic.gdx.math.*;
 import com.badlogic.gdx.scenes.scene2d.InputEvent;
 import com.badlogic.gdx.scenes.scene2d.InputListener;
-import com.badlogic.gdx.utils.GdxBuild;
 import dbast.prometheus.engine.LockOnCamera;
 import dbast.prometheus.engine.config.PrometheusConfig;
 import dbast.prometheus.engine.entity.Entity;
@@ -29,12 +18,15 @@ import dbast.prometheus.engine.entity.components.*;
 import dbast.prometheus.engine.entity.systems.*;
 import dbast.prometheus.engine.events.Event;
 import dbast.prometheus.engine.events.EventBus;
+import dbast.prometheus.engine.graphics.SpriteType;
+import dbast.prometheus.engine.serializing.WorldMapLoader;
 import dbast.prometheus.engine.world.WorldSpace;
+import dbast.prometheus.engine.world.level.MinimalLevel2;
 import dbast.prometheus.engine.world.level.Superflat;
 import dbast.prometheus.engine.world.tile.TileData;
 import dbast.prometheus.engine.world.tile.TileRegistry;
 import dbast.prometheus.utils.GeneralUtils;
-import dbast.prometheus.utils.SpriteDataQueue;
+import dbast.prometheus.engine.graphics.SpriteDataQueue;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -67,8 +59,10 @@ public class WorldScene extends AbstractScene{
         super.create();
         font = new BitmapFont();
         font.setColor(Color.valueOf("#FFFFFF"));
-        font.getRegion().getTexture().setFilter(Texture.TextureFilter.Linear, Texture.TextureFilter.Linear);
-        font.getData().setScale(0.1f);
+      //  font.getRegion().getTexture().setFilter(Texture.TextureFilter.Linear, Texture.TextureFilter.Linear);
+      //  font.getData().setScale(0.21f);
+        font.setUseIntegerPositions(false);
+        font.getData().setScale(0.0125f);
         font.getData().setLineHeight(1.0f);
 
         this.background = Color.valueOf("0077FF");
@@ -82,14 +76,15 @@ public class WorldScene extends AbstractScene{
         bgmMusic.setLooping(true);
 
         // ==== [ prepare world ] ============================
-        /*world = new WaveFunctionTest(100, 100, 20, false, true,
+       /* world = new WaveFunctionTest(100, 100, 20, false, true,
                 Arrays.asList(
                         new CastleTower("brickF"),
                         new CastleTower("dirt_0"),
                         new Hole()
                 ), 6,20).setup();*/
-        world = new Superflat(48, 48).setup();
-        //world = WorldMapLoader.fromJson(Gdx.files.local("save/world_38571562605.json")).build();
+        world = new Superflat(30, 30).setup();
+       // world = new MinimalLevel2().setup();
+       // world = WorldMapLoader.fromJson(Gdx.files.local("save/world_38571562605.json")).build();
 
         // ==== [ camera setup ] ============================
         Entity cameraFocus = world.getCameraFocus();
@@ -222,26 +217,31 @@ public class WorldScene extends AbstractScene{
                     tileState = tileData.state;
                 }
 
-                Sprite tileSprite = new Sprite(tile.renderComponent.getTexture(animatorLife,tileState));
+                Sprite sprite = new Sprite(tile.renderComponent.getTexture(animatorLife,tileState));
 
                 float spriteX = tilePos.x;
                 float spriteY = tilePos.y;
 
-                tileSprite.setOrigin(0.5f * (tileSprite.getRegionWidth() / baseSpriteSize), 0.f);
-                tileSprite.setPosition(spriteX, spriteY);
+                //sprite.setOrigin(0.5f * (sprite.getRegionWidth() / baseSpriteSize), 1f/*0.f*/);
+               // sprite.setOrigin(0.5f * (sprite.getRegionWidth() / baseSpriteSize), (sprite.getRegionHeight() / baseSpriteSize)-0.5f/*0.f*/);
+                float originX  = 0.5f;
+                float originY  = 1f-(0.5f/(sprite.getRegionHeight() / baseSpriteSize));
+                sprite.setOrigin(originX, originY/*0.f*/);
+
+                sprite.setPosition(spriteX, spriteY);
 
                // tileSprite.setSize(tileSprite.getRegionWidth() / (float)tile.tileTexture.getWidth(), tileSprite.getRegionHeight() / (float)tile.tileTexture.getWidth());
-                tileSprite.setSize(tileSprite.getRegionWidth() / (float)baseSpriteSize, tileSprite.getRegionHeight() / baseSpriteSize);
+                sprite.setSize(sprite.getRegionWidth() / (float)baseSpriteSize, sprite.getRegionHeight() / baseSpriteSize);
 
                 //tileBatch.put(tilePos, tileSprite);
-                spriteQueue.add(tilePos, tileSprite);
+                spriteQueue.add(tilePos, sprite).update(SpriteType.TILE);
 
                 // =========================================================================================================
                 // <editor-fold desc="---- start debugging nonsense ----"
                 // =========================================================================================================
-                if (gui.isDebugAll() && !debuggedSprites.contains(tileSprite.hashCode())) {
-                    TextureData spriteTexture = tileSprite.getTexture().getTextureData();
-                    debuggedSprites.add(tileSprite.hashCode());
+                if (gui.isDebugAll() && !debuggedSprites.contains(sprite.hashCode())) {
+                    TextureData spriteTexture = sprite.getTexture().getTextureData();
+                    debuggedSprites.add(sprite.hashCode());
                     if (!spriteTexture.isPrepared()) {
                         spriteTexture.prepare();
                     }
@@ -254,12 +254,12 @@ public class WorldScene extends AbstractScene{
                     pixmap.drawPixel(0,0);
 
                     pixmap.setColor(0xFF00FFFF);
-                    pixmap.drawPixel((int)(tileSprite.getOriginX() * (pixmap.getWidth()-1)),(int)(tileSprite.getOriginY() * (pixmap.getHeight()-1)));
+                    pixmap.drawPixel((int)(sprite.getOriginX() * (pixmap.getWidth()-1)),(int)(sprite.getOriginY() * (pixmap.getHeight()-1)));
 
 
                     spriteTexture.disposePixmap();
 
-                    tileSprite.setTexture(new Texture(pixmap));
+                    sprite.setTexture(new Texture(pixmap));
                 }
                 // =========================================================================================================
                 //</editor-fold>
@@ -297,7 +297,7 @@ public class WorldScene extends AbstractScene{
 
             Sprite sprite = new Sprite(renderComponent.getTexture(animatorLife));
             // sprite.setOrigin(0.5f, 1f);
-            sprite.setOrigin(0.5f * (sprite.getRegionWidth() / baseSpriteSize), 1f * (sprite.getRegionHeight() / baseSpriteSize));
+            sprite.setOrigin(0.5f * (sprite.getRegionWidth() / baseSpriteSize), 0.25f + (sprite.getRegionHeight() / baseSpriteSize));
 
            // spriteY += entityPos.z * (sprite.getOriginY() * sprite.getHeight());
 
@@ -308,7 +308,7 @@ public class WorldScene extends AbstractScene{
             //entityBatch.put(entityPos, sprite);
            // Gdx.app.getApplicationLogger().log("render pipeline", String.format("[entity %s] sprite %s | X %s | Y %s | Z  %s | KEY: %s", entity.getId(), sprite.hashCode(), spriteX, spriteY, entityPos.z, skey ));
             //spriteQueue.put(skey, sprite);
-            spriteQueue.add(entityPos, sprite);
+            spriteQueue.add(entityPos, sprite).update(SpriteType.ENTITY);
 
             // =========================================================================================================
             // <editor-fold desc="---- start debugging nonsense ----"
@@ -390,11 +390,15 @@ public class WorldScene extends AbstractScene{
         float fogOfWarRange = world.getSightRange();
         Color lightingColor = world.currentTime.getLightingColor(world.age);
 
+        boolean renderShadow = false;
+        boolean renderOrderIndex = false;
+        boolean viewCulling = false;
+
         spriteQueue.forEach((spriteData)-> {
             // begin of render pipeline...
             // TODO can this be delegated to actual shader logic, hopefully sparing sweet CPU calculation time??
-            float intendedX = spriteData.position.x;
-            float intendedY = spriteData.position.y;
+            float intendedX = spriteData.levelPosition.x;
+            float intendedY = spriteData.levelPosition.y;
             // Gdx.app.getApplicationLogger().log("render pipeline", String.format("[sprite %s 1/2] intendedX %s | intendedY %s", spriteData.hashCode(), intendedX, intendedY));
             if (!useIsometric) {
              //   intendedY += spriteData.spritePos3D.z;
@@ -419,49 +423,50 @@ public class WorldScene extends AbstractScene{
                 intendedX = unmodified.x ;//* spriteData.sprite.getWidth();
                 intendedY = unmodified.y;// * spriteData.sprite.getWidth();
                 // offset, because why the fuck?
-                intendedY += spriteData.position.z * 0.5f /*- 0.6f*/;// * spriteData.sprite.getWidth();
+                intendedY += spriteData.levelPosition.z * 0.5f /*- 0.6f*/;// * spriteData.sprite.getWidth();
 
                // Gdx.app.getApplicationLogger().log("render pipeline", String.format("[sprite %s 2/2] intendedX %s | intendedY %s", spriteData.hashCode(), intendedX, intendedY));
                 // offset
-                intendedX -= spriteData.sprite.getOriginX() - 0.5f;
+                intendedX -= (spriteData.sprite.getOriginX() * spriteData.sprite.getWidth())- 0.5f;
                // intendedX -= spriteData.sprite.getOriginX();
 
-                if ((int)higlightThis.x == (int) spriteData.position.x
-                        && (int)higlightThis.y == (int) spriteData.position.y
+                if ((int)higlightThis.x == (int) spriteData.levelPosition.x
+                        && (int)higlightThis.y == (int) spriteData.levelPosition.y
                        /* && (int)higlightThis.z == (int) spriteData.position.z*/) {
                     intendedY += 0.125f; //* spriteData.sprite.getWidth();
                 }
             } else {
-                if ((int)higlightThis.x == (int) spriteData.position.x
-                        && (int)higlightThis.y == (int) spriteData.position.y) {
+                if ((int)higlightThis.x == (int) spriteData.levelPosition.x
+                        && (int)higlightThis.y == (int) spriteData.levelPosition.y) {
                     spriteData.sprite.rotate(45);
                 }
             }
+
             // draw "shadow"
             // kinda works, but looks absolutely stupid
-            /*
-            spriteData.sprite.setPosition(
-                    intendedX,
-                    intendedY
-            );
-            spriteData.sprite.setScale(spriteData.sprite.getScaleX() + 0.0625f, spriteData.sprite.getScaleY() + 0.0625f);
+            if (renderShadow) {
+                spriteData.sprite.setPosition(
+                        intendedX,
+                        intendedY
+                );
+                spriteData.sprite.setScale(spriteData.sprite.getScaleX() + 0.0625f, spriteData.sprite.getScaleY() + 0.0625f);
 
-            Color beforeShadow = spriteData.sprite.getColor();
+                Color beforeShadow = spriteData.sprite.getColor();
 
-            spriteData.sprite.setColor(new Color(0f,0f,0f,0.33f));
-            spriteData.sprite.draw(batch);
+                spriteData.sprite.setColor(new Color(0f,0f,0f,0.33f));
+                spriteData.sprite.draw(batch);
 
-            // reset
-            spriteData.sprite.setColor(beforeShadow);
-            spriteData.sprite.setScale(spriteData.sprite.getScaleX() - 0.0625f, spriteData.sprite.getScaleY() - 0.0625f);
-            */
+                // reset
+                spriteData.sprite.setColor(beforeShadow);
+                spriteData.sprite.setScale(spriteData.sprite.getScaleX() - 0.0625f, spriteData.sprite.getScaleY() - 0.0625f);
+            }
             // draw normal sprite
             spriteData.sprite.setPosition(
                 intendedX,
                 intendedY
             );
 
-            float distanceFromFocus = lockOnVector.dst(spriteData.position);
+            float distanceFromFocus = lockOnVector.dst(spriteData.levelPosition);
             float distanceToFocus = 1- (distanceFromFocus / renderDistance);//tilePos.x, tilePos.y, tilePos.z*0.5f));
             //Gdx.app.getApplicationLogger().log("Render Pipeline", String.format("distance of tile %s to focus is %s", tile.tag, distanceToFocus));
 
@@ -474,21 +479,33 @@ public class WorldScene extends AbstractScene{
             } else {
                 spriteData.sprite.setColor(new Color(distanceFog, distanceFog, distanceFog, 1f));
             }
-            // TODO intersection with view camera...
-            int lockonX = (int) (Math.round(lockOnVector.x) - 4f);
-            int lockonY = (int) (Math.round(lockOnVector.y) - 4f);
-            int lockonZ = Math.round(lockOnVector.z);
-            if (
-                    spriteData.position.z > lockonZ  &&
-                    /*spriteData.position.z - lockonZ > 3 && */(
-                        0.5f * ( Math.max(spriteData.position.x, lockonX) - Math.min(spriteData.position.x, lockonX) ) < spriteData.position.z - lockonZ - 1 &&
-                        0.5f * ( Math.max(spriteData.position.y, lockonY) - Math.min(spriteData.position.y, lockonY) ) < spriteData.position.z - lockonZ - 1
-                    )
-                )
-            {
-              //  spriteData.sprite.draw(batch, 0.125f);
-            } else {
-                spriteData.sprite.draw(batch, distanceToFocus > 0.3f ? 1f : distanceToFocus > 0.20 ? 0.5f : distanceToFocus > 0.10 ? 0.25f : 0f);
+
+            if (viewCulling) {
+                // TODO intersection with view camera...
+                int lockonX = (int) (Math.round(lockOnVector.x) - 4f);
+                int lockonY = (int) (Math.round(lockOnVector.y) - 4f);
+                int lockonZ = Math.round(lockOnVector.z);
+                if (
+                        spriteData.levelPosition.z > lockonZ  &&
+                                /*spriteData.position.z - lockonZ > 3 && */(
+                                0.5f * ( Math.max(spriteData.levelPosition.x, lockonX) - Math.min(spriteData.levelPosition.x, lockonX) ) < spriteData.levelPosition.z - lockonZ - 1 &&
+                                        0.5f * ( Math.max(spriteData.levelPosition.y, lockonY) - Math.min(spriteData.levelPosition.y, lockonY) ) < spriteData.levelPosition.z - lockonZ - 1
+                        )
+                ) {
+                    //  spriteData.sprite.draw(batch, 0.125f);
+                    return;
+                }
+            }
+            spriteData.sprite.draw(batch, distanceToFocus > 0.3f ? 1f : distanceToFocus > 0.20 ? 0.5f : distanceToFocus > 0.10 ? 0.25f : 0f);
+
+            if (renderOrderIndex) {
+                /*if(spriteData.position.equals(lockOnVector)) {
+                    logger.log("renderer", String.format("Player sprite has %s as order index", spriteData.orderIndex.toString()));
+                }*/
+                font.setColor(Color.YELLOW);
+                font.draw(batch,  spriteData.orderIndex.toString(),
+                        intendedX + spriteData.sprite.getWidth() * 0.25f,
+                        intendedY + 2 * spriteData.sprite.getOriginY());
             }
         });
     }

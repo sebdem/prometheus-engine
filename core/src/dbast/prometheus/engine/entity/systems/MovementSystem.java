@@ -64,10 +64,12 @@ public class MovementSystem extends ComponentSystem {
 */
                 Vector3 chunkPosition = worldSpace.getChunkFor(newPos);
                 List<BoundingBox> chunkBounds = worldSpace.boundariesPerChunk.get(chunkPosition);
-                for(BoundingBox bb : chunkBounds) {
-                    if (bb.intersects(entityBoundary)) {
-                        canMoveTo = false;
-                        Gdx.app.getApplicationLogger().log("Movement", "Player corner " + newPos.toString() + " intersects with bounds " + bb.toString());
+                if (chunkBounds != null && !chunkBounds.isEmpty()) {
+                    for(BoundingBox bb : chunkBounds) {
+                        if (bb.intersects(entityBoundary)) {
+                            canMoveTo = false;
+                            Gdx.app.getApplicationLogger().log("Movement", "Player corner " + newPos.toString() + " intersects with bounds " + bb.toString());
+                        }
                     }
                 }/*
 

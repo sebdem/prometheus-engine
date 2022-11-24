@@ -50,7 +50,7 @@ public class WaveFunctionTest {
     }
 
     public WorldSpace setup() {
-        WorldSpace worldSpace = new WorldSpace(width, height);
+        WorldSpace worldSpace = new WorldSpace(-width, -height, width, height);
         boolean useIsometric = (Boolean) PrometheusConfig.conf.getOrDefault("isometric", false);
 
         // Step 0: Define tile "rules"

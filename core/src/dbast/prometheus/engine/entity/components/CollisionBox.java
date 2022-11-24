@@ -3,7 +3,7 @@ package dbast.prometheus.engine.entity.components;
 import com.badlogic.gdx.math.Polygon;
 import com.badlogic.gdx.math.Vector3;
 
-// TODO migrate to BoundingBox?
+//TODO migrate to BoundingBox?
 public class CollisionBox extends Component {
 
     private Vector3 boundaries;

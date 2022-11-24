@@ -30,14 +30,17 @@ import javafx.scene.shape.Shape3D;
 
 import java.util.*;
 
-// TODO WorldSpace builder from a level file
 public class WorldSpace {
 
     /*
         Basic World data
      */
+    public int minX;
+    public int minY;
     public int height;
     public int width;
+    // TODO introduce boundaries as a cube "playarea", adjust methods accordingly
+
     public Vector3IndexMap<Tile> terrainTiles;
     public Vector3IndexMap<TileData> tileDataMap;
     public EntityRegistry entities;
@@ -60,6 +63,11 @@ public class WorldSpace {
     protected boolean dataUpdate;
 
     public WorldSpace(int width, int height) {
+        this(0,0, width, height);
+    }
+    public WorldSpace(int minX, int minY, int width, int height) {
+        this.minX = minX;
+        this.minY = minY;
         this.width = width;
         this.height = height;
         this.terrainTiles = new Vector3IndexMap<>(new Vector3Comparator.Planar());
@@ -67,6 +75,7 @@ public class WorldSpace {
         this.dataUpdate = true;
         this.boundariesPerChunk = new Vector3IndexMap<>(new Vector3Comparator.Planar());
     }
+
 
     public void update(float updateDelta) {
         this.age += updateDelta;
@@ -140,8 +149,8 @@ public class WorldSpace {
        /* Tile positionTile = lookupTile(position);
 
         return positionTile != null;//&& !positionTile.tag.equals("water");*/
-        return  position.x >= 0 && position.x < this.width &&
-                position.y >= 0 && position.y < this.height;
+        return  position.x >= minX && position.x < this.width &&
+                position.y >= minY && position.y < this.height;
     }
     public boolean isPositionFree(Vector3 position) {
         return lookupTile(position) == null;
@@ -167,8 +176,8 @@ public class WorldSpace {
         int attempts = 0;
         do {
             targetPosition.set(
-                    (float) (MathUtils.random(0, this.width)),
-                    (float) (MathUtils.random(0, this.height)),
+                    (float) (MathUtils.random(minX, this.width)),
+                    (float) (MathUtils.random(minY, this.height)),
                     1f
             );
             attempts++;
