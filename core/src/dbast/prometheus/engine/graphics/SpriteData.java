@@ -2,7 +2,10 @@ package dbast.prometheus.engine.graphics;
 
 import com.badlogic.gdx.graphics.g2d.Sprite;
 import com.badlogic.gdx.math.Vector3;
-import dbast.prometheus.engine.world.WorldSpace;
+import dbast.prometheus.engine.world.Direction;
+
+import java.util.HashSet;
+import java.util.Set;
 
 public class SpriteData implements Comparable<SpriteData> {
     public Float orderIndex;
@@ -11,11 +14,14 @@ public class SpriteData implements Comparable<SpriteData> {
     public Vector3 levelPosition;
     //public Vector3 spriteOrigin;
 
+    public Set<Direction> notBlocked;
+
     public SpriteData(Sprite sprite, Vector3 orderPosition) {
         // factually correct
         //this.spriteOrigin = spritePos3D.cpy().add(sprite.getOriginX(), 0,  sprite.getOriginY());
         this.sprite = sprite;
         this.levelPosition = orderPosition;
+        this.notBlocked = new HashSet<>();
         recalcOrderIndex();
     }
     public float recalcOrderIndex() {
@@ -33,6 +39,7 @@ public class SpriteData implements Comparable<SpriteData> {
                         -(levelPosition.x * xyWeight + sprite.getOriginX() * sprite.getWidth() + levelPosition.y * xyWeight);*/
         // this is a more expensive, but 'correct' priority, based on the pure levelPosition distance to predefined comparePoint
         this.orderIndex = this.levelPosition.cpy().add(0,0,type.priorityOffset).dst2(comparePoint);
+       // this.orderIndex = levelPosition.z + type.priorityOffset - (levelPosition.x + levelPosition.y);
 
         // almost solution for terrain...
         // this.orderIndex = -(spritePos3D.x + sprite.getOriginX() + spritePos3D.y) + (spritePos3D.z / (spritePos3D.x + spritePos3D.y)) + sprite.getOriginY();
@@ -68,7 +75,8 @@ public class SpriteData implements Comparable<SpriteData> {
             }
             return yComp == 0 ? zComp == 0 ? xComp : zComp: yComp;*/
 
-       // return this.orderIndex.compareTo(o.orderIndex);
+
+        //return this.orderIndex.compareTo(o.orderIndex);
         return o.orderIndex.compareTo(this.orderIndex);
        // return Float.compare(this.levelPosition.dst(comparePoint), o.levelPosition.dst(comparePoint));
         //return this.orderIndex.compareTo(o.orderIndex);

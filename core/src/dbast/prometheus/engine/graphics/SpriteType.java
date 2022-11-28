@@ -4,7 +4,8 @@ public enum SpriteType {
     DEFAULT(0f),
     TILE(0f),
     ENTITY(1f),
-    OVERSIZE(0f);
+    OVERSIZE_2(2f),
+    OVERSIZE_3(3f);
 
     public float priorityOffset = 0f;
 

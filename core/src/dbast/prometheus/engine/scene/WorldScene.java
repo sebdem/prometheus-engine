@@ -18,10 +18,10 @@ import dbast.prometheus.engine.entity.components.*;
 import dbast.prometheus.engine.entity.systems.*;
 import dbast.prometheus.engine.events.Event;
 import dbast.prometheus.engine.events.EventBus;
+import dbast.prometheus.engine.graphics.SpriteData;
 import dbast.prometheus.engine.graphics.SpriteType;
-import dbast.prometheus.engine.serializing.WorldMapLoader;
+import dbast.prometheus.engine.world.Direction;
 import dbast.prometheus.engine.world.WorldSpace;
-import dbast.prometheus.engine.world.level.MinimalLevel2;
 import dbast.prometheus.engine.world.level.Superflat;
 import dbast.prometheus.engine.world.tile.TileData;
 import dbast.prometheus.engine.world.tile.TileRegistry;
@@ -49,6 +49,12 @@ public class WorldScene extends AbstractScene{
 
     public static ApplicationLogger logger = Gdx.app.getApplicationLogger();
 
+    protected Texture background_image;
+
+    // TODO move them somewhere more fit...
+    protected Sprite borderSpriteNorth;
+    protected Sprite borderSpriteEast;
+
     public WorldScene(String key) {
         super(key);
     }
@@ -74,6 +80,18 @@ public class WorldScene extends AbstractScene{
 
         bgmMusic = Gdx.audio.newMusic(Gdx.files.local("resources/sounds/song.wav"));
         bgmMusic.setLooping(true);
+
+        background_image = new Texture(Gdx.files.internal("skybox.png"));
+       // background_image.setWrap(Texture.TextureWrap.MirroredRepeat, Texture.TextureWrap.MirroredRepeat);
+
+        borderSpriteNorth = new Sprite(new Texture(Gdx.files.local("world/terrain/iso/border_n.png")));
+        borderSpriteNorth.setOrigin(0.5f, 1f-(0.5f/(borderSpriteNorth.getRegionHeight() / baseSpriteSize)));
+        borderSpriteNorth.setSize(borderSpriteNorth.getRegionWidth() / (float)baseSpriteSize, borderSpriteNorth.getRegionHeight() / baseSpriteSize);
+
+        borderSpriteEast = new Sprite(new Texture(Gdx.files.local("world/terrain/iso/border_e.png")));
+        borderSpriteEast.setOrigin(0.5f, 1f-(0.5f/(borderSpriteEast.getRegionHeight() / baseSpriteSize)));
+        borderSpriteEast.setSize(borderSpriteEast.getRegionWidth() / (float)baseSpriteSize, borderSpriteEast.getRegionHeight() / baseSpriteSize);
+
 
         // ==== [ prepare world ] ============================
        /* world = new WaveFunctionTest(100, 100, 20, false, true,
@@ -234,7 +252,15 @@ public class WorldScene extends AbstractScene{
                 sprite.setSize(sprite.getRegionWidth() / (float)baseSpriteSize, sprite.getRegionHeight() / baseSpriteSize);
 
                 //tileBatch.put(tilePos, tileSprite);
-                spriteQueue.add(tilePos, sprite).update(SpriteType.TILE);
+                SpriteData spriteData = spriteQueue.add(tilePos, sprite);
+
+                spriteData.update(SpriteType.TILE);
+
+                for(Direction dirEnum : Direction.values()) {
+                    if (world.lookupTile(tilePos.cpy().add(dirEnum.dir)) != tile) {
+                        spriteData.notBlocked.add(dirEnum);
+                    }
+                }
 
                 // =========================================================================================================
                 // <editor-fold desc="---- start debugging nonsense ----"
@@ -367,7 +393,6 @@ public class WorldScene extends AbstractScene{
     @Override
     public void mainRender(int windowWidth, int windowHeight, float aspect){
         font.setColor(Color.WHITE);
-
         spriteQueue.clear();
 
         float deltaTime = Gdx.graphics.getDeltaTime();
@@ -388,9 +413,10 @@ public class WorldScene extends AbstractScene{
       //  logger.log("Highlight:", String.format("Highlighting %s", higlightThis.toString()));
 
         float fogOfWarRange = world.getSightRange();
-        Color lightingColor = world.currentTime.getLightingColor(world.age);
+        Color lightingColor = world.worldTime.getLightingColor(world.age);
 
         boolean renderShadow = false;
+        boolean renderBorderSprites = true;
         boolean renderOrderIndex = false;
         boolean viewCulling = false;
 
@@ -414,7 +440,8 @@ public class WorldScene extends AbstractScene{
             if (useIsometric) {
                 float unmodifiedX = intendedX;
                 float unmodifiedY = intendedY;
-                Vector3 unmodified = new Vector3(unmodifiedX, unmodifiedY, 0);
+                Vector3 unmodified = new Vector3(unmodifiedX, unmodifiedY, spriteData.levelPosition.z);
+                //unmodified = GeneralUtils.projectIso(unmodified, spriteData.sprite.getWidth() * 0.5f, spriteData.sprite.getHeight() * 0.5f);
                 unmodified.prj(LockOnCamera.isoTransform);
 
                 // sprite height should be used here according to render logic... For some reason spritebased sizes fuck this up however, therefor use width
@@ -423,6 +450,7 @@ public class WorldScene extends AbstractScene{
                 intendedX = unmodified.x ;//* spriteData.sprite.getWidth();
                 intendedY = unmodified.y;// * spriteData.sprite.getWidth();
                 // offset, because why the fuck?
+               // intendedY += spriteData.levelPosition.z * 0.5f /*- 0.6f*/;// * spriteData.sprite.getWidth();
                 intendedY += spriteData.levelPosition.z * 0.5f /*- 0.6f*/;// * spriteData.sprite.getWidth();
 
                // Gdx.app.getApplicationLogger().log("render pipeline", String.format("[sprite %s 2/2] intendedX %s | intendedY %s", spriteData.hashCode(), intendedX, intendedY));
@@ -460,7 +488,8 @@ public class WorldScene extends AbstractScene{
                 spriteData.sprite.setColor(beforeShadow);
                 spriteData.sprite.setScale(spriteData.sprite.getScaleX() - 0.0625f, spriteData.sprite.getScaleY() - 0.0625f);
             }
-            // draw normal sprite
+
+            // reposition sprite
             spriteData.sprite.setPosition(
                 intendedX,
                 intendedY
@@ -496,7 +525,30 @@ public class WorldScene extends AbstractScene{
                     return;
                 }
             }
-            spriteData.sprite.draw(batch, distanceToFocus > 0.3f ? 1f : distanceToFocus > 0.20 ? 0.5f : distanceToFocus > 0.10 ? 0.25f : 0f);
+
+            float spriteAlpha =  distanceToFocus > 0.3f ? 1f : distanceToFocus > 0.20 ? 0.5f : distanceToFocus > 0.10 ? 0.25f : 0f;
+
+            // draw border sprites
+            if (renderBorderSprites) {
+                float intendedXBorder = (intendedX + (spriteData.sprite.getOriginX() * spriteData.sprite.getWidth())- 0.5f);
+                if (spriteData.notBlocked.contains(Direction.NORTH)) {
+                    borderSpriteNorth.setPosition(
+                            intendedXBorder - ((borderSpriteNorth.getOriginX() * borderSpriteNorth.getWidth())- 0.5f),
+                            intendedY
+                    );
+                    borderSpriteNorth.draw(batch, spriteAlpha);
+                }
+                if (spriteData.notBlocked.contains(Direction.EAST)) {
+                    borderSpriteEast.setPosition(
+                            intendedXBorder - ((borderSpriteEast.getOriginX() * borderSpriteEast.getWidth())- 0.5f),
+                            intendedY
+                    );
+                    borderSpriteEast.draw(batch, spriteAlpha);
+                }
+            }
+
+            // draw regular sprite
+            spriteData.sprite.draw(batch, spriteAlpha);
 
             if (renderOrderIndex) {
                 /*if(spriteData.position.equals(lockOnVector)) {
@@ -535,7 +587,7 @@ public class WorldScene extends AbstractScene{
     }
 
     public void drawWorld(SpriteBatch batch, int windowWidth, int windowHeight, float aspect) {
-       // batch.draw(background_image, 0,0, 0,0, windowWidth, windowHeight);
+        batch.draw(background_image, 0,0, 0,0, windowWidth, windowHeight);
     }
 
 }

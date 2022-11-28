@@ -6,6 +6,7 @@ import com.badlogic.gdx.math.Vector3;
 import dbast.prometheus.engine.config.PrometheusConfig;
 import dbast.prometheus.engine.entity.EntityRegistry;
 import dbast.prometheus.engine.entity.components.*;
+import dbast.prometheus.engine.world.Direction;
 import dbast.prometheus.engine.world.WorldSpace;
 import dbast.prometheus.engine.world.generation.GenerationUtils;
 import dbast.prometheus.engine.world.generation.PlaceFeature;
@@ -97,8 +98,8 @@ public class WaveFunctionTest {
         nearby.forEach(offset ->
                 waterRules.put(offset, grassTile, waterTile, grassToWaterNorth, grassToWaterEast)
         );
-        waterRules.put(TileRuleEntry.Direction.SOUTH.dir, grassTile, waterTile, grassToWaterEast);
-        waterRules.put(TileRuleEntry.Direction.WEST.dir, grassTile, waterTile, grassToWaterNorth);
+        waterRules.put(Direction.SOUTH.dir, grassTile, waterTile, grassToWaterEast);
+        waterRules.put(Direction.WEST.dir, grassTile, waterTile, grassToWaterNorth);
 
 
       /*  nearby.forEach(offset ->
@@ -128,27 +129,27 @@ public class WaveFunctionTest {
         nearby.forEach(offset ->
                 grassRules.put(offset, grassChances)
         );
-        grassRules.remove(TileRuleEntry.Direction.SOUTH.dir);
-        grassRules.put(TileRuleEntry.Direction.SOUTH.dir, Arrays.asList(grassHighTile, grassTile, dirtTile, grassToWaterNorth, grassToWaterEast));
+        grassRules.remove(Direction.SOUTH.dir);
+        grassRules.put(Direction.SOUTH.dir, Arrays.asList(grassHighTile, grassTile, dirtTile, grassToWaterNorth, grassToWaterEast));
 
-        grassRules.remove(TileRuleEntry.Direction.EAST.dir);
-        grassRules.put(TileRuleEntry.Direction.EAST.dir, Arrays.asList(grassHighTile, grassTile, dirtTile, grassToWaterNorth));
+        grassRules.remove(Direction.EAST.dir);
+        grassRules.put(Direction.EAST.dir, Arrays.asList(grassHighTile, grassTile, dirtTile, grassToWaterNorth));
 
-        grassRules.remove(TileRuleEntry.Direction.NORTH.dir);
-        grassRules.put(TileRuleEntry.Direction.EAST.dir, Arrays.asList(grassHighTile, grassTile, dirtTile, grassToWaterEast));
+        grassRules.remove(Direction.NORTH.dir);
+        grassRules.put(Direction.EAST.dir, Arrays.asList(grassHighTile, grassTile, dirtTile, grassToWaterEast));
 
-        grassRules.remove(TileRuleEntry.Direction.WEST.dir);
-        grassRules.put(TileRuleEntry.Direction.WEST.dir, Arrays.asList(grassHighTile, grassTile, dirtTile, grassToWaterNorth, grassToWaterEast));
+        grassRules.remove(Direction.WEST.dir);
+        grassRules.put(Direction.WEST.dir, Arrays.asList(grassHighTile, grassTile, dirtTile, grassToWaterNorth, grassToWaterEast));
 
-        grassToWaterNorthRules.put(TileRuleEntry.Direction.NORTH.dir, grassTile);
-        grassToWaterNorthRules.put(TileRuleEntry.Direction.SOUTH.dir, waterTile);
-        grassToWaterNorthRules.put(TileRuleEntry.Direction.EAST.dir, grassTile, waterTile, grassToWaterNorth);
-        grassToWaterNorthRules.put(TileRuleEntry.Direction.WEST.dir, grassTile, waterTile, grassToWaterNorth);
+        grassToWaterNorthRules.put(Direction.NORTH.dir, grassTile);
+        grassToWaterNorthRules.put(Direction.SOUTH.dir, waterTile);
+        grassToWaterNorthRules.put(Direction.EAST.dir, grassTile, waterTile, grassToWaterNorth);
+        grassToWaterNorthRules.put(Direction.WEST.dir, grassTile, waterTile, grassToWaterNorth);
 
-        grassToWaterEastRules.put(TileRuleEntry.Direction.EAST.dir, grassTile);
-        grassToWaterEastRules.put(TileRuleEntry.Direction.WEST.dir, waterTile);
-        grassToWaterEastRules.put(TileRuleEntry.Direction.NORTH.dir, grassTile, waterTile, grassToWaterEast);
-        grassToWaterEastRules.put(TileRuleEntry.Direction.SOUTH.dir, grassTile, waterTile, grassToWaterEast);
+        grassToWaterEastRules.put(Direction.EAST.dir, grassTile);
+        grassToWaterEastRules.put(Direction.WEST.dir, waterTile);
+        grassToWaterEastRules.put(Direction.NORTH.dir, grassTile, waterTile, grassToWaterEast);
+        grassToWaterEastRules.put(Direction.SOUTH.dir, grassTile, waterTile, grassToWaterEast);
 
         nearby.forEach(offset ->
                 grassHighRules.put(offset, Arrays.asList(grassTile, grassHighTile, treeTile))

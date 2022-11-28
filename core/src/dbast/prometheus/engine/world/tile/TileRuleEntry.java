@@ -22,15 +22,4 @@ public class TileRuleEntry extends HashMap<Vector3, Collection<Tile>> {
         this.put(key, Arrays.asList(tiles));
     }
 
-    public enum Direction {
-        NORTH(new Vector3(0, 1, 0)),
-        EAST(new Vector3(1, 0, 0)),
-        SOUTH(new Vector3(0, -1, 0)),
-        WEST(new Vector3(-1, 0, 0));
-
-        public Vector3 dir;
-        Direction(Vector3 dir) {
-            this.dir = dir;
-        }
-    }
 }

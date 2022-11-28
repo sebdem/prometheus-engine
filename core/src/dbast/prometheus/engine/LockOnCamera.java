@@ -75,8 +75,8 @@ public class LockOnCamera extends PerspectiveCamera implements PositionProvider 
     public static Matrix4 isoTransform = new Matrix4(
             new float[]{
                     // EDIT:
-                    0.5f, 0.25f , 0, 0,
-                    -0.5f, 0.25f, 0, 0,
+                    0.5f, 0.25f , 0f,0f,
+                    -0.5f, 0.25f, 0f, 0f,
                     0, 0, 1, 0,
                     0, 0, 0, 1
             });

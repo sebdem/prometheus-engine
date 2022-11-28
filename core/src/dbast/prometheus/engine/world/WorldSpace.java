@@ -3,18 +3,10 @@ package dbast.prometheus.engine.world;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.files.FileHandle;
 import com.badlogic.gdx.graphics.Color;
-import com.badlogic.gdx.graphics.Mesh;
-import com.badlogic.gdx.graphics.g2d.RepeatablePolygonSprite;
 import com.badlogic.gdx.math.MathUtils;
-import com.badlogic.gdx.math.Polygon;
-import com.badlogic.gdx.math.Rectangle;
 import com.badlogic.gdx.math.Vector3;
 import com.badlogic.gdx.math.collision.BoundingBox;
-import com.badlogic.gdx.math.collision.Segment;
-import com.badlogic.gdx.physics.box2d.World;
-import com.badlogic.gdx.physics.bullet.softbody.btSoftBody;
 import com.google.gson.Gson;
-import com.sun.javafx.geom.Shape;
 import dbast.prometheus.engine.entity.Entity;
 import dbast.prometheus.engine.entity.EntityRegistry;
 import dbast.prometheus.engine.entity.components.InputControllerComponent;
@@ -26,7 +18,6 @@ import dbast.prometheus.engine.world.tile.TileData;
 import dbast.prometheus.engine.world.tile.TileRegistry;
 import dbast.prometheus.utils.Vector3Comparator;
 import dbast.prometheus.utils.Vector3IndexMap;
-import javafx.scene.shape.Shape3D;
 
 import java.util.*;
 
@@ -50,7 +41,8 @@ public class WorldSpace {
      */
     public float age = 720;
     public long realTime;
-    public WorldTime currentTime;
+
+    public WorldTime worldTime;
 
 
     /*
@@ -74,13 +66,13 @@ public class WorldSpace {
         this.tileDataMap = new Vector3IndexMap<>(new Vector3Comparator.Planar());
         this.dataUpdate = true;
         this.boundariesPerChunk = new Vector3IndexMap<>(new Vector3Comparator.Planar());
+        this.worldTime = new WorldTime();
     }
 
 
     public void update(float updateDelta) {
         this.age += updateDelta;
         this.realTime = System.currentTimeMillis();
-        this.currentTime = WorldTime.get(this.age);
 
         if (dataUpdate) {
             Vector3IndexMap<List<BoundingBox>> tempBoundaries = new Vector3IndexMap<>(new Vector3Comparator.Planar());
@@ -116,11 +108,14 @@ public class WorldSpace {
     }
 
     public Color getSkyboxColor() {
-        return this.currentTime.getSkyboxColor(this.age);
+        return this.worldTime.getSkyboxColor(this.age);
+        //return this.currentTime.getSkyboxColor(this.age);
     }
 
     public float getSightRange() {
-        return this.currentTime.getSightRange(this.age);
+      //  return this.currentTime.getSightRange(this.age);
+        return this.worldTime.getSightRange(this.age);
+        //return 50f;
     }
 
     public WorldSpace placeTile(int tileId, float x, float y, float z) {

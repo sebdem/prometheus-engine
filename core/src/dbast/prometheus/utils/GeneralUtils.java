@@ -59,4 +59,11 @@ public class GeneralUtils {
                 (float)Math.floor(vector3.y),
                 (float)Math.floor(vector3.z));
     }
+
+    // for some reason, this doesn't apply all to well, but by all accounts, it doesn't make any sense why
+    @Deprecated
+    public static Vector3 projectIso(Vector3 vector3, float scaleX, float scaleY) {
+        // storing unmodified z as "depth"
+        return new Vector3((vector3.x - vector3.y) * scaleX, ((vector3.x/2) + (vector3.y / 2) - vector3.z) * scaleY, vector3.z);
+    }
 }
