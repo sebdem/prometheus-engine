@@ -3,7 +3,7 @@
 	"tag": "grass_0",
 	"renderData": {
 		"default": {
-			"path": "world/terrain/iso/grass.png",
+			"path": "world/terrain/iso/grass_cut.png",
 			"animated": false
 		},
 		"steppedOn": {

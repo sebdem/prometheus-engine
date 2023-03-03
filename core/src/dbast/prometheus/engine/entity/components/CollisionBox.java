@@ -22,8 +22,12 @@ public class CollisionBox extends Component {
         this.permeable = permeable;
     }
 
+    public CollisionBox() {
+        this(new Vector3(0.99f,0.99f,0.99f), false);
+    }
+
     public static CollisionBox createBasic() {
-        return new CollisionBox(new Vector3(0.99f,0.99f,0.99f), false);
+        return new CollisionBox();
     }
 
 

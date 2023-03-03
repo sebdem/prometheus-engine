@@ -44,20 +44,16 @@ public class Superflat {
         worldSpace.placeTile(TileRegistry.getByTag("dirt_0"), 7, 5 , 1);
         worldSpace.placeTile(TileRegistry.getByTag("grass_0"), 7, 5 , 2);
 
-        worldSpace.placeTile(TileRegistry.getByTag("grass_ramp"), 5, 6 , 1);
-        worldSpace.tileDataMap.put(new Vector3(5,6,1), new TileData("east"));
+        worldSpace.placeTile(TileRegistry.getByTag("grass_ramp"), 5, 6 , 1, "east");
         worldSpace.placeTile(TileRegistry.getByTag("dirt_0"), 6, 6 , 1);
         worldSpace.placeTile(TileRegistry.getByTag("grass_0"), 6, 6 , 2);
-        worldSpace.placeTile(TileRegistry.getByTag("grass_ramp"), 6, 6 , 2);
-        worldSpace.tileDataMap.put(new Vector3(6,6,2), new TileData("east"));
+        worldSpace.placeTile(TileRegistry.getByTag("grass_ramp"), 6, 6 , 2, "east");
         worldSpace.placeTile(TileRegistry.getByTag("dirt_0"), 7, 6 , 1);
         worldSpace.placeTile(TileRegistry.getByTag("grass_0"), 7, 6 , 2);
 
-        worldSpace.placeTile(TileRegistry.getByTag("grass_ramp"), 5, 7 , 1);
-        worldSpace.tileDataMap.put(new Vector3(5,7,1), new TileData("east"));
+        worldSpace.placeTile(TileRegistry.getByTag("grass_ramp"), 5, 7 , 1, "east");
         worldSpace.placeTile(TileRegistry.getByTag("dirt_0"), 6, 7 , 1);
-        worldSpace.placeTile(TileRegistry.getByTag("grass_ramp"), 6, 7 , 2);
-        worldSpace.tileDataMap.put(new Vector3(6,7,2), new TileData("east"));
+        worldSpace.placeTile(TileRegistry.getByTag("grass_ramp"), 6, 7 , 2, "east");
         worldSpace.placeTile(TileRegistry.getByTag("dirt_0"), 7, 7 , 1);
         worldSpace.placeTile(TileRegistry.getByTag("grass_0"), 7, 7 , 2);
 

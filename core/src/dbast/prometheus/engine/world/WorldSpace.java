@@ -32,10 +32,12 @@ public class WorldSpace {
     public int width;
     // TODO introduce boundaries as a cube "playarea", adjust methods accordingly
 
+    @Deprecated
     public Vector3IndexMap<Tile> terrainTiles;
-    public Vector3IndexMap<TileData> tileDataMap;
+    public Map<Vector3, TileData> tileDataMap;
     public EntityRegistry entities;
-    int chunkSize = 16;
+    public int chunkSize;
+    public final static int BASE_CHUNK_SIZE = 16;
     /*
         Time data
      */
@@ -62,11 +64,13 @@ public class WorldSpace {
         this.minY = minY;
         this.width = width;
         this.height = height;
+        this.chunkSize = BASE_CHUNK_SIZE;
         this.terrainTiles = new Vector3IndexMap<>(new Vector3Comparator.Planar());
-        this.tileDataMap = new Vector3IndexMap<>(new Vector3Comparator.Planar());
+        this.tileDataMap = new HashMap<>();
         this.dataUpdate = true;
         this.boundariesPerChunk = new Vector3IndexMap<>(new Vector3Comparator.Planar());
         this.worldTime = new WorldTime();
+        this.chunks = new Vector3IndexMap<>(new Vector3Comparator.Planar());
     }
 
 
@@ -122,15 +126,33 @@ public class WorldSpace {
         return placeTile(TileRegistry.get(tileId), x, y, z);
     }
     public WorldSpace placeTile(Tile tile, float x, float y, float z) {
-        this.terrainTiles.put(new Vector3(x, y, z), tile);
+        return placeTile(tile, x, y, z, "default");
+    }
+    public WorldSpace placeTile(Tile tile, float x, float y, float z, String state) {
+        Vector3 position = new Vector3(x, y, z);
+        this.terrainTiles.put(position, tile);
+        TileData tileData = new TileData(tile, this, position, state);
+        this.tileDataMap.put(position, tileData);
+        this.placeInChunk(position, tileData);
         this.dataUpdate = true;
         return this;
+    }
+
+    public WorldChunk placeInChunk(Vector3 inWorldPosition, TileData tileData) {
+        Vector3 chunkPos = this.getChunkFor(inWorldPosition);
+        WorldChunk chunk = this.chunks.getOrDefault(chunkPos, new WorldChunk(chunkPos));
+        chunk.tileDataMap.put(inWorldPosition, tileData);
+        this.chunks.put(chunkPos, chunk);
+        return chunk;
     }
     public Tile lookupTile(float x, float y, float z) {
         return this.terrainTiles.getOrDefault(new Vector3(x, y, z), null);
     }
     public Tile lookupTile(Vector3 vector3) {
         return this.terrainTiles.getOrDefault(vector3,  null);
+    }
+    public TileData lookupTileData(Vector3 vector3) {
+        return this.tileDataMap.getOrDefault(vector3,  null);
     }
 
 
@@ -208,10 +230,6 @@ public class WorldSpace {
         //Gdx.app.getClipboard().setContents();
     }
 
-    public float getTopZ(Vector3 entityPos) {
-        Vector3 topMost = this.terrainTiles.keySet().stream().filter(key -> key.x == Math.floor(entityPos.x) && key.y ==  Math.floor(entityPos.y)).max((key1, key2) -> Float.compare(key1.z, key2.z)).orElse(new Vector3(0,0,0));
-        return topMost.z;
-    }
     public void toNextUpperLevel(Vector3 entityPos) {
         Vector3 topMost = this.terrainTiles.keySet().stream()
                 .filter(key -> key.x == Math.floor(entityPos.x) && key.y ==  Math.floor(entityPos.y) && key.z <= Math.floor(entityPos.z + 1f))

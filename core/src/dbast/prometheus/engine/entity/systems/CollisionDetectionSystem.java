@@ -34,7 +34,7 @@ public class CollisionDetectionSystem extends ComponentSystem {
 
             entities.stream().filter(entityB ->
                 !entityB.getId().equals(entityA.getId())
-                && positionA.isNearby(entityB.getComponent(PositionComponent.class), 4f)
+                && positionA.isNearby(entityB.getComponent(PositionComponent.class).position, 4f)
             ).forEach(entityB -> {
                 PositionComponent positionB = entityB.getComponent(PositionComponent.class);
                 CollisionBox collisionB = entityB.getComponent(CollisionBox.class);

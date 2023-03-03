@@ -14,7 +14,7 @@ public class WorldTime {
     public float speedOfTime;
 
     public WorldTime() {
-        this.speedOfTime = 1f;
+        this.speedOfTime = 4f;
         this.dayDuration  = 24;
 
         this.skyboxLighting = new Pixmap(Gdx.files.local("data/environment/overworld/skyline.png"));
@@ -55,7 +55,7 @@ public class WorldTime {
     }
 
     protected Color getForProgress(Pixmap targetPixmap, float worldAge) {
-        float pixelProgress = targetPixmap.getWidth() * (getTimeOfDay(worldAge) / dayDuration);
+        float pixelProgress = targetPixmap.getWidth() * getDayProgress(worldAge);
         int min = MathUtils.floor(pixelProgress);
         int max = MathUtils.ceil(pixelProgress);
         if (max >= targetPixmap.getWidth()) {
@@ -65,5 +65,9 @@ public class WorldTime {
         Color maxTarget = new Color(targetPixmap.getPixel(max,0));
 
         return minTarget.lerp(maxTarget, pixelProgress - min);
+    }
+
+    public float getDayProgress(float atAge) {
+        return (getTimeOfDay(atAge) / dayDuration);
     }
 }

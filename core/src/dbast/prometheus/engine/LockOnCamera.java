@@ -67,8 +67,9 @@ public class LockOnCamera extends PerspectiveCamera implements PositionProvider 
         return this.lockOnEntity;
     }
 
-    protected static float gridSnapIncrement = (Float)PrometheusConfig.conf.getOrDefault("gridSnapIncrement", 0.0625f);
-    protected static boolean useIsometric = (Boolean) PrometheusConfig.conf.getOrDefault("isometric", false);
+    public static float gridSnapIncrement = (Float)PrometheusConfig.conf.getOrDefault("gridSnapIncrement", 0.0625f);
+    public static boolean useGridSnapping = (Boolean)PrometheusConfig.conf.getOrDefault("gridSnapping", false);
+    public static boolean useIsometric = (Boolean) PrometheusConfig.conf.getOrDefault("isometric", false);
 
     // This doesn't seem to work properly...
     // EDIT: [1] and [4] were reversed???
@@ -89,6 +90,29 @@ public class LockOnCamera extends PerspectiveCamera implements PositionProvider 
                     0, 0, 1, 0,
                     0, 0, 0, 1
             });
+
+    public static Vector3 project_custom(Vector3 unmodified, float xOffset, float yOffset) {
+        Vector3 projected = unmodified.cpy();
+        if (LockOnCamera.useIsometric) {
+            //unmodified = GeneralUtils.projectIso(unmodified, spriteData.sprite.getWidth() * 0.5f, spriteData.sprite.getHeight() * 0.5f);
+            unmodified.prj(LockOnCamera.isoTransform);
+
+            // sprite height should be used here according to render logic... For some reason spritebased sizes fuck this up however, therefor use width
+            // intendedX = (float) (unmodifiedX * 0.5 * spriteData.sprite.getWidth() - unmodifiedY * 0.5 * spriteData.sprite.getWidth());
+            //intendedY = (float) (unmodifiedX * 0.25 * spriteData.sprite.getWidth() + unmodifiedY * 0.25 * spriteData.sprite.getWidth());
+            projected.x = unmodified.x ;//* spriteData.sprite.getWidth();
+            projected.y = unmodified.y;// * spriteData.sprite.getWidth();
+            // offset, because why the fuck?
+            // intendedY += spriteData.levelPosition.z * 0.5f /*- 0.6f*/;// * spriteData.sprite.getWidth();
+            projected.y += yOffset /*- 0.6f*/;// * spriteData.sprite.getWidth();
+
+            // Gdx.app.getApplicationLogger().log("render pipeline", String.format("[sprite %s 2/2] intendedX %s | intendedY %s", spriteData.hashCode(), intendedX, intendedY));
+            // offset
+            projected.x += xOffset;
+        }
+        return projected;
+    }
+
     @Override
     public Vector3 unproject(Vector3 screenCoords) {
         return super.unproject(screenCoords);

@@ -6,6 +6,10 @@ public class PositionComponent extends Component {
 
     public Vector3 position;
 
+
+    public static PositionComponent ofVector3(Vector3 position) {
+        return new PositionComponent(position);
+    }
     public PositionComponent(Vector3 position) {
         this.position = position;
     }
@@ -59,6 +63,12 @@ public class PositionComponent extends Component {
         /*
         return (other.x_pos > this.x_pos - maxDistance && other.x_pos < this.x_pos + maxDistance)
                 && (other.y_pos > this.y_pos - maxDistance && other.y_pos < this.y_pos + maxDistance);*/
+
+    }
+    public boolean isNearby(Vector3 otherVector, float maxDistance) {
+       // return this.position.dst(otherVector) <= maxDistance;
+        return Math.abs(this.position.x - otherVector.x) <= maxDistance && Math.abs(this.position.y - otherVector.y) <= maxDistance;
+       // return Math.abs(otherXPos - getX()) <= maxDistance && Math.abs(otherYPos - getY()) <= maxDistance;
 
     }
 }

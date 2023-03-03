@@ -1,11 +1,37 @@
 package dbast.prometheus.engine.world;
 
+import com.badlogic.gdx.math.Vector3;
+import com.badlogic.gdx.physics.box2d.World;
+import dbast.prometheus.engine.LockOnCamera;
+import dbast.prometheus.engine.world.tile.TileData;
+
+import java.util.HashMap;
+import java.util.Map;
+
 // TODO migrate prepared sprites and collision data to this for a neat performance boost.
-// TODO consider actual world data as well (tiles, entities etc.)
+// TODO consider actual world data as well (~~tiles~~, entities etc.)
 public class WorldChunk {
+
+    public Vector3 position;
+    protected Vector3 screenPosition;
 
     protected boolean requiredDataUpdate = true;
     protected boolean loaded = false;
+    public Map<Vector3, TileData> tileDataMap;
+
+    public WorldChunk() {
+        this.tileDataMap = new HashMap<>();
+        this.load();
+    }
+
+    public WorldChunk(Vector3 position) {
+        this();
+        this.position = position;
+        this.screenPosition = LockOnCamera.project_custom(this.position.cpy(),
+            WorldSpace.BASE_CHUNK_SIZE,
+            0.5f
+        );
+    }
 
     public void update(float deltaTime) {
         if (requiredDataUpdate) {

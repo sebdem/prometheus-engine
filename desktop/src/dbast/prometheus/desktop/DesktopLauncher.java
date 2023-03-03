@@ -19,7 +19,8 @@ public class DesktopLauncher {
 		PrometheusConfig.init();
 		PrometheusConfig.conf.put("gridSnapping", true);
 		PrometheusConfig.conf.put("isometric", true);
-		PrometheusConfig.conf.put("renderDistance", 32f);
+		//PrometheusConfig.conf.put("renderDistance", 32f);
+		PrometheusConfig.conf.put("renderDistance", 10f);
 		//PrometheusConfig.conf.put("gridSnapIncrement", 0.0625f); //1 pixel
 		PrometheusConfig.conf.put("gridSnapIncrement", 0.125f);	//2 pixel
 		//PrometheusConfig.conf.put("gridSnapIncrement", 0.1875f); //3 pixel - a bit snappy

@@ -20,6 +20,7 @@ public class PlayerInputSystem extends ComponentSystem {
      * Stores screen coordinates of cursor
      */
     public Vector2 cursorInput = new Vector2(0,0);
+    public Vector2 aspectInput = new Vector2(0,0);
     public Vector3 inWorldPos = new Vector3(0,0,0);
 
     public static float levelOffset = -1f;
@@ -93,11 +94,15 @@ public class PlayerInputSystem extends ComponentSystem {
         // update ui stuff...
 
         this.cursorInput.set(Gdx.input.getX(), Gdx.input.getY());
+        this.aspectInput.set(
+                this.cursorInput.x / (float)Gdx.graphics.getWidth(),
+                1f - (this.cursorInput.y / (float)Gdx.graphics.getHeight())
+        );
 
         camera.getLockOnEntity().executeFor(PositionComponent.class, lockOnPosition -> {
             Vector3 mousePos = new Vector3(
-                    this.cursorInput.x / (float)Gdx.graphics.getWidth(),
-                    1f -(this.cursorInput.y / (float)Gdx.graphics.getHeight()),
+                    aspectInput.x,
+                    aspectInput.y,
                     PlayerInputSystem.levelOffset
             );
             // focus on middle
