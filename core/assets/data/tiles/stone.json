@@ -3,7 +3,7 @@
 	"tag": "stone",
 	"renderData": {
 		"default": {
-			"path": "world/terrain/iso/rock_cube.png",
+			"path": "world/terrain/iso/stone_full.png",
 			"animated": false
 		}
 	}

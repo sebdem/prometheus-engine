@@ -587,7 +587,7 @@ public class WaveFunctionTest {
                     SizeComponent.createBasic(),
                     new PositionComponent(worldSpace.getSpawnPoint()),
                     new StateComponent(),
-                    new RenderComponent().setDefaultTexture(GeneralUtils.randomElement(blobTextures)),
+                  //  new RenderComponent().setDefaultTexture(GeneralUtils.randomElement(blobTextures)),
                     //SpriteComponent.fromTexture(new Texture(blobTextures[(int)(Math.random() * blobTextures.length)])),
                     new VelocityComponent(0f,0f,0f),
                    new TargetTraverseComponent()

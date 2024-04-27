@@ -41,9 +41,7 @@ public class WorldMapLoader extends AbstractLoader<WorldSpace> {
                 new VelocityComponent(0,0),
                 new HealthComponent(200f),
                 new StateComponent(),
-                new RenderComponent()
-                        .registerAnimation(Gdx.files.internal("sprites/player/player_idle.png"), 8, 1, 1.25f, true, "default")
-                        .registerAnimation(Gdx.files.internal("sprites/player/player_moving_down.png"), 8, 1, 0.125f, true, "moving")
+                RenderComponent.playerRenderComponent()
         );
 
         return buildResult;

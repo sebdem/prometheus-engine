@@ -1,0 +1,6 @@
+{
+	"default": {
+		"path": "resources/native/tiles/iso_cube.png",
+		"animated": false
+	}
+}

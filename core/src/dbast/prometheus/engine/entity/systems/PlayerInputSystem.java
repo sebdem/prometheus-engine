@@ -14,6 +14,8 @@ import dbast.prometheus.engine.entity.components.*;
 import java.util.Arrays;
 import java.util.List;
 
+import static dbast.prometheus.engine.LockOnCamera.useIsometric;
+
 public class PlayerInputSystem extends ComponentSystem {
 
     /**
@@ -41,22 +43,22 @@ public class PlayerInputSystem extends ComponentSystem {
         float baseSpeed = 0.125f;
         float sprint = 2f;
 
-        if(Gdx.input.isKeyPressed(Input.Keys.W) || Gdx.input.isKeyPressed(Input.Keys.UP)) {
+        if(isMovingYUp()) {
             velocityY += baseSpeed;
         }
-        if(Gdx.input.isKeyPressed(Input.Keys.S) || Gdx.input.isKeyPressed(Input.Keys.DOWN)) {
+        if(isMovingYDown()) {
             velocityY -= baseSpeed;
         }
-        if(Gdx.input.isKeyPressed(Input.Keys.D) || Gdx.input.isKeyPressed(Input.Keys.RIGHT)) {
+        if(isMovingXRight()) {
             velocityX += baseSpeed;
         }
-        if(Gdx.input.isKeyPressed(Input.Keys.A) || Gdx.input.isKeyPressed(Input.Keys.LEFT)) {
+        if(isMovingXLeft()) {
             velocityX -= baseSpeed;
         }
-        if(Gdx.input.isKeyPressed(Input.Keys.SPACE)) {
+        if(isMovingZUp()) {
             velocityZ += baseSpeed;
         }
-        if(Gdx.input.isKeyPressed(Input.Keys.CONTROL_LEFT)) {
+        if(isMovingZDown()) {
             velocityZ -= baseSpeed;
         }
 
@@ -99,6 +101,7 @@ public class PlayerInputSystem extends ComponentSystem {
                 1f - (this.cursorInput.y / (float)Gdx.graphics.getHeight())
         );
 
+       // Gdx.app.getApplicationLogger().log("PIS", String.format("Cursor: %s | Aspect: %s", this.cursorInput.toString(), aspectInput.toString()));
         camera.getLockOnEntity().executeFor(PositionComponent.class, lockOnPosition -> {
             Vector3 mousePos = new Vector3(
                     aspectInput.x,
@@ -111,7 +114,7 @@ public class PlayerInputSystem extends ComponentSystem {
             float ratioWidthToHeight = (camera.viewportWidth/camera.viewportHeight);
             float ratioHeightToWidth = (camera.viewportHeight/camera.viewportWidth);
 
-            if (PrometheusConfig.get("isometric", Boolean.class, true)) {
+            if (useIsometric) {
                 // TODO consider camera distance...
                 float halfX = (camera.viewportWidth / 2) * ratioWidthToHeight;
                 float halfY = camera.viewportHeight / ratioHeightToWidth;
@@ -121,6 +124,8 @@ public class PlayerInputSystem extends ComponentSystem {
                 mousePos.scl(halfX, halfY, 1f);
                 // mousePos.scl(cam.getCameraDistance() / 2);
 
+                // iso_x => (ox / 0.5 + oy / 0.5) / 2
+                // iso_y => (oy / 0.5 - ox / 0.5) / 2
                 mousePos.set(
                         (mousePos.x / 0.5f + mousePos.y /  0.5f) / 2 + distortionOffset,
                         ((mousePos.y / 0.5f - (mousePos.x /  0.5f)) / 2) + distortionOffset,
@@ -134,6 +139,26 @@ public class PlayerInputSystem extends ComponentSystem {
             mousePos.add(lockOnPosition.position);
             inWorldPos.set(mousePos);
         });
+    }
+
+
+    private boolean isMovingYUp() {
+        return (Gdx.input.isKeyPressed(Input.Keys.W) || Gdx.input.isKeyPressed(Input.Keys.UP));
+    }
+    private boolean isMovingYDown() {
+        return (Gdx.input.isKeyPressed(Input.Keys.S) || Gdx.input.isKeyPressed(Input.Keys.DOWN));
+    }
+    private boolean isMovingXRight() {
+        return (Gdx.input.isKeyPressed(Input.Keys.D) || Gdx.input.isKeyPressed(Input.Keys.RIGHT));
+    }
+    private boolean isMovingXLeft() {
+        return (Gdx.input.isKeyPressed(Input.Keys.A) || Gdx.input.isKeyPressed(Input.Keys.LEFT));
+    }
+    private boolean isMovingZUp() {
+        return (Gdx.input.isKeyPressed(Input.Keys.SPACE));
+    }
+    private boolean isMovingZDown() {
+        return (Gdx.input.isKeyPressed(Input.Keys.CONTROL_LEFT));
     }
 
     @Override

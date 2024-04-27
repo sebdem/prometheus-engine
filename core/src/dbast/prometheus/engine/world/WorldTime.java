@@ -14,7 +14,7 @@ public class WorldTime {
     public float speedOfTime;
 
     public WorldTime() {
-        this.speedOfTime = 4f;
+        this.speedOfTime = 8f;
         this.dayDuration  = 24;
 
         this.skyboxLighting = new Pixmap(Gdx.files.local("data/environment/overworld/skyline.png"));

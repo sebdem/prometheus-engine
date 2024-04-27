@@ -3,6 +3,7 @@
 	"tag": "stone_cliff_e",
 	"renderData": {
 		"default": {
+			"offset": [0,0,1],
 			"path": "world/terrain/iso/hang_e.png",
 			"animated": false
 		}

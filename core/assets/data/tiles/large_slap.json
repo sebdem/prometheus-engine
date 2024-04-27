@@ -1,9 +1,12 @@
 {
 	"name": "slap",
 	"tag": "slap",
-	"bounds": [0,0,0,3,3,1],
+	"bounds": [
+		[0,0,0,3,3,1]
+	],
 	"renderData": {
 		"default": {
+			"offset": [1.5,1.5,1.0],
 			"path": "world/terrain/iso/large_slap - Kopie.png",
 			"animated": false
 		}

@@ -2,6 +2,10 @@ package dbast.prometheus.engine.serializing.data;
 
 public class RenderComponentData {
     public String path;
+    public String normal;
+
+    public Float[] offset = new Float[]{0.0f,0.0f,0.0f};
+
     public Boolean animated = false;
     public Boolean loop = true;
     public Integer columns = 1;

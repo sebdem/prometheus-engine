@@ -12,6 +12,11 @@ import dbast.prometheus.engine.world.tile.TileRegistry;
 import dbast.prometheus.utils.GeneralUtils;
 import net.dermetfan.gdx.math.MathUtils;
 
+import javax.imageio.ImageIO;
+import java.awt.*;
+import java.awt.image.BufferedImage;
+import java.io.File;
+import java.io.IOException;
 import java.util.Arrays;
 
 public class PerlinTest {
@@ -27,14 +32,18 @@ public class PerlinTest {
 
     public WorldSpace setup() {
         OpenSimplexNoise simplexNoise = new OpenSimplexNoise(System.currentTimeMillis());
+
         OpenSimplexNoise biomeNoise = new OpenSimplexNoise(simplexNoise.hashCode());
 
         WorldSpace worldSpace = new WorldSpace(-width, -height, width, height);
 
+
         int totalHeight = (height * 2);
         int totalWidth = width * 2;
-        int numberOfChunksY = totalHeight / worldSpace.chunkSize + 2;
-        int numberOfChunksX = totalWidth / worldSpace.chunkSize + 2;
+        int numberOfChunksY = totalHeight / worldSpace.chunkSize/* + 2*/;
+        int numberOfChunksX = totalWidth / worldSpace.chunkSize/* + 2*/;
+
+        BufferedImage worldHeightMap = new BufferedImage(totalWidth, totalHeight, BufferedImage.TYPE_INT_ARGB);
 
         WorldChunk[] chunks = new WorldChunk[numberOfChunksY * numberOfChunksX];
 
@@ -59,16 +68,34 @@ public class PerlinTest {
 
                         float simplexValue =  (float)simplexNoise.eval(xAbs / 24, yAbs / 24);
                         float biomeValue =  (float)biomeNoise.eval(xAbs / 16, yAbs / 16);
-                        Gdx.app.getApplicationLogger().log("WorldSetup", String.format("For X %s and Y %s opensimplex: %s", xAbs, yAbs, simplexValue));
+                        //Gdx.app.getApplicationLogger().log("WorldSetup", String.format("For X %s and Y %s opensimplex: %s", xAbs, yAbs, simplexValue));
 
-                        float terrainLimit = (int)(simplexValue *8f);
+                        float terrainLimit = (int)(simplexValue *24f * biomeValue);
                         float maxZ = (terrainLimit < 0) ? 0 : terrainLimit;
+
+
+                        if (xAbs >= 0 && xAbs < totalWidth && yAbs >= 0 && yAbs < totalHeight) {
+                            int rgbValue = (int) (127 + 120 * (terrainLimit / 24));
+                            Color c = new Color(rgbValue, rgbValue, rgbValue,
+                                    255
+                            );
+                            if ( terrainLimit < 0) {
+                                c = new Color( 0, 0, c.getBlue(), c.getAlpha());
+                            }
+
+                            Gdx.app.log("world_...", String.format("rendering worldmap, %s %s | color: %s", xAbs, yAbs, rgbValue));
+                            worldHeightMap.setRGB(
+                                    (int)xAbs,
+                                    (int)yAbs,
+                                   c.getRGB());
+
+                        }
                         String tileState = "default";
                         for (float z = -8f; z<= maxZ; z+=1f) {
 
                             if (z > terrainLimit && z <= maxZ) {
                                 tileToPlace = TileRegistry.getByTag("water");
-                                tileState = "north";
+                            //    tileState = "north";
                             } else {
                                 if (z < maxZ - 2) {
                                     tileToPlace = TileRegistry.getByTag("stone");
@@ -78,6 +105,7 @@ public class PerlinTest {
                                     tileToPlace = TileRegistry.getByTag("grass_0");
                                 }
                             }
+
 
                             worldSpace.placeTile(
                                     tileToPlace,
@@ -124,6 +152,13 @@ public class PerlinTest {
             }
         }*/
 
+
+        try {
+            ImageIO.write(worldHeightMap, "png", Gdx.files.local("save/" + worldSpace.id + "_map.png").file());
+        } catch (IOException e) {
+            // handle exception
+            Gdx.app.getApplicationLogger().log("WorldSetup", "error writing worldmap!");
+        }
         Gdx.app.getApplicationLogger().log("WorldSetup", "Generating Entities");
         worldSpace.entities = new EntityRegistry();
         worldSpace.entities.addNewEntity(
@@ -135,12 +170,7 @@ public class PerlinTest {
                 new VelocityComponent(0,0),
                 new HealthComponent(200f),
                 new StateComponent(),
-                new RenderComponent()
-                        .registerAnimation(Gdx.files.internal("sprites/player/player_idle.png"
-                        ), 8, 1, 1.25f, true, "default")
-                        .registerAnimation(Gdx.files.internal(
-                                "sprites/player/player_moving_down.png"
-                        ), 8, 1, 0.125f, true, "moving")
+                RenderComponent.playerRenderComponent()
         );
         return worldSpace;
     }

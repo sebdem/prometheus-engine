@@ -2,6 +2,7 @@ package dbast.prometheus.engine.entity.components;
 
 import com.badlogic.gdx.math.Polygon;
 import com.badlogic.gdx.math.Vector3;
+import com.badlogic.gdx.math.collision.BoundingBox;
 
 //TODO migrate to BoundingBox?
 public class CollisionBox extends Component {
@@ -96,5 +97,9 @@ public class CollisionBox extends Component {
     @Deprecated
     public Vector3 getMax(Vector3 toMin) {
         return toMin.cpy().add(boundaries);
+    }
+
+    public BoundingBox getBoundsAt(Vector3 at) {
+        return new BoundingBox(at, at.cpy().add(boundaries));
     }
 }

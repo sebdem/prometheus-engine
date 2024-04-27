@@ -4,6 +4,7 @@
 	"renderData": {
 		"default": {
 			"path": "world/terrain/iso/water.png",
+			"normal": "world/terrain/iso/normal_liquid.png",
 			"animated": true,
 			"columns": 8,
 			"rows": 1,
@@ -11,6 +12,7 @@
 		},
 		"north": {
 			"path": "world/terrain/iso/water_moving.png",
+			"normal": "world/terrain/iso/normal_liquid.png",
 			"animated": true,
 			"columns": 8,
 			"rows": 1,

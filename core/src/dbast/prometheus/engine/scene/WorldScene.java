@@ -11,6 +11,7 @@ import com.badlogic.gdx.graphics.g2d.BitmapFont;
 import com.badlogic.gdx.graphics.g2d.Sprite;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.glutils.ShaderProgram;
+import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
 import com.badlogic.gdx.math.*;
 import com.badlogic.gdx.scenes.scene2d.InputEvent;
 import com.badlogic.gdx.scenes.scene2d.InputListener;
@@ -21,14 +22,19 @@ import dbast.prometheus.engine.entity.components.*;
 import dbast.prometheus.engine.entity.systems.*;
 import dbast.prometheus.engine.events.Event;
 import dbast.prometheus.engine.events.EventBus;
+import dbast.prometheus.engine.graphics.PrometheusSpriteBatch;
 import dbast.prometheus.engine.graphics.SpriteData;
 import dbast.prometheus.engine.graphics.SpriteType;
 import dbast.prometheus.engine.serializing.WorldMapLoader;
 import dbast.prometheus.engine.world.Direction;
 import dbast.prometheus.engine.world.WorldSpace;
 import dbast.prometheus.engine.world.WorldTime;
+import dbast.prometheus.engine.world.generation.features.CastleTower;
+import dbast.prometheus.engine.world.generation.features.Hole;
 import dbast.prometheus.engine.world.level.MinimalLevel2;
 import dbast.prometheus.engine.world.level.PerlinTest;
+import dbast.prometheus.engine.world.level.Superflat;
+import dbast.prometheus.engine.world.level.WaveFunctionTest;
 import dbast.prometheus.engine.world.tile.TileData;
 import dbast.prometheus.engine.world.tile.TileRegistry;
 import dbast.prometheus.utils.GeneralUtils;
@@ -38,10 +44,10 @@ import java.util.*;
 
 public class WorldScene extends AbstractScene{
 
-    private static final Vector3 LIGHT_POS = new Vector3(0,0, 1);
+    private static final Vector3 LIGHT_POS = new Vector3(0,0, 0);
     private static final Vector3 SUN_DIR = new Vector3(-1f,0, 1);
     protected BitmapFont font;
-    protected SpriteBatch batch;
+    protected PrometheusSpriteBatch batch;
 
     protected WorldSpace world;
     private LockOnCamera cam;
@@ -108,16 +114,16 @@ public class WorldScene extends AbstractScene{
 
 
         // ==== [ prepare world ] ============================
-       /* world = new WaveFunctionTest(100, 100, 20, false, true,
+/*       world = new WaveFunctionTest(100, 100, 20, false, true,
                 Arrays.asList(
                         new CastleTower("brickF"),
                         new CastleTower("dirt_0"),
                         new Hole()
                 ), 6,20).setup();*/
         //world = new Superflat(30, 30).setup();
-        //world = new PerlinTest(100, 100).setup();
+       world = new PerlinTest(256, 128).setup();
         //world = new MinimalLevel2().setup();
-        world = WorldMapLoader.fromJson(Gdx.files.local("save/world_38571562605.json")).build();
+       // world = WorldMapLoader.fromJson(Gdx.files.local("save/world_38571562605.json")).build();
 
         // ==== [ camera setup ] ============================
         Entity cameraFocus = world.getCameraFocus();
@@ -219,7 +225,7 @@ public class WorldScene extends AbstractScene{
 
         ShaderProgram customShader = new ShaderProgram(
                 Gdx.files.internal("resources/native/shaders/vertex.glsl").readString(),
-                Gdx.files.internal("resources/native/shaders/defaultFragment.glsl").readString()
+                Gdx.files.internal("resources/native/shaders/fragment.glsl").readString()
         );
         ShaderProgram.pedantic = false;
         customShader.begin();
@@ -235,7 +241,7 @@ public class WorldScene extends AbstractScene{
         }
         customShader.end();
 
-        batch = new SpriteBatch(1000, customShader);
+        batch = new PrometheusSpriteBatch(1000, customShader);
 
         spriteQueue = new SpriteDataQueue();
 
@@ -250,8 +256,8 @@ public class WorldScene extends AbstractScene{
         batch.setProjectionMatrix(cam.combined);
        // batch.maxSpritesInBatch = 4000;
 
-        Gdx.gl.glActiveTexture(GL20.GL_TEXTURE1);
-        iso_normal.bind();
+        /*Gdx.gl.glActiveTexture(GL20.GL_TEXTURE1);
+        iso_normal.bind();*/
         Gdx.gl.glActiveTexture(GL20.GL_TEXTURE2);
         iso_height.bind();
         Gdx.gl.glActiveTexture(GL20.GL_TEXTURE0);
@@ -259,17 +265,20 @@ public class WorldScene extends AbstractScene{
         batch.begin();
 
         ShaderProgram shader = batch.getShader();
+/*
 Gdx.app.log("shader", shader.getLog());
+*/
         //update light position, normalized to screen resolution
         float x = this.playerInputSystem.cursorInput.x / (float)Gdx.graphics.getWidth();
         float y = this.playerInputSystem.cursorInput.y / (float)Gdx.graphics.getHeight();
         LIGHT_POS.x = x;
-        LIGHT_POS.y = y;
-        LIGHT_POS.z = 2;
+        LIGHT_POS.y = 1f-y;
+       // LIGHT_POS.z = 0;
 
         float dayProgress = world.worldTime.getDayProgress(world.age);
         SUN_DIR.x = (dayProgress * 2) - 1f;
-
+        SUN_DIR.x = (playerInputSystem.aspectInput.x * 2) - 1f;
+        SUN_DIR.y = (playerInputSystem.aspectInput.y * 2) - 1f;
         //send a Vector4f to GLSL
 
         shader.setUniformf("Resolution", Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
@@ -285,7 +294,7 @@ Gdx.app.log("shader", shader.getLog());
         float timeVisibleRange = world.worldTime.getSightRange(world.age);
        // shader.setUniformf("Falloff", new Vector3(.4f, 3f, 20f));
         //shader.setUniformf("Falloff", new Vector3(0.5f, 1f, 10f));
-        shader.setUniformf("Falloff", new Vector3(3,6,1));
+        shader.setUniformf("Falloff", new Vector3(1,0.5f,0));
         //shader.setUniformf("Falloff", new Vector3(0.5f, 0.5f, 20f - (timeVisibleRange / 20f)/*0.125f*/));
 
         preRender(windowWidth, windowHeight, aspect);
@@ -295,191 +304,9 @@ Gdx.app.log("shader", shader.getLog());
         afterRender(windowWidth, windowHeight, aspect);
     }
 
-    // TODO move sprite building out of here. Update new reference whenever things actually change. Then just render to batch
     SpriteDataQueue spriteQueue = null;
     public static float renderDistance = (Float)PrometheusConfig.conf.getOrDefault("renderDistance",18f);
     public static float baseSpriteSize = (Float)PrometheusConfig.conf.getOrDefault("baseSpriteSize",16f);
-
-    @Deprecated
-    public void prepareTileSprites(float deltaTime) {
-        Entity cameraLockOn = cam.getLockOnEntity();
-        PositionComponent lockOnPosition = cameraLockOn.getComponent(PositionComponent.class);
-
-        //  logger.log("rendering:", "tiles " + world.terrainTiles.size());
-
-        world.terrainTiles.forEach((tilePos, tile)-> {
-            if (lockOnPosition.isNearby(tilePos, renderDistance)) {
-                String tileState = "default";
-                TileData tileData = world.tileDataMap.get(tilePos);
-                if (tileData != null) {
-                    if (!tileData.isVisibleFrom(lockOnPosition.position)) {
-                        return;
-                    }
-                    tileState = tileData.stateComponent.getState();
-                }
-
-                Sprite sprite = new Sprite(tile.renderComponent.getTexture(animatorLife,tileState));
-
-                float spriteX = tilePos.x;
-                float spriteY = tilePos.y;
-
-                //sprite.setOrigin(0.5f * (sprite.getRegionWidth() / baseSpriteSize), 1f/*0.f*/);
-               // sprite.setOrigin(0.5f * (sprite.getRegionWidth() / baseSpriteSize), (sprite.getRegionHeight() / baseSpriteSize)-0.5f/*0.f*/);
-                float originX  = 0.5f;
-                float originY  = 1f-(0.5f/(sprite.getRegionHeight() / baseSpriteSize));
-                sprite.setOrigin(originX, originY/*0.f*/);
-
-                sprite.setPosition(spriteX, spriteY);
-
-               // tileSprite.setSize(tileSprite.getRegionWidth() / (float)tile.tileTexture.getWidth(), tileSprite.getRegionHeight() / (float)tile.tileTexture.getWidth());
-                sprite.setSize(sprite.getRegionWidth() / (float)baseSpriteSize, sprite.getRegionHeight() / baseSpriteSize);
-
-                SpriteData spriteData = spriteQueue.add(tilePos, sprite);
-
-                spriteData.setType(SpriteType.TILE);
-
-                spriteData.update(deltaTime);
-
-                if (tileData != null) {
-                    for(Direction dirEnum : Direction.values()) {
-                        TileData neighbor = tileData.getNeighbor(dirEnum);
-                        if (neighbor == null || neighbor.tile != tileData.tile) {
-                            spriteData.notBlocked.add(dirEnum);
-                        }
-                    }
-                }
-                /*for(Direction dirEnum : Direction.values()) {
-                    if (world.lookupTile(tilePos.cpy().add(dirEnum.dir)) != tile) {
-                        spriteData.notBlocked.add(dirEnum);
-                    }
-                }*/
-
-                // =========================================================================================================
-                // <editor-fold desc="---- start debugging nonsense ----"
-                // =========================================================================================================
-                if (gui.isDebugAll() && !debuggedSprites.contains(sprite.hashCode())) {
-                    TextureData spriteTexture = sprite.getTexture().getTextureData();
-                    debuggedSprites.add(sprite.hashCode());
-                    if (!spriteTexture.isPrepared()) {
-                        spriteTexture.prepare();
-                    }
-
-                    Pixmap pixmap = spriteTexture.consumePixmap();
-                    pixmap.setColor(0xCCCCCCCC);
-                    pixmap .drawRectangle(0, 0, pixmap.getWidth(), pixmap.getHeight());
-
-                    pixmap.setColor(0xFF0000FF);
-                    pixmap.drawPixel(0,0);
-
-                    pixmap.setColor(0xFF00FFFF);
-                    pixmap.drawPixel((int)(sprite.getOriginX() * (pixmap.getWidth()-1)),(int)(sprite.getOriginY() * (pixmap.getHeight()-1)));
-
-
-                    spriteTexture.disposePixmap();
-
-                    sprite.setTexture(new Texture(pixmap));
-                }
-                // =========================================================================================================
-                //</editor-fold>
-                // =========================================================================================================
-
-            }
-        });
-    }
-
-    @Deprecated
-    private Set<Integer> debuggedSprites = new HashSet<>();
-
-
-    // TODO delegate to AnimatorSystem or whatever we'll call it, or replace with a state life when extending StateComponent
-
-    @Deprecated
-    private float animatorLife = 0f;
-
-    @Deprecated
-    public void prepareEntitySprites(float deltaTime) {
-        Entity cameraLockOn = cam.getLockOnEntity();
-        PositionComponent lockOnPosition = cameraLockOn.getComponent(PositionComponent.class);
-
-        for (Entity entity : world.entities.values()) {
-            if (entity.hasComponents(entityRenderComponents)) {
-                PositionComponent positionComponent = entity.getComponent(PositionComponent.class);
-                Vector3 entityPos = positionComponent.position;
-
-                if (lockOnPosition.isNearby(entityPos, renderDistance)) {
-                    SizeComponent sizeComponent = entity.getComponent(SizeComponent.class);
-                    RenderComponent renderComponent = entity.getComponent(RenderComponent.class);
-                    // SpriteComponent spriteComponent = entity.getComponent(SpriteComponent.class);
-
-                    //world.toNextUpperLevel(entityPos);
-                    float spriteX = entityPos.x;
-                    float spriteY = entityPos.y;
-
-                    Sprite sprite = new Sprite(renderComponent.getTexture(animatorLife));
-                    // sprite.setOrigin(0.5f, 1f);
-                    sprite.setOrigin(0.5f * (sprite.getRegionWidth() / baseSpriteSize), 0.25f + (sprite.getRegionHeight() / baseSpriteSize));
-
-                    // spriteY += entityPos.z * (sprite.getOriginY() * sprite.getHeight());
-
-                    sprite.setPosition(spriteX, spriteY);
-                    // sprite.setSize(sizeComponent.getWidth(), sizeComponent.getHeight());
-                    sprite.setSize(sprite.getRegionWidth() / (float)baseSpriteSize, sprite.getRegionHeight() / baseSpriteSize);
-
-                    //entityBatch.put(entityPos, sprite);
-                    // Gdx.app.getApplicationLogger().log("render pipeline", String.format("[entity %s] sprite %s | X %s | Y %s | Z  %s | KEY: %s", entity.getId(), sprite.hashCode(), spriteX, spriteY, entityPos.z, skey ));
-                    //spriteQueue.put(skey, sprite);
-                    SpriteData spriteData = spriteQueue.add(entityPos, sprite);
-                    spriteData.setType(SpriteType.ENTITY);
-                    spriteData.update(deltaTime);
-
-                    // =========================================================================================================
-                    // <editor-fold desc="---- start debugging nonsense ----"
-                    // =========================================================================================================
-                    if (gui.isDebugAll() && !debuggedSprites.contains(sprite.hashCode())) {
-                        Vector3 camPosition = cam.position;
-                        TextureData spriteTexture = sprite.getTexture().getTextureData();
-                        debuggedSprites.add(sprite.hashCode());
-
-                        if (!spriteTexture.isPrepared()) {
-                            spriteTexture.prepare();
-                        }
-
-                        Pixmap pixmap = spriteTexture.consumePixmap();
-                        pixmap.setColor(0xCCCCCCCC);
-                        pixmap.drawRectangle(0, 0, pixmap.getWidth(), pixmap.getHeight());
-
-                        if (entity.hasComponent(CollisionBox.class)) {
-                            CollisionBox collisionBox = entity.getComponent(CollisionBox.class);
-                            pixmap.setColor(0xEEEE00A0);
-                            int hbX = (int) collisionBox.getWidth() * pixmap.getWidth();
-                            int hbY = (int) collisionBox.getHeight() * pixmap.getHeight();
-                            for (int y = 0; y < hbY; y++) {
-                                for (int x = 0; x < hbX; x++) {
-                                    if (x == 0 || x == hbX-1 || y == 0 || y == hbY - 1
-                                            || ( (x% 2 == 0 && y % 2 != 0) || (x % 2 != 0 && y % 2 == 0) )) {
-                                        pixmap.drawPixel(x,y);
-                                    }
-                                }
-                            }
-                        }
-                        pixmap.setColor(0xFF0000FF);
-                        pixmap.drawPixel(0,0);
-
-                        pixmap.setColor(0xFF00FFFF);
-                        pixmap.drawPixel((int)(sprite.getOriginX() * baseSpriteSize-1),(int)(sprite.getOriginY() * baseSpriteSize-1));
-
-                        spriteTexture.disposePixmap();
-
-                        sprite.setTexture(new Texture(pixmap));
-                    }
-                    // =========================================================================================================
-                    //</editor-fold>
-                    // =========================================================================================================
-                }
-            }
-        }
-    }
-
 
     protected static float gridSnapIncrement = (Float)PrometheusConfig.conf.getOrDefault("gridSnapIncrement", 0.0625f);
     protected static boolean useGridSnapping = (Boolean)PrometheusConfig.conf.getOrDefault("gridSnapping", false);
@@ -493,8 +320,6 @@ Gdx.app.log("shader", shader.getLog());
         font.setColor(Color.WHITE);
       //  spriteQueue.clear();
         float deltaTime = Gdx.graphics.getDeltaTime();
-        this.animatorLife += deltaTime;
-
         //prepareTileSprites(deltaTime);
         //prepareEntitySprites(deltaTime);
 
@@ -507,8 +332,8 @@ Gdx.app.log("shader", shader.getLog());
 
         PositionComponent lockOnPosition =  cam.getLockOnEntity().getComponent(PositionComponent.class);
         Vector3 lockOnVector = lockOnPosition.position;
-        Vector3 higlightThis = playerInputSystem.inWorldPos;
-      //  logger.log("Highlight:", String.format("Highlighting %s", higlightThis.toString()));
+        Vector3 highlightThis = playerInputSystem.inWorldPos;
+      //  logger.log("Highlight:", String.format("Highlighting %s", highlightThis.toString()));
 
         float fogOfWarRange = world.getSightRange();
         Color lightingColor = world.worldTime.getLightingColor(world.age);
@@ -530,14 +355,14 @@ Gdx.app.log("shader", shader.getLog());
             // Gdx.app.getApplicationLogger().log("render pipeline", String.format("[sprite %s 1/2] intendedX %s | intendedY %s", spriteData.hashCode(), intendedX, intendedY));
 
             if (useIsometric) {
-                if ((int)higlightThis.x == (int) spriteData.levelPosition.x
-                        && (int)higlightThis.y == (int) spriteData.levelPosition.y
-                       /* && (int)higlightThis.z == (int) spriteData.position.z*/) {
+                if ((int)highlightThis.x == (int) spriteData.levelPosition.x
+                        && (int)highlightThis.y == (int) spriteData.levelPosition.y
+                       /* && (int)highlightThis.z == (int) spriteData.position.z*/) {
                     intendedY += 0.125f; //* spriteData.sprite.getWidth();
                 }
             } else {
-                if ((int)higlightThis.x == (int) spriteData.levelPosition.x
-                        && (int)higlightThis.y == (int) spriteData.levelPosition.y) {
+                if ((int)highlightThis.x == (int) spriteData.levelPosition.x
+                        && (int)highlightThis.y == (int) spriteData.levelPosition.y) {
                     spriteData.sprite.rotate(45);
                 }
             }
@@ -620,6 +445,7 @@ Gdx.app.log("shader", shader.getLog());
                 }
             }
             // draw regular sprite
+
             spriteData.sprite.draw(batch, spriteAlpha);
 
             if (renderOrderIndex) {

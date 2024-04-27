@@ -1,13 +1,16 @@
 {
 	"name": "grass",
 	"tag": "grass_0",
+	"model": "grass",
 	"renderData": {
 		"default": {
-			"path": "world/terrain/iso/grass_cut.png",
+			"path": "world/terrain/iso/grass.png",
+			"normal": "world/terrain/iso/grass_normal.png",
 			"animated": false
 		},
 		"steppedOn": {
-			"path": "world/terrain/iso/grass_cut.png",
+			"path": "world/terrain/iso/grass.png",
+			"normal": "world/terrain/iso/normal_c.png",
 			"animated": false
 		}
 	}

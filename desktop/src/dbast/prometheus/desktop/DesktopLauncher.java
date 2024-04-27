@@ -3,15 +3,14 @@ package dbast.prometheus.desktop;
 import com.badlogic.gdx.Files;
 import com.badlogic.gdx.backends.lwjgl.LwjglApplication;
 import com.badlogic.gdx.backends.lwjgl.LwjglApplicationConfiguration;
+import com.badlogic.gdx.math.Vector2;
 import dbast.prometheus.PrometheusGame;
 import dbast.prometheus.SimpleDecalTest;
 import dbast.prometheus.engine.config.PrometheusConfig;
 
 import java.time.LocalDateTime;
 import java.time.format.TextStyle;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Locale;
+import java.util.*;
 
 public class DesktopLauncher {
 	public static void main (String[] arg) {
@@ -28,7 +27,7 @@ public class DesktopLauncher {
 		//PrometheusConfig.conf.put("gridSnapIncrement", 0.5f); //8 pixel - a bit snappy
 		//PrometheusConfig.conf.put("gridSnapIncrement", 1f); //16 pixel - a bit snappy
 
-		PrometheusConfig.conf.put("useWorldTimeShading", true);
+		PrometheusConfig.conf.put("useWorldTimeShading", false);
 
 		if (PrometheusConfig.conf.get("isometric", Boolean.class)) {
 			PrometheusConfig.conf.put("baseSpriteSize", 32f);
@@ -44,8 +43,8 @@ public class DesktopLauncher {
 		// hdready
 		config.height = 720;
 		config.width = 1280;
-
 		config.resizable = true;
+
 		if (arguments.contains("fullscreen")) {
 			config.fullscreen = true;
 
@@ -53,48 +52,24 @@ public class DesktopLauncher {
 			config.width= 3840;
 		} else {
 
-			int setting = 4;
-			boolean mobile = false;
-			if (setting == 1) {
-				// DS
-				config.height = 192;
-				config.width= 256;
-			}
-			if (setting == 2) {
-				// 3DS
-				config.height = 240;
-				config.width = 320;
-			}
-			if (setting == 3) {
-				// hdready
-				config.height = 720;
-				config.width = 1280;
-			}
-			if (setting == 4) {
-				// more hd
-				config.height = 900;
-				config.width = 1600;
-			}
-			if (setting == 5) {
-				// 2k baby
-				config.height = 1440;
-				config.width = 2560;
-			}
-			if (setting == 6) {
-				// 4k omegapogchamp
-				config.height = 2160;
-				config.width = 3840;
-			}
-			if (setting == 7) {
-				// 8k
-				config.height = 4320;
-				config.width = 7680;
-			}
-			if (mobile) {
-				int width = config.width;
-				config.width = config.height;
-				config.height = width;
-			}
+			final Map<String, Vector2> resConfig = new HashMap<>();
+			resConfig.put("nds", new Vector2(256, 192));
+			resConfig.put("3ds", new Vector2(320, 240));
+			resConfig.put("hd720", new Vector2(1280, 720));
+			resConfig.put("hd900", new Vector2(1600, 900));
+			resConfig.put("hd1080", new Vector2(1920, 1080));
+			resConfig.put("ultraWide", new Vector2(	2560, 1080));
+			resConfig.put("2k", new Vector2(2560, 1440));
+			resConfig.put("4k", new Vector2(3840, 2160));
+			resConfig.put("8k", new Vector2(7680, 4320));
+
+			boolean mobile = arguments.contains("mobile");
+
+			Vector2 resolution = resConfig.get(arguments.stream().filter(resConfig::containsKey).findFirst().orElse("hd900"));
+
+			config.height = (int) (mobile ? resolution.x  : resolution.y);
+			config.width = (int) (mobile ? resolution.y  : resolution.x);
+
 			config.title = "It's " + LocalDateTime.now().getDayOfWeek().getDisplayName(TextStyle.FULL, Locale.ENGLISH) +" mah dudes"; // TODO slap a name on this motherf
 		}
 

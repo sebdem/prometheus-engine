@@ -2,28 +2,21 @@ package dbast.prometheus.engine.entity.systems;
 
 
 import com.badlogic.gdx.Gdx;
-import com.badlogic.gdx.graphics.Pixmap;
 import com.badlogic.gdx.graphics.Texture;
-import com.badlogic.gdx.graphics.TextureData;
-import com.badlogic.gdx.graphics.g2d.Sprite;
-import com.badlogic.gdx.graphics.g2d.TextureRegion;
+import com.badlogic.gdx.graphics.g2d.Animation;
 import com.badlogic.gdx.math.Vector3;
 import dbast.prometheus.engine.LockOnCamera;
 import dbast.prometheus.engine.entity.Entity;
 import dbast.prometheus.engine.entity.components.*;
-import dbast.prometheus.engine.graphics.SpriteData;
-import dbast.prometheus.engine.graphics.SpriteDataQueue;
-import dbast.prometheus.engine.graphics.SpriteType;
+import dbast.prometheus.engine.graphics.*;
 import dbast.prometheus.engine.scene.WorldScene;
 import dbast.prometheus.engine.world.Direction;
 import dbast.prometheus.engine.world.WorldChunk;
 import dbast.prometheus.engine.world.WorldSpace;
 import dbast.prometheus.engine.world.generation.GenerationUtils;
 import dbast.prometheus.engine.world.tile.TileData;
-import dbast.prometheus.utils.GeneralUtils;
 
 import java.util.*;
-import java.util.stream.Collectors;
 
 /**
  * Hear that developer, engine wants something a bit meatier!
@@ -42,9 +35,11 @@ public class RenderSystem extends ComponentSystem {
 
     public float baseSpriteSize;
 
+    public Texture defaultCubeNormal;
     public RenderSystem(WorldSpace world, LockOnCamera cam) {
         this.world = world;
         this.camera = cam;
+        this.defaultCubeNormal = new Texture(Gdx.files.internal("world/terrain/iso/normal_c.png"));
         resetRenderSystem();
     }
 
@@ -139,8 +134,8 @@ public class RenderSystem extends ComponentSystem {
         SpriteData spriteData = spriteDataCache.get(spriteDataKey);
         Vector3 entityPos = positionComponent.position;
 
-        Sprite sprite = null;
-        TextureRegion currentTextureRegion = (stateComponent != null) ? renderComponent.getTexture(animatorLife, stateComponent.getState()) : renderComponent.getTexture(animatorLife);
+        PrometheusSprite sprite = null;
+        SpriteRenderData currentRenderData = getTextureForState(renderComponent, stateComponent);
 
         if (spriteData == null) {
             spriteData = new SpriteData();
@@ -148,7 +143,7 @@ public class RenderSystem extends ComponentSystem {
             float spriteX = entityPos.x;
             float spriteY = entityPos.y;
 
-            sprite = new Sprite(currentTextureRegion);
+            sprite = new PrometheusSprite(currentRenderData);
 
             float originX  = 0;
             float originY  = 0;
@@ -169,14 +164,38 @@ public class RenderSystem extends ComponentSystem {
             spriteDataCache.put(spriteDataKey, spriteData);
         }
 
+        // TODO improve update of render data...
         spriteData.setPosition(entityPos);
         spriteData.setType(spriteType);
-        spriteData.sprite.setRegion(currentTextureRegion);
+        spriteData.setOffset(currentRenderData.renderIndexOffset);
+        spriteData.sprite.setNormal(currentRenderData.normal);
+        spriteData.sprite.setRegion(currentRenderData.diffuse);
 
         spriteData.update(updateDelta);
         return spriteData;
     }
 
+    protected SpriteRenderData getTextureForState(RenderComponent renderComponent, StateComponent stateComponent) {
+        float stateAge = animatorLife;
+        Map<String, Animation<SpriteRenderData>> animations = renderComponent.getAnimations();
+
+        Animation<SpriteRenderData> currentAnimation = null;
+        if (stateComponent != null) {
+            if (stateComponent.getCurrentAge() != 0f) {
+                stateAge = stateComponent.getCurrentAge();
+            }
+            currentAnimation = animations.getOrDefault(stateComponent.getState(), null);
+        }
+        if (currentAnimation == null ) {
+            currentAnimation = animations.getOrDefault("default", null);
+        }
+
+        if (currentAnimation != null) {
+            return currentAnimation.getKeyFrame(stateAge);
+        }
+
+        return renderComponent.getDefaultRenderData();
+    }
 
     @Override
     public List<Class<? extends Component>> neededComponents() {

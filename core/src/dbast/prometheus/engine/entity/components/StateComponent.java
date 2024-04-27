@@ -23,13 +23,34 @@ public class StateComponent extends Component {
 
     public void dropState(String state) {
         this.states.remove(state);
-        this.state = this.states.peek();
+        resetState();
+    }
+    public void dropCurrentState() {
+        this.states.remove(this.state);
+        resetState();
+    }
+    private void resetState() {
+        if (this.states.isEmpty()) {
+            this.states.push("default");
+        } else {
+            this.state = this.states.peek();
+        }
         this.currentAge = 0f;
     }
     public void setState(String state) {
         this.states.push(state);
         this.state = this.states.peek();
         this.currentAge = 0f;
+    }
+
+    /**
+     * Updates the current state without affecting age. Should only be used for minor modifications to state variants
+     * @param updatedState new state
+     */
+    public void updateCurrentState(String updatedState) {
+        this.states.remove(this.state);
+        this.state = updatedState;
+        this.states.push(this.state);
     }
 
     public float getCurrentAge() {

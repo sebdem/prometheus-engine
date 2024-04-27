@@ -4,6 +4,7 @@
 	"renderData": {
 		"default": {
 			"path": "world/terrain/iso/dirt_full.png",
+			"normal": "world/terrain/iso/normal_c.png",
 			"animated": false
 		}
 	}

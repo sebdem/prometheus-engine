@@ -156,9 +156,10 @@ public class LockOnCamera extends PerspectiveCamera implements PositionProvider 
 
     @Override
     public void update() {
-        int largestFactor = 16;
+        int largestFactor = (int)Math.max(this.viewportWidth, this.viewportHeight);
         int height =  Gdx.graphics.getHeight();
         int width =  Gdx.graphics.getWidth();
+
         float ratio = ((float)Math.min(height, width) / (float)Math.max(height, width));
         if (width >= height) {
             this.viewportHeight = largestFactor * ratio;

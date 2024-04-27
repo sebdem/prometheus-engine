@@ -1,6 +1,5 @@
 package dbast.prometheus.engine.graphics;
 
-import com.badlogic.gdx.graphics.g2d.Sprite;
 import com.badlogic.gdx.math.Vector3;
 import dbast.prometheus.engine.LockOnCamera;
 import dbast.prometheus.engine.world.Direction;
@@ -9,8 +8,9 @@ import java.util.HashSet;
 import java.util.Set;
 
 public class SpriteData implements Comparable<SpriteData> {
-    public SpriteType type = SpriteType.DEFAULT;
-    public Sprite sprite;
+
+    public PrometheusSprite sprite;
+
     public Vector3 levelPosition;
     public Set<Direction> notBlocked;
     protected boolean dataUpdate = false;
@@ -23,7 +23,7 @@ public class SpriteData implements Comparable<SpriteData> {
         this.notBlocked = new HashSet<>();
         this.screenPosition = Vector3.Zero.cpy();
     }
-    public SpriteData(Sprite sprite, Vector3 orderPosition) {
+    public SpriteData(PrometheusSprite sprite, Vector3 orderPosition) {
         this();
         // factually correct
         //this.spriteOrigin = spritePos3D.cpy().add(sprite.getOriginX(), 0,  sprite.getOriginY());
@@ -49,7 +49,19 @@ public class SpriteData implements Comparable<SpriteData> {
                         -(levelPosition.x * xyWeight + sprite.getOriginX() * sprite.getWidth() + levelPosition.y * xyWeight);*/
         // this is a more expensive, but 'correct' priority, based on the pure levelPosition distance to predefined comparePoint
        /*===>this.orderIndex = this.levelPosition.cpy().add(0,0,type.priorityOffset).dst2(comparePoint);*/
-        this.orderIndex = this.levelPosition.x + this.levelPosition.y * 16 - this.levelPosition.z * 16 * 16 + type.priorityOffset;
+        /*this.orderIndex =
+                (
+                        (this.levelPosition.x + sprite.renderIndexOffset.x)
+                )
+                + (
+                        (this.levelPosition.y + sprite.renderIndexOffset.y) * 16
+                )
+                - (
+                        (this.levelPosition.z + sprite.renderIndexOffset.z) * 16 * 16  *//*+ sprite.type.priorityOffset*//*
+                ); */
+        // TODO deprecate type in favour of renderIndexOffset
+        this.orderIndex = this.levelPosition.cpy().add(this.sprite.renderIndexOffset).add(0,0,sprite.type.priorityOffset).dst2(comparePoint);
+
        // this.orderIndex = levelPosition.z + type.priorityOffset - (levelPosition.x + levelPosition.y);
 
         // almost solution for terrain...
@@ -68,15 +80,22 @@ public class SpriteData implements Comparable<SpriteData> {
         }
         this.levelPosition = newPositon;
     }
-    public void setSprite(Sprite newSprite) {
+    public void setSprite(PrometheusSprite newSprite) {
         this.setRequiresUpdate();
         this.sprite = newSprite;
     }
+
     public void setType(SpriteType type) {
-        if (!type.equals(this.type)) {
+        if (!type.equals(this.sprite.type)) {
             this.setRequiresUpdate();
         }
-        this.type = type;
+        this.sprite.type = type;
+    }
+    public void setOffset(Vector3 newOffset) {
+        if (!newOffset.equals(this.sprite.renderIndexOffset)) {
+            this.setRequiresUpdate();
+        }
+        this.sprite.setRenderIndexOffset(newOffset);
     }
 
     public void update(float updateDelta) {

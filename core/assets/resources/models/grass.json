@@ -1,0 +1,10 @@
+{
+	"default": {
+		"path": "world/terrain/iso/grass.png",
+		"animated": false
+	},
+	"steppedOn": {
+		"path": "world/terrain/iso/grass.png",
+		"animated": false
+	}
+}

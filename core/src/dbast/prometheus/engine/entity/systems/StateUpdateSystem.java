@@ -3,12 +3,15 @@ package dbast.prometheus.engine.entity.systems;
 import com.badlogic.gdx.math.Vector3;
 import dbast.prometheus.engine.entity.Entity;
 import dbast.prometheus.engine.entity.components.*;
+import dbast.prometheus.engine.world.Direction;
 import dbast.prometheus.engine.world.WorldSpace;
 import dbast.prometheus.engine.world.tile.Tile;
 import dbast.prometheus.engine.world.tile.TileData;
 
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 public class StateUpdateSystem extends ComponentSystem {
 
@@ -39,19 +42,44 @@ public class StateUpdateSystem extends ComponentSystem {
                     // do nothing
                 }
             });
-            final String movingState = "moving";
+
             entity.executeFor(VelocityComponent.class, velocityComponent -> {
                 //  Gdx.app.getApplicationLogger().log("Collision System:", String.format("update for entity %s state; new state is%s colliding", entityA.getId(), isColliding ? "" : " not"));
                 boolean currentlyMoving = velocityComponent.isMoving();
-                boolean containsStatus = entityState.states.contains(movingState);
+
+                String movingState = "moving:";
+                boolean containsStatus = entityState.states.stream().anyMatch(state-> state.startsWith("moving:"));
 
                 if (currentlyMoving && !containsStatus) {
                     entityState.setState(movingState);
                 } else if (!currentlyMoving && containsStatus) {
-                    entityState.dropState(movingState);
+                    entityState.dropCurrentState();
+                } else if (currentlyMoving){
+                    // update direction "substate"
+                    // TODO maybe this could look better if there was an actual MovementComponent, containing that specific information already, with the StateSystem just "composing" the final state per components
+                    float abs_x = Math.abs(velocityComponent.getVelocity_x());
+                    float abs_y = Math.abs(velocityComponent.getVelocity_y());
+
+                    if (abs_y > 0) {
+                        if (velocityComponent.getVelocity_y() > 0) {
+                            movingState += "up";
+                        } else if (velocityComponent.getVelocity_y() < 0) {
+                            movingState += "down";
+                        }
+                    }
+                    if (abs_x > 0) {
+                        if (velocityComponent.getVelocity_x() > 0) {
+                            movingState += "right";
+                        } else if (velocityComponent.getVelocity_x() < 0) {
+                            movingState += "left";
+                        }
+                    }
+
+                    entityState.updateCurrentState(movingState);
                 } else {
-                    // do nothing
+                    // Do nothing
                 }
+
             });
 
             /*// TODO improve???

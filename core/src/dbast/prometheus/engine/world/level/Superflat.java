@@ -102,20 +102,20 @@ public class Superflat {
                 Gdx.files.internal("sprites/enemies/iso_blob_2.png")
         };
 
-        for (int i = 0; i < 8; i++) {
+        for (int i = 0; i < 32; i++) {
             Vector3 pos = worldSpace.getSpawnPoint();
             worldSpace.placeTile(TileRegistry.getByTag("rock"), pos.x, pos.y, pos.z);
-            /*worldSpace.entities.addNewEntity(
+            worldSpace.entities.addNewEntity(
                     CollisionBox.createBasic(),
                     SizeComponent.createBasic(),
                     new PositionComponent(worldSpace.getSpawnPoint()),
                     new StateComponent(),
-                    new RenderComponent().setDefaultTexture(GeneralUtils.randomElement(blobTextures)),
+                    new RenderComponent().registerAnimation(GeneralUtils.randomElement(blobTextures), "default"),
                     //SpriteComponent.fromTexture(new Texture(blobTextures[(int)(Math.random() * blobTextures.length)])),
                     new VelocityComponent(0f,0f,0f),
                     new TargetTraverseComponent()
                     // new VelocityComponent((float)((Math.random() - 0.5f) * maxSpeed),(float)((Math.random() - 0.5f) * maxSpeed))
-            );*/
+            );
         }
 
         return worldSpace;

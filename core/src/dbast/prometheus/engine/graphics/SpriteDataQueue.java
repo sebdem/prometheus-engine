@@ -12,8 +12,8 @@ import java.util.ArrayList;
  */
 public class SpriteDataQueue extends ArrayList<SpriteData> {
 
-    public SpriteData add(Vector3 spritePos3D, Sprite Sprite) {
-        SpriteData data = new SpriteData(Sprite, spritePos3D);
+    public SpriteData add(Vector3 spritePos3D, PrometheusSprite sprite) {
+        SpriteData data = new SpriteData(sprite, spritePos3D);
         this.add(data);
         return data;
     }

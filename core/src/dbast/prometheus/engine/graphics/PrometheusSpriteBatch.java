@@ -1,6 +1,5 @@
 package dbast.prometheus.engine.graphics;
 
-import com.badlogic.gdx.graphics.g2d.Batch;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 
 /**
@@ -84,7 +83,16 @@ public class PrometheusSpriteBatch extends SpriteBatch {
             throw new IllegalArgumentException("Can't have more than 8191 sprites per batch: " + size);
         } else {
             Mesh.VertexDataType vertexDataType = Gdx.gl30 != null ? VertexDataType.VertexBufferObjectWithVAO : defaultVertexDataType;
-            this.mesh = new Mesh(vertexDataType, false, size * 4, size * 6, new VertexAttribute[]{new VertexAttribute(1, 2, "a_position"), new VertexAttribute(4, 4, "a_color"), new VertexAttribute(16, 2, "a_texCoord0")});
+            this.mesh = new Mesh(
+                    vertexDataType,
+                    false,
+                    size * 4,
+                    size * 6,
+                    new VertexAttribute[]{
+                            new VertexAttribute(1, 2, "a_position"),
+                            new VertexAttribute(4, 4, "a_color"),
+                            new VertexAttribute(16, 2, "a_texCoord0")
+            });
             this.projectionMatrix.setToOrtho2D(0.0F, 0.0F, (float)Gdx.graphics.getWidth(), (float)Gdx.graphics.getHeight());
             this.vertices = new float[size * 20];
             int len = size * 6;
@@ -189,13 +197,13 @@ public class PrometheusSpriteBatch extends SpriteBatch {
         return this.colorPacked;
     }
 
-    public void draw(Texture texture, float x, float y, float originX, float originY, float width, float height, float scaleX, float scaleY, float rotation, int srcX, int srcY, int srcWidth, int srcHeight, boolean flipX, boolean flipY) {
+    public void draw(Texture texture, Texture normal, float x, float y, float originX, float originY, float width, float height, float scaleX, float scaleY, float rotation, int srcX, int srcY, int srcWidth, int srcHeight, boolean flipX, boolean flipY) {
         if (!this.drawing) {
             throw new IllegalStateException("SpriteBatch.begin must be called before draw.");
         } else {
             float[] vertices = this.vertices;
             if (texture != this.lastTexture) {
-                this.switchTexture(texture);
+                this.switchTexture(texture, normal);
             } else if (this.idx == vertices.length) {
                 this.flush();
             }
@@ -296,13 +304,13 @@ public class PrometheusSpriteBatch extends SpriteBatch {
         }
     }
 
-    public void draw(Texture texture, float x, float y, float width, float height, int srcX, int srcY, int srcWidth, int srcHeight, boolean flipX, boolean flipY) {
+    public void draw(Texture texture, Texture normal, float x, float y, float width, float height, int srcX, int srcY, int srcWidth, int srcHeight, boolean flipX, boolean flipY) {
         if (!this.drawing) {
             throw new IllegalStateException("SpriteBatch.begin must be called before draw.");
         } else {
             float[] vertices = this.vertices;
             if (texture != this.lastTexture) {
-                this.switchTexture(texture);
+                this.switchTexture(texture, normal);
             } else if (this.idx == vertices.length) {
                 this.flush();
             }
@@ -352,13 +360,13 @@ public class PrometheusSpriteBatch extends SpriteBatch {
         }
     }
 
-    public void draw(Texture texture, float x, float y, int srcX, int srcY, int srcWidth, int srcHeight) {
+    public void draw(Texture texture, Texture normal, float x, float y, int srcX, int srcY, int srcWidth, int srcHeight) {
         if (!this.drawing) {
             throw new IllegalStateException("SpriteBatch.begin must be called before draw.");
         } else {
             float[] vertices = this.vertices;
             if (texture != this.lastTexture) {
-                this.switchTexture(texture);
+                this.switchTexture(texture, normal);
             } else if (this.idx == vertices.length) {
                 this.flush();
             }
@@ -395,13 +403,13 @@ public class PrometheusSpriteBatch extends SpriteBatch {
         }
     }
 
-    public void draw(Texture texture, float x, float y, float width, float height, float u, float v, float u2, float v2) {
+    public void draw(Texture texture, Texture normal, float x, float y, float width, float height, float u, float v, float u2, float v2) {
         if (!this.drawing) {
             throw new IllegalStateException("SpriteBatch.begin must be called before draw.");
         } else {
             float[] vertices = this.vertices;
             if (texture != this.lastTexture) {
-                this.switchTexture(texture);
+                this.switchTexture(texture, normal);
             } else if (this.idx == vertices.length) {
                 this.flush();
             }
@@ -434,17 +442,17 @@ public class PrometheusSpriteBatch extends SpriteBatch {
         }
     }
 
-    public void draw(Texture texture, float x, float y) {
+    public void draw(Texture texture, Texture normal, float x, float y) {
         this.draw(texture, x, y, (float)texture.getWidth(), (float)texture.getHeight());
     }
 
-    public void draw(Texture texture, float x, float y, float width, float height) {
+    public void draw(Texture texture, Texture normal, float x, float y, float width, float height) {
         if (!this.drawing) {
             throw new IllegalStateException("SpriteBatch.begin must be called before draw.");
         } else {
             float[] vertices = this.vertices;
             if (texture != this.lastTexture) {
-                this.switchTexture(texture);
+                this.switchTexture(texture, normal);
             } else if (this.idx == vertices.length) {
                 this.flush();
             }
@@ -481,14 +489,14 @@ public class PrometheusSpriteBatch extends SpriteBatch {
         }
     }
 
-    public void draw(Texture texture, float[] spriteVertices, int offset, int count) {
+    public void draw(Texture texture, Texture normal, float[] spriteVertices, int offset, int count) {
         if (!this.drawing) {
             throw new IllegalStateException("SpriteBatch.begin must be called before draw.");
         } else {
             int verticesLength = this.vertices.length;
             int remainingVertices = verticesLength;
             if (texture != this.lastTexture) {
-                this.switchTexture(texture);
+                this.switchTexture(texture, normal);
             } else {
                 remainingVertices = verticesLength - this.idx;
                 if (remainingVertices == 0) {
@@ -524,7 +532,7 @@ public class PrometheusSpriteBatch extends SpriteBatch {
             Texture texture = region.getTexture();
             
             if (texture != this.lastTexture) {
-                this.switchTexture(texture);
+                this.switchTexture(texture, null);
             } else if (this.idx == vertices.length) {
                 this.flush();
             }
@@ -568,7 +576,7 @@ public class PrometheusSpriteBatch extends SpriteBatch {
             float[] vertices = this.vertices;
             Texture texture = region.getTexture();
             if (texture != this.lastTexture) {
-                this.switchTexture(texture);
+                this.switchTexture(texture, null);
             } else if (this.idx == vertices.length) {
                 this.flush();
             }
@@ -663,7 +671,7 @@ public class PrometheusSpriteBatch extends SpriteBatch {
             float[] vertices = this.vertices;
             Texture texture = region.getTexture();
             if (texture != this.lastTexture) {
-                this.switchTexture(texture);
+                this.switchTexture(texture, null);
             } else if (this.idx == vertices.length) {
                 this.flush();
             }
@@ -780,7 +788,7 @@ public class PrometheusSpriteBatch extends SpriteBatch {
             float[] vertices = this.vertices;
             Texture texture = region.getTexture();
             if (texture != this.lastTexture) {
-                this.switchTexture(texture);
+                this.switchTexture(texture, null);
             } else if (this.idx == vertices.length) {
                 this.flush();
             }
@@ -838,7 +846,7 @@ public class PrometheusSpriteBatch extends SpriteBatch {
             this.lastTexture.bind();
 
             Gdx.gl.glActiveTexture(GL20.GL_TEXTURE1);
-            this.lastNormal.bind();
+            this.lastNormal.bind(GL20.GL_TEXTURE1);
 
             Gdx.gl.glActiveTexture(GL20.GL_TEXTURE0);
 
@@ -958,17 +966,13 @@ public class PrometheusSpriteBatch extends SpriteBatch {
 
     }
 
-    public void setNormal(Texture nTexture) {
-        if (nTexture != null) {
-            this.lastNormal = nTexture;
-        } else {
-            this.lastNormal = defaultNormal;
-        }
-    }
-
-    protected void switchTexture(Texture texture) {
+    protected void switchTexture(Texture texture, Texture normal) {
         this.flush();
         this.lastTexture = texture;
+        if (normal == null) {
+            normal = defaultNormal;
+        }
+        this.lastNormal = normal;
         this.invTexWidth = 1.0F / (float)texture.getWidth();
         this.invTexHeight = 1.0F / (float)texture.getHeight();
     }

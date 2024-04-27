@@ -10,8 +10,9 @@ public class TileLoader extends AbstractLoader<Tile> {
 
     public String name;
     public String tag;
+    @Deprecated
     public Float height = 1f;
-    public float[] bounds = new float[]{0f,0f,0f,1f,1f,1f};
+    public float[][] bounds = new float[][]{{0f,0f,0f,1f,1f,1f}};
 
     public RenderComponentMap renderData;
 

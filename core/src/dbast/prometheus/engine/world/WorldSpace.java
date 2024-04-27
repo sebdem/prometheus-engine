@@ -23,6 +23,8 @@ import java.util.*;
 
 public class WorldSpace {
 
+    public String id;
+
     /*
         Basic World data
      */
@@ -60,6 +62,7 @@ public class WorldSpace {
         this(0,0, width, height);
     }
     public WorldSpace(int minX, int minY, int width, int height) {
+        this.id ="world_" + (System.nanoTime() / 1000);
         this.minX = minX;
         this.minY = minY;
         this.width = width;
@@ -87,9 +90,9 @@ public class WorldSpace {
                 Vector3 chunkPosition = getChunkFor(position);
 
                 List<BoundingBox> chunkBoundaries = tempBoundaries.getOrDefault(chunkPosition, new ArrayList<>());
-                BoundingBox tileBounds = tile.getBoundsFor(position);
-                if (tileBounds != null) {
-                    chunkBoundaries.add(tileBounds);
+                List<BoundingBox> tileBounds = tile.getBoundsForPositon(position);
+                if (tileBounds != null && !tileBounds.isEmpty()) {
+                    chunkBoundaries.addAll(tileBounds);
                     tempBoundaries.put(chunkPosition, chunkBoundaries);
                 }
             }
@@ -225,7 +228,7 @@ public class WorldSpace {
 
 
     public void persist() {
-        FileHandle file = Gdx.files.local("save/world_" + (System.nanoTime() / 1000) + ".json");
+        FileHandle file = Gdx.files.local("save/" + this.id + ".json");
         file.writeString(new Gson().toJson(new WorldData(this)), false);
         //Gdx.app.getClipboard().setContents();
     }
