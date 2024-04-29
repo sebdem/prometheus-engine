@@ -56,7 +56,8 @@ public class MovementSystem extends ComponentSystem {
                 if (canMoveTo && collisionBox != null && !collisionBox.isPermeable()) {
                     BoundingBox entityBoundary =collisionBox.getBoundsAt(newPos);
                // TODO a lot of this stuff, while related to movement, really shouldn't be in here. Gravity/ascend, only makes sense inside a movement system if it is limited only to the grid. Currently it's more physics based.
-                    float allowedStep = 0.66f;
+                    //float allowedStep = 0.66f;
+                    float allowedStep = 2f;
                     Vector3 newPosHigher = newPos.cpy().add(0,0,allowedStep);
                     Vector3 newPosLower = newPos.cpy().add(0,0,-allowedStep);
                     BoundingBox entityBoundaryHigher = collisionBox.getBoundsAt(newPosHigher);

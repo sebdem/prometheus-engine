@@ -33,6 +33,9 @@ public class OpenSimplexNoise {
     private static final int PSIZE = 2048;
     private static final int PMASK = 2047;
 
+
+    public long noiseSeed = DEFAULT_SEED;
+
     private short[] perm;
     private Grad2[] permGrad2;
     private Grad3[] permGrad3;
@@ -60,6 +63,7 @@ public class OpenSimplexNoise {
         permGrad2 = new Grad2[PSIZE];
         permGrad3 = new Grad3[PSIZE];
         permGrad4 = new Grad4[PSIZE];
+        noiseSeed = seed;
         short[] source = new short[PSIZE];
         for (short i = 0; i < PSIZE; i++)
             source[i] = i;

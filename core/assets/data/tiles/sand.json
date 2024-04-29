@@ -1,0 +1,10 @@
+{
+	"name": "sand",
+	"tag": "sand",
+	"renderData": {
+		"default": {
+			"path": "world/terrain/iso/sand.png",
+			"animated": false
+		}
+	}
+}

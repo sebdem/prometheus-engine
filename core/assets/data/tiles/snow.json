@@ -1,0 +1,11 @@
+{
+	"name": "snow",
+	"tag": "snow",
+	"model": "snow",
+	"renderData": {
+		"default": {
+			"path": "world/terrain/iso/snow.png",
+			"animated": false
+		}
+	}
+}

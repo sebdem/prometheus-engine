@@ -43,6 +43,9 @@ public class PerlinTest {
         int numberOfChunksY = totalHeight / worldSpace.chunkSize/* + 2*/;
         int numberOfChunksX = totalWidth / worldSpace.chunkSize/* + 2*/;
 
+        int perlinScale = 24;
+        int biomeScale = 16;
+
         BufferedImage worldHeightMap = new BufferedImage(totalWidth, totalHeight, BufferedImage.TYPE_INT_ARGB);
 
         WorldChunk[] chunks = new WorldChunk[numberOfChunksY * numberOfChunksX];
@@ -66,16 +69,16 @@ public class PerlinTest {
                     for (float xc = 0; xc < worldSpace.chunkSize; xc++) {
                         float xAbs = xc + chunkX;
 
-                        float simplexValue =  (float)simplexNoise.eval(xAbs / 24, yAbs / 24);
-                        float biomeValue =  (float)biomeNoise.eval(xAbs / 16, yAbs / 16);
+                        float simplexValue =  (float)simplexNoise.eval(xAbs / perlinScale, yAbs / perlinScale);
+                        float biomeValue =  (float)biomeNoise.eval(xAbs / biomeScale, yAbs / biomeScale);
                         //Gdx.app.getApplicationLogger().log("WorldSetup", String.format("For X %s and Y %s opensimplex: %s", xAbs, yAbs, simplexValue));
 
-                        float terrainLimit = (int)(simplexValue *24f * biomeValue);
+                        float terrainLimit = (int)(simplexValue * perlinScale * biomeValue);
                         float maxZ = (terrainLimit < 0) ? 0 : terrainLimit;
 
 
                         if (xAbs >= 0 && xAbs < totalWidth && yAbs >= 0 && yAbs < totalHeight) {
-                            int rgbValue = (int) (127 + 120 * (terrainLimit / 24));
+                            int rgbValue = (int) (127 + 120 * (terrainLimit / perlinScale));
                             Color c = new Color(rgbValue, rgbValue, rgbValue,
                                     255
                             );
@@ -102,7 +105,11 @@ public class PerlinTest {
                                 } else if (z < maxZ) {
                                     tileToPlace = TileRegistry.getByTag("dirt_0");
                                 } else if (z == maxZ) {
-                                    tileToPlace = TileRegistry.getByTag("grass_0");
+                                    if (z != 0) {
+                                        tileToPlace = TileRegistry.getByTag("grass_0");
+                                    } else {
+                                        tileToPlace = TileRegistry.getByTag("sand");
+                                    }
                                 }
                             }
 

@@ -31,10 +31,7 @@ import dbast.prometheus.engine.world.WorldSpace;
 import dbast.prometheus.engine.world.WorldTime;
 import dbast.prometheus.engine.world.generation.features.CastleTower;
 import dbast.prometheus.engine.world.generation.features.Hole;
-import dbast.prometheus.engine.world.level.MinimalLevel2;
-import dbast.prometheus.engine.world.level.PerlinTest;
-import dbast.prometheus.engine.world.level.Superflat;
-import dbast.prometheus.engine.world.level.WaveFunctionTest;
+import dbast.prometheus.engine.world.level.*;
 import dbast.prometheus.engine.world.tile.TileData;
 import dbast.prometheus.engine.world.tile.TileRegistry;
 import dbast.prometheus.utils.GeneralUtils;
@@ -121,7 +118,7 @@ public class WorldScene extends AbstractScene{
                         new Hole()
                 ), 6,20).setup();*/
         //world = new Superflat(30, 30).setup();
-       world = new PerlinTest(256, 128).setup();
+       world = new MultilayeredPerlinTest(256, 256).setup();
         //world = new MinimalLevel2().setup();
        // world = WorldMapLoader.fromJson(Gdx.files.local("save/world_38571562605.json")).build();
 
