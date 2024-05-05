@@ -111,15 +111,15 @@ public class WorldScene extends AbstractScene{
 
 
         // ==== [ prepare world ] ============================
-/*       world = new WaveFunctionTest(100, 100, 20, false, true,
+      /*world = new WaveFunctionTest(100, 100, 20, false, true,
                 Arrays.asList(
                         new CastleTower("brickF"),
                         new CastleTower("dirt_0"),
                         new Hole()
                 ), 6,20).setup();*/
         //world = new Superflat(30, 30).setup();
-       world = new MultilayeredPerlinTest(256, 256).setup();
-        //world = new MinimalLevel2().setup();
+       world = new MultilayeredPerlinTest(200, 200).setup();
+      //  world = new MinimalLevel2().setup();
        // world = WorldMapLoader.fromJson(Gdx.files.local("save/world_38571562605.json")).build();
 
         // ==== [ camera setup ] ============================

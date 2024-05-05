@@ -3,6 +3,7 @@ package dbast.prometheus.engine.world;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.files.FileHandle;
 import com.badlogic.gdx.graphics.Color;
+import com.badlogic.gdx.graphics.Cubemap;
 import com.badlogic.gdx.math.MathUtils;
 import com.badlogic.gdx.math.Vector3;
 import com.badlogic.gdx.math.collision.BoundingBox;
@@ -80,8 +81,10 @@ public class WorldSpace {
     public void update(float updateDelta) {
         this.age += updateDelta;
         this.realTime = System.currentTimeMillis();
+       // Gdx.app.log("world", "updating world...");
 
         if (dataUpdate) {
+         //   Gdx.app.log("world", String.format("requires world data update with %s chunks", chunks.size()));
             Vector3IndexMap<List<BoundingBox>> tempBoundaries = new Vector3IndexMap<>(new Vector3Comparator.Planar());
 
             for (Map.Entry<Vector3, Tile> tileEntry : terrainTiles.entrySet()) {
@@ -96,10 +99,12 @@ public class WorldSpace {
                     tempBoundaries.put(chunkPosition, chunkBoundaries);
                 }
             }
-
             this.boundariesPerChunk = tempBoundaries;
+
+            this.chunks.values().forEach(chunk -> chunk.update(updateDelta));
             dataUpdate = false;
         }
+
 
     //   Gdx.app.getApplicationLogger().log("World", String.format("Current age: %s | RealTime: %s | CurrentTime: %s | currentOClock %s", this.age, realTime, currentTime.name(), (this.age / 60) % 24 ));
     }
@@ -144,7 +149,7 @@ public class WorldSpace {
     public WorldChunk placeInChunk(Vector3 inWorldPosition, TileData tileData) {
         Vector3 chunkPos = this.getChunkFor(inWorldPosition);
         WorldChunk chunk = this.chunks.getOrDefault(chunkPos, new WorldChunk(chunkPos));
-        chunk.tileDataMap.put(inWorldPosition, tileData);
+        chunk.putTileData(inWorldPosition, tileData);
         this.chunks.put(chunkPos, chunk);
         return chunk;
     }

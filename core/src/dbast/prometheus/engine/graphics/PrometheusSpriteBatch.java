@@ -88,11 +88,9 @@ public class PrometheusSpriteBatch extends SpriteBatch {
                     false,
                     size * 4,
                     size * 6,
-                    new VertexAttribute[]{
-                            new VertexAttribute(1, 2, "a_position"),
-                            new VertexAttribute(4, 4, "a_color"),
-                            new VertexAttribute(16, 2, "a_texCoord0")
-            });
+                    new VertexAttribute(1, 2, "a_position"),
+                    new VertexAttribute(4, 4, "a_color"),
+                    new VertexAttribute(16, 2, "a_texCoord0"));
             this.projectionMatrix.setToOrtho2D(0.0F, 0.0F, (float)Gdx.graphics.getWidth(), (float)Gdx.graphics.getHeight());
             this.vertices = new float[size * 20];
             int len = size * 6;

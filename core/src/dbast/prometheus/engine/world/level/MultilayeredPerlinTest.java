@@ -7,6 +7,7 @@ import dbast.prometheus.engine.entity.components.*;
 import dbast.prometheus.engine.world.WorldChunk;
 import dbast.prometheus.engine.world.WorldSpace;
 import dbast.prometheus.engine.world.generation.OpenSimplexNoise;
+import dbast.prometheus.engine.world.generation.WorldGenLayer;
 import dbast.prometheus.engine.world.tile.Tile;
 import dbast.prometheus.engine.world.tile.TileRegistry;
 
@@ -16,42 +17,45 @@ import java.awt.image.BufferedImage;
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.Random;
+import java.util.function.Function;
 
 public class MultilayeredPerlinTest {
 
 
-    private BufferedImage worldHeightMap;
+    private final BufferedImage worldHeightMap;
     public int width;
     public int height;
     private final int worldDepth;
 
-    private Random randomGenerator;
+    private final Random randomGenerator;
 
     // generate what world map level (ocean, (beach), land, mountain)
-    private OpenSimplexNoise landmassNoise;
+    private final OpenSimplexNoise landmassNoise;
 
     // mainHeightNoise
-    private OpenSimplexNoise mainHeightNoise;
-    private OpenSimplexNoise terrainSmoothingNoise;
+    private final OpenSimplexNoise mainHeightNoise;
+    private final OpenSimplexNoise terrainSmoothingNoise;
 
     // determines biome generation, ignore for now
-    private OpenSimplexNoise temperatureNoise;
+    private final OpenSimplexNoise temperatureNoise;
 
-    private OpenSimplexNoise featureNoise;
+    private final OpenSimplexNoise featureNoise;
 
+    private final boolean generateMinimap = true;
 
-    private final int landmassScale = 96;
-    private final int mainHeightScale = 64;
-    private final int terrainSmoothingScale = 16;
-
-    private final int temperatureScale = 64;
+    protected long seed;
 
     public MultilayeredPerlinTest(int width, int height) {
+        this(width, height, new Random().nextLong());
+    }
+
+    public MultilayeredPerlinTest(int width, int height, long seed) {
         this.width = width;
         this.height = height;
         this.worldDepth = 32;
 
-        randomGenerator = new Random();
+        this.seed = seed;
+        randomGenerator = new Random(seed);
 
         landmassNoise = new OpenSimplexNoise(randomGenerator.nextLong());
         mainHeightNoise = new OpenSimplexNoise(randomGenerator.nextLong());
@@ -59,7 +63,11 @@ public class MultilayeredPerlinTest {
         temperatureNoise = new OpenSimplexNoise(randomGenerator.nextLong());
         featureNoise = new OpenSimplexNoise(randomGenerator.nextLong());
 
-        worldHeightMap = new BufferedImage(width * 2, height *2, BufferedImage.TYPE_INT_ARGB);
+        if (generateMinimap) {
+            worldHeightMap = new BufferedImage(width * 2 + 2, height *2 + 2, BufferedImage.TYPE_INT_ARGB);
+        } else {
+            worldHeightMap = null;
+        }
     }
 
     public WorldSpace setup() {
@@ -94,12 +102,14 @@ public class MultilayeredPerlinTest {
             }
         );
 
-        generateMinimap(totalWidth, totalHeight, worldSpace);
+        if (generateMinimap) {
+            generateMinimap(totalWidth, totalHeight, worldSpace);
+        }
         Gdx.app.getApplicationLogger().log("WorldSetup", "Generating Entities");
         worldSpace.entities = new EntityRegistry();
         worldSpace.entities.addNewEntity(
                 1L,
-                new CollisionBox(new Vector3(0.99f,0.99f,1.49f).scl(0.75f), false),
+                /*new CollisionBox(new Vector3(0.99f,0.99f,1.49f).scl(0.75f), false),*/
                 new SizeComponent(1f,1f),
                 new PositionComponent(new Vector3(0,0,10)),
                 new InputControllerComponent(),
@@ -119,13 +129,18 @@ public class MultilayeredPerlinTest {
         int heightWeight = 10;
         int smoothingWeight = 2;
 
+        int landmassScale = 96;
+        int mainHeightScale = 64;
+        int terrainSmoothingScale = 16;
+        int temperatureScale = 112;
+
         for (float yc = 0; yc < worldSpace.chunkSize; yc++) {
             float yAbs = yc + chunkY;
             for (float xc = 0; xc < worldSpace.chunkSize; xc++) {
                 float xAbs = xc + chunkX;
 
                 float landmassNoiseVal = (float) landmassNoise.eval(xAbs / landmassScale, yAbs / landmassScale);
-                float landmassValue = (float)Math.pow(Math.abs(landmassNoiseVal), 0.75) * ((landmassNoiseVal < 0) ? -1 : 1) / 2;
+                float landmassValue = (float)Math.pow(Math.abs(landmassNoiseVal), 0.75) * ((landmassNoiseVal < 0) ? -1 : 1);
 
                // Gdx.app.log("world_...", String.format("generating landmass noise at %s %s : %s", xAbs, yAbs, landmassValue));
 
@@ -135,11 +150,12 @@ public class MultilayeredPerlinTest {
                 float mainHeightValue =  (float)mainHeightNoise.eval(xAbs / mainHeightScale, yAbs / mainHeightScale);
                 float smoothingValue =  (float)terrainSmoothingNoise.eval(xAbs / terrainSmoothingScale, yAbs / terrainSmoothingScale);
 
+                /*
                 if (currentLayer.equals(WorldGenLayer.BEACH)) {
                     smoothingValue = (smoothingValue * (float)terrainSmoothingNoise.eval(xAbs / 4, yAbs / 4));
                 }
+                */
                 //float biomeValue =  (float)temperatureNoise.eval(xAbs / biomeScale, yAbs / biomeScale);
-
 
                 float landmassWithWeight = (landmassValue * landmassWeight);
                 float heightWithWeight = (mainHeightValue * heightWeight);
@@ -149,7 +165,10 @@ public class MultilayeredPerlinTest {
 
                 float terrainLimit = (float) ((worldDepth) * (2 * Math.pow(Math.abs(productDividedByWeight), 1.85)) * ((product < 0) ? -1 : 1));
 
-                Gdx.app.log("world_...", String.format("generating at x%s/y%s => terrainLimit: %s - product: %s (layer: %s | landmass: %s (noise: %s) | height: %s | smoothing %s", xAbs, yAbs, terrainLimit, product, currentLayer.name(), landmassWithWeight, landmassNoiseVal, heightWithWeight, smoothingWithWeight));
+                if (Math.abs(terrainLimit) >= worldDepth) {
+                    terrainLimit = worldDepth * ((product < 0) ? -1 : 1 );
+                }
+              //  Gdx.app.log("world_...", String.format("generating at x%s/y%s => terrainLimit: %s - product: %s (layer: %s | landmass: %s (noise: %s) | height: %s | smoothing %s", xAbs, yAbs, terrainLimit, product, currentLayer.name(), landmassWithWeight, landmassNoiseVal, heightWithWeight, smoothingWithWeight));
 
                 float maxZ = (terrainLimit < 0) ? 0 : (float)Math.floor(terrainLimit);
 
@@ -178,92 +197,62 @@ public class MultilayeredPerlinTest {
 
                 setMinimapPixel((int)xAbs, (int)yAbs, minimapColor, terrainLimit);
 
+                /*
                 worldSpace.placeTile(
                         tileToPlace,
                         xAbs, yAbs, terrainLimit,
                         tileState
-                );
-/*
-                for (float z = -8f; z<= maxZ; z+=1f) {
-// TODO next step, rebuild the actual block placing...
+                );*/
 
-                    if (z > terrainLimit && z <= maxZ) {
-                        tileToPlace = TileRegistry.getByTag("water");
-                        //    tileState = "north";
-                    } else {
-                        if (z < maxZ - 2) {
-                            tileToPlace = TileRegistry.getByTag("stone");
-                        } else if (z < maxZ) {
-                            tileToPlace = TileRegistry.getByTag("dirt_0");
-                        } else if (z == maxZ) {
-                            if (z != 0) {
-                                tileToPlace = TileRegistry.getByTag("grass_0");
-                            } else {
-                                tileToPlace = TileRegistry.getByTag("sand");
-                            }
-                        }
+                float temperatureValue = normalizeNoise((float) (temperatureNoise.eval(xAbs / temperatureScale, yAbs / temperatureScale)));
+
+                for (float z = maxZ -5f; z<= maxZ; z+=1f) {
+                    tileToPlace = currentLayer.tileAtHeightGenerator.get(z, maxZ, temperatureValue);
+
+                    if (tileToPlace != null) {
+                        worldSpace.placeTile(
+                                tileToPlace,
+                                xAbs, yAbs, z,
+                                tileState
+                        );
                     }
-                    worldSpace.placeTile(
-                            tileToPlace,
-                            xAbs, yAbs, z,
-                            tileState
-                    );
 
-                }*/
+                }
             }
         }
     }
 
 
     public void setMinimapPixel(int x, int y, Color color, float terrainLimit) {
-        float alphaValue = normalizeNoise((Math.abs(terrainLimit) > worldDepth ? worldDepth : (terrainLimit / worldDepth)));
-        Gdx.app.log("world_...", String.format("rendering worldmap, %s %s | height: %s | color: %s", x, y, terrainLimit,alphaValue));
+        if (generateMinimap) {
+            float alphaValue = normalizeNoise((Math.abs(terrainLimit) > worldDepth ? worldDepth : (terrainLimit / worldDepth)));
+            Gdx.app.log("world_...", String.format("rendering worldmap, %s %s | height: %s | color: %s", x, y, terrainLimit,alphaValue));
 
-        Color c = new Color((int)(color.getRed() * alphaValue),
-                (int)(color.getGreen()* alphaValue),
-                (int)(color.getBlue()* alphaValue),
-                255
-        );
+            Color c = new Color((int)(color.getRed() * alphaValue),
+                    (int)(color.getGreen()* alphaValue),
+                    (int)(color.getBlue()* alphaValue),
+                    255
+            );
 
-        worldHeightMap.setRGB(x+width, y+height, c.getRGB());
+            try {
+                worldHeightMap.setRGB(x+width, y+height, c.getRGB());
+            } catch (ArrayIndexOutOfBoundsException e) {
+                Gdx.app.log("error", String.format("coordinates %s/%s do not fit into image %s/%s", x+width, y+height, worldHeightMap.getWidth(), worldHeightMap.getHeight()));
+                e.printStackTrace();
+            }
+        }
     }
     public void generateMinimap(int totalWidth, int totalHeight, WorldSpace worldSpace) {
         try {
-            ImageIO.write(worldHeightMap, "png", Gdx.files.local("save/" + worldSpace.id + "_map.png").file());
+            ImageIO.write(worldHeightMap, "png", Gdx.files.local("save/" + worldSpace.id + "_map_"+this.seed + ".png").file());
         } catch (IOException e) {
             // handle exception
             Gdx.app.getApplicationLogger().log("WorldSetup", "error writing worldmap!");
         }
-
     }
 
     public static float normalizeNoise(float noiseValue) {
         return (noiseValue + 1) / 2;
     }
 
-    public static enum WorldGenLayer {
-        OCEAN (1),
-        BEACH (1),
-        LAND(1),
-        MOUNTAIN(1);
-
-        WorldGenLayer(float layerWeight) {
-            this.layerWeight = layerWeight;
-        }
-
-        public final float layerWeight;
-
-        public static WorldGenLayer getForValue(float noiseResult) {
-            WorldGenLayer result = OCEAN;
-            if (noiseResult > 0.85) {
-                result = MOUNTAIN;
-            } else if (noiseResult > 0.2) {
-                result = LAND;
-            } else if (noiseResult > -0.1) {
-                result = BEACH;
-            }
-
-            return result;
-        }
-    }
 }

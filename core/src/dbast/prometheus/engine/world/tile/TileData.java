@@ -1,5 +1,6 @@
 package dbast.prometheus.engine.world.tile;
 
+import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.math.Vector3;
 import dbast.prometheus.engine.entity.components.PositionComponent;
 import dbast.prometheus.engine.entity.components.StateComponent;
@@ -17,6 +18,8 @@ public class TileData {
     public WorldSpace worldSpace;
 
     public Map<Direction, TileData> neighbors;
+
+    public Boolean isVisible;
     public TileData() {
     }
     public TileData(Tile referencedTile, WorldSpace worldSpace, Vector3 position, String state) {
@@ -37,9 +40,24 @@ public class TileData {
             if (adjacentTile != null) {
                 this.neighbors.put(dirEnum, adjacentTile);
                 adjacentTile.neighbors.put(dirEnum.invert(), this);
+                adjacentTile.isVisible = null;
             }
         }
+        this.isVisible = null;
         return this;
+    }
+
+    public boolean updateIsVisible() {
+        // TODO find a way to make this 'smart': based on pointOfView, different directions will be checked
+        if (neighbors.containsKey(Direction.UP)
+              //  && neighbors.get(Direction.UP).neighbors.containsKey(Direction.UP)
+                && neighbors.containsKey(Direction.SOUTH)
+                && neighbors.containsKey(Direction.WEST)) {
+            this.isVisible = Boolean.FALSE;
+        } else {
+            this.isVisible = Boolean.TRUE;
+        }
+        return this.isVisible;
     }
 
     public TileData getNeighbor(Direction dir) {
@@ -52,14 +70,9 @@ public class TileData {
     }
 
     public boolean isVisibleFrom(Vector3 pointOfView) {
-        // TODO find a way to make this 'smart': based on pointOfView, different directions will be checked
-        if (neighbors.containsKey(Direction.UP)
-                && neighbors.get(Direction.UP).neighbors.containsKey(Direction.UP)
-                && neighbors.containsKey(Direction.SOUTH)
-            && neighbors.containsKey(Direction.WEST)) {
-            return false;
-        } else {
-            return true;
+        if(isVisible == null) {
+            updateIsVisible();
         }
+        return  isVisible;
     }
 }

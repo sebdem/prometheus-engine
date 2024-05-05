@@ -18,10 +18,12 @@ public class SpriteData implements Comparable<SpriteData> {
     public Float orderIndex;
 
     public Vector3 screenPosition;
+    public Vector3 renderOrderPosition;
 
     public SpriteData() {
         this.notBlocked = new HashSet<>();
         this.screenPosition = Vector3.Zero.cpy();
+        this.renderOrderPosition = Vector3.Zero.cpy();
     }
     public SpriteData(PrometheusSprite sprite, Vector3 orderPosition) {
         this();
@@ -60,7 +62,8 @@ public class SpriteData implements Comparable<SpriteData> {
                         (this.levelPosition.z + sprite.renderIndexOffset.z) * 16 * 16  *//*+ sprite.type.priorityOffset*//*
                 ); */
         // TODO deprecate type in favour of renderIndexOffset
-        this.orderIndex = this.levelPosition.cpy().add(this.sprite.renderIndexOffset).add(0,0,sprite.type.priorityOffset).dst2(comparePoint);
+        this.renderOrderPosition = this.levelPosition.cpy().add(this.sprite.renderIndexOffset).add(0,0,sprite.type.priorityOffset);
+        this.orderIndex = renderOrderPosition.dst2(comparePoint);
 
        // this.orderIndex = levelPosition.z + type.priorityOffset - (levelPosition.x + levelPosition.y);
 
@@ -140,7 +143,86 @@ public class SpriteData implements Comparable<SpriteData> {
 
         //return this.orderIndex.compareTo(o.orderIndex);
         return o.orderIndex.compareTo(this.orderIndex);
-       // return Float.compare(this.levelPosition.dst(comparePoint), o.levelPosition.dst(comparePoint));
+/*
+
+        int xComp = Float.compare(o.renderOrderPosition.x, this.renderOrderPosition.x);
+        int yComp = Float.compare(o.renderOrderPosition.y, this.renderOrderPosition.y);
+        int zComp = Float.compare(this.renderOrderPosition.z, o.renderOrderPosition.z);
+
+        int compResult = 0;
+        if (xComp == 0 && yComp == -1) {
+            switch (zComp) {
+                case 0:
+                case 1:
+                case -1:
+                    compResult = 1; break;
+                default: break;
+            }
+        } else if (xComp == 0 && yComp == 1) {
+            switch (zComp) {
+                case 0:
+                case -1:
+                case 1:
+                    compResult = -1; break;
+                default: break;
+            }
+        } else if (xComp == -1 && yComp == 0) {
+            switch (zComp) {
+                case 0:
+                case 1:
+                case -1:
+                    compResult = 1; break;
+                default: break;
+            }
+        } else if (xComp == 1 && yComp == 0) {
+            switch (zComp) {
+                case 0:
+                case 1:
+                case -1:
+                    compResult = -1; break;
+                default: break;
+            }
+        } else if (xComp == 0 && yComp == 0) {
+            switch (zComp) {
+                case 0: compResult = Float.compare(o.sprite.type.priorityOffset, this.sprite.type.priorityOffset); break;
+                case -1: compResult = 1; break;
+                case 1: compResult = -1; break;
+                default: break;
+            }
+        } else if (xComp == -1 && yComp == -1) {
+            switch (zComp) {
+                case 0:
+                case -1:
+                case 1:
+                    compResult = -1; break;
+                default: break;
+            }
+        }  else if (xComp == 1 && yComp == 1) {
+            switch (zComp) {
+                case 0:
+                case -1:
+                case 1:
+                    compResult = 1; break;
+                default: break;
+            }
+
+        } else if (xComp == -1 && yComp == 1) {
+            switch (zComp) {
+                case 0: compResult = Float.compare(o.sprite.type.priorityOffset, this.sprite.type.priorityOffset); break;
+                case -1: compResult = 1; break;
+                case 1: compResult = -1; break;
+                default: break;
+            }
+        } else if (xComp == 1 && yComp == -1) {
+            switch (zComp) {
+                case 0: compResult = Float.compare(this.sprite.type.priorityOffset, o.sprite.type.priorityOffset); break;
+                case -1: compResult = 1; break;
+                case 1: compResult = -1; break;
+                default: break;
+            }
+        }
+        return compResult;*/
+        // return Float.compare(this.levelPosition.dst(comparePoint), o.levelPosition.dst(comparePoint));
         //return this.orderIndex.compareTo(o.orderIndex);
     }
 }

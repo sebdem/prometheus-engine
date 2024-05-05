@@ -33,7 +33,6 @@ public class MovementSystem extends ComponentSystem {
     public void execute(float updateDelta, List<Entity> qualifiedEntities) {
         for(Entity entity : qualifiedEntities) {
             PositionComponent positionComponent = entity.getComponent(PositionComponent.class);
-            CollisionBox collisionBox = entity.getComponent(CollisionBox.class);
             VelocityComponent velocity = entity.getComponent(VelocityComponent.class);
 /*
             Tile tileUnder = worldSpace.lookupTile(new Vector3(Math.round(positionComponent.position.x), Math.round(positionComponent.position.y), positionComponent.position.z -1f));
@@ -52,6 +51,8 @@ public class MovementSystem extends ComponentSystem {
 
                 Vector3 newPos = new Vector3(newXpos, newYpos, newZpos);
                 boolean canMoveTo = worldSpace.isPositionInWorld(newPos);
+
+                CollisionBox collisionBox = entity.getComponent(CollisionBox.class);
 
                 if (canMoveTo && collisionBox != null && !collisionBox.isPermeable()) {
                     BoundingBox entityBoundary =collisionBox.getBoundsAt(newPos);
@@ -153,6 +154,6 @@ public class MovementSystem extends ComponentSystem {
 
     @Override
     public List<Class<? extends Component>> neededComponents() {
-        return Arrays.asList(PositionComponent.class, VelocityComponent.class, CollisionBox.class);
+        return Arrays.asList(PositionComponent.class, VelocityComponent.class/*, CollisionBox.class*/);
     }
 }

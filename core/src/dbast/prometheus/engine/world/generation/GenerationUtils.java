@@ -41,6 +41,19 @@ public class GenerationUtils {
                 center.cpy().add(-offset, offset, 0)
         };
     }
+
+    public static Vector3[] nearby(Vector3 center, float distance, float steps) {
+        List<Vector3> resultList = new ArrayList<>();
+        for (float y = -distance; y <= distance; y += steps) {
+            for (float x = -distance; x <= distance; x += steps) {
+                resultList.add(center.cpy().add(x, y, 0));
+            }
+        }
+        resultList.remove(center);
+        Gdx.app.log("Utils, Rendering", String.format("Visible Chunks are: { %s } ", resultList.stream().map(Vector3::toString).collect(Collectors.joining(", "))));
+        return resultList.toArray(new Vector3[0]);
+    }
+
     public static Vector3[] nearby4Of(Vector3 center) {
         return new Vector3[]{
                 center.cpy().add(0, 1, 0),

@@ -28,7 +28,7 @@ public class RenderSystem extends ComponentSystem {
 
     public LockOnCamera camera;
 
-    protected Map<String, SpriteData> spriteDataCache;
+    protected PrometheusCache<String, SpriteData> spriteDataCache;
     public SpriteDataQueue spriteQueue;
 
     public float animatorLife;
@@ -48,7 +48,7 @@ public class RenderSystem extends ComponentSystem {
             spriteQueue.clear();
         }
         spriteQueue = new SpriteDataQueue();
-        spriteDataCache = new HashMap<>();
+        spriteDataCache = new PrometheusCache<>();
 
         this.animatorLife = 0f;
     }
@@ -60,6 +60,7 @@ public class RenderSystem extends ComponentSystem {
         PositionComponent lockOnPosition = cameraLockOn.getComponent(PositionComponent.class);
 
         spriteQueue.clear();
+        spriteDataCache.update(updateDelta);
 
         this.baseSpriteSize = WorldScene.baseSpriteSize;
 
@@ -81,14 +82,17 @@ public class RenderSystem extends ComponentSystem {
 
         Vector3 centerChunk = world.getChunkFor(lockOnPosition.position);
         // chunks are currently only horizontally, hence the 8 surroundings should suffice
-        List<Vector3> visibleChunkCords = new ArrayList<>(Arrays.asList(GenerationUtils.nearby8Of(centerChunk, world.chunkSize)));
+    //    List<Vector3> visibleChunkCords = new ArrayList<>(Arrays.asList(GenerationUtils.nearby8Of(centerChunk, world.chunkSize)));
+        List<Vector3> visibleChunkCords = new ArrayList<>(Arrays.asList(GenerationUtils.nearby(centerChunk, world.chunkSize* 2, world.chunkSize)));
         visibleChunkCords.add(centerChunk);
+
 
         List<WorldChunk> visibleChunks = world.chunks.getMultiple(visibleChunkCords);
 
         for(WorldChunk chunk : visibleChunks) {
 
-            for (Map.Entry<Vector3, TileData> tileDataEntry : chunk.tileDataMap.entrySet()) {
+            for (Map.Entry<Vector3, TileData> tileDataEntry : chunk.getVisibleTiles().entrySet()) {
+           // for (Map.Entry<Vector3, TileData> tileDataEntry : chunk.getTileDataMap().entrySet()) {
                 Vector3 tilePos = tileDataEntry.getKey();
                 TileData tileData = tileDataEntry.getValue();
 
@@ -102,6 +106,7 @@ public class RenderSystem extends ComponentSystem {
                     SpriteData spriteData = updateSpriteData(updateDelta, cacheKey, SpriteType.TILE, positionComponent, renderComponent, stateComponent);
 
                     if (tileData.isVisibleFrom(lockOnPosition.position)) {
+                       /*
                         for(Direction dirEnum : Direction.values()) {
                             TileData neighbor = tileData.getNeighbor(dirEnum);
                             if (neighbor == null || neighbor.tile != tileData.tile) {
@@ -110,6 +115,7 @@ public class RenderSystem extends ComponentSystem {
                                 spriteData.notBlocked.remove(dirEnum);
                             }
                         }
+                        */
 
                         spriteQueue.add(spriteData);
                     }
