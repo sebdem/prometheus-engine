@@ -3,7 +3,6 @@ package dbast.prometheus.engine.world;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.files.FileHandle;
 import com.badlogic.gdx.graphics.Color;
-import com.badlogic.gdx.graphics.Cubemap;
 import com.badlogic.gdx.math.MathUtils;
 import com.badlogic.gdx.math.Vector3;
 import com.badlogic.gdx.math.collision.BoundingBox;
@@ -35,9 +34,6 @@ public class WorldSpace {
     public int width;
     // TODO introduce boundaries as a cube "playarea", adjust methods accordingly
 
-    @Deprecated
-    public Vector3IndexMap<Tile> terrainTiles;
-    public Map<Vector3, TileData> tileDataMap;
     public EntityRegistry entities;
     public int chunkSize;
     public final static int BASE_CHUNK_SIZE = 16;
@@ -53,7 +49,6 @@ public class WorldSpace {
     /*
         Generic data for runtime
      */
-    public Vector3IndexMap<List<BoundingBox>> boundariesPerChunk;
     // TODO It's chunkin' time
     public Vector3IndexMap<WorldChunk> chunks;
 
@@ -69,10 +64,9 @@ public class WorldSpace {
         this.width = width;
         this.height = height;
         this.chunkSize = BASE_CHUNK_SIZE;
-        this.terrainTiles = new Vector3IndexMap<>(new Vector3Comparator.Planar());
-        this.tileDataMap = new HashMap<>();
+        //this.terrainTiles = new Vector3IndexMap<>(new Vector3Comparator.Planar());
+        //this.tileDataMap = new HashMap<>();
         this.dataUpdate = true;
-        this.boundariesPerChunk = new Vector3IndexMap<>(new Vector3Comparator.Planar());
         this.worldTime = new WorldTime();
         this.chunks = new Vector3IndexMap<>(new Vector3Comparator.Planar());
     }
@@ -81,30 +75,17 @@ public class WorldSpace {
     public void update(float updateDelta) {
         this.age += updateDelta;
         this.realTime = System.currentTimeMillis();
-       // Gdx.app.log("world", "updating world...");
 
         if (dataUpdate) {
-         //   Gdx.app.log("world", String.format("requires world data update with %s chunks", chunks.size()));
-            Vector3IndexMap<List<BoundingBox>> tempBoundaries = new Vector3IndexMap<>(new Vector3Comparator.Planar());
+            Gdx.app.log("WorldUpdate", "Detected World Data Update");
 
-            for (Map.Entry<Vector3, Tile> tileEntry : terrainTiles.entrySet()) {
-                Tile tile = tileEntry.getValue();
-                Vector3 position = tileEntry.getKey();
-                Vector3 chunkPosition = getChunkFor(position);
-
-                List<BoundingBox> chunkBoundaries = tempBoundaries.getOrDefault(chunkPosition, new ArrayList<>());
-                List<BoundingBox> tileBounds = tile.getBoundsForPositon(position);
-                if (tileBounds != null && !tileBounds.isEmpty()) {
-                    chunkBoundaries.addAll(tileBounds);
-                    tempBoundaries.put(chunkPosition, chunkBoundaries);
-                }
+            for (WorldChunk chunk : this.chunks.values()) {
+                chunk.update(updateDelta);
             }
-            this.boundariesPerChunk = tempBoundaries;
 
-            this.chunks.values().forEach(chunk -> chunk.update(updateDelta));
             dataUpdate = false;
+            Gdx.app.log("WorldUpdate", "Finished World Data Update");
         }
-
 
     //   Gdx.app.getApplicationLogger().log("World", String.format("Current age: %s | RealTime: %s | CurrentTime: %s | currentOClock %s", this.age, realTime, currentTime.name(), (this.age / 60) % 24 ));
     }
@@ -138,9 +119,9 @@ public class WorldSpace {
     }
     public WorldSpace placeTile(Tile tile, float x, float y, float z, String state) {
         Vector3 position = new Vector3(x, y, z);
-        this.terrainTiles.put(position, tile);
+       // this.terrainTiles.put(position, tile);
         TileData tileData = new TileData(tile, this, position, state);
-        this.tileDataMap.put(position, tileData);
+       // this.tileDataMap.put(position, tileData);
         this.placeInChunk(position, tileData);
         this.dataUpdate = true;
         return this;
@@ -149,23 +130,35 @@ public class WorldSpace {
     public WorldChunk placeInChunk(Vector3 inWorldPosition, TileData tileData) {
         Vector3 chunkPos = this.getChunkFor(inWorldPosition);
         WorldChunk chunk = this.chunks.getOrDefault(chunkPos, new WorldChunk(chunkPos));
-        chunk.putTileData(inWorldPosition, tileData);
+        chunk.tileDataMap.put(inWorldPosition, tileData);
+        chunk.requiredDataUpdate = true;
         this.chunks.put(chunkPos, chunk);
         return chunk;
     }
     public Tile lookupTile(float x, float y, float z) {
-        return this.terrainTiles.getOrDefault(new Vector3(x, y, z), null);
+        return lookupTile(new Vector3(x, y, z));
     }
     public Tile lookupTile(Vector3 vector3) {
-        return this.terrainTiles.getOrDefault(vector3,  null);
+        TileData tileData = lookupTileDataAbsolute(vector3);
+        return tileData == null ? null : tileData.tile;
     }
-    public TileData lookupTileData(Vector3 vector3) {
-        return this.tileDataMap.getOrDefault(vector3,  null);
+    public TileData lookupTileDataAbsolute(Vector3 vector3) {
+        Vector3 targetChunk = getChunkFor(vector3);
+        WorldChunk chunk = this.chunks.getOrDefault(targetChunk, null);
+        if (chunk == null) {
+            return null;
+        } else {
+            return chunk.tileDataMap.getOrDefault(vector3,  null);
+        }
     }
 
 
     public WorldSpace removeTile(float x, float y, float z) {
-        this.terrainTiles.remove(new Vector3(x, y, z));
+        //this.terrainTiles.remove();
+        Vector3 targetPosition = new Vector3(x, y, z);
+        Vector3 targetChunk = getChunkFor(targetPosition);
+        this.chunks.get(targetChunk).tileDataMap.remove(targetPosition);
+        this.chunks.get(targetChunk).requiredDataUpdate = true;
         this.dataUpdate = true;
         return this;
     }
@@ -233,13 +226,31 @@ public class WorldSpace {
 
 
     public void persist() {
-        FileHandle file = Gdx.files.local("save/" + this.id + ".json");
-        file.writeString(new Gson().toJson(new WorldData(this)), false);
+        WorldData worldData = new WorldData(this);
+        Gson gsonMapper = new Gson();
+
+        FileHandle file = Gdx.files.local(String.format("save/%s", this.id));
+        file.mkdirs();
+
+        file.child("world.json").writeString(gsonMapper.toJson(worldData), false);
+
+        FileHandle chunkFolder = file.child("data");
+        chunkFolder.mkdirs();
+        worldData.chunkData.forEach((chunkHash, chunkData) -> {
+            FileHandle chunkFile = chunkFolder.child(chunkHash + ".json");// Gdx.files.local(String.format("save/%s/data/%s.json", this.id, chunkHash));
+            try {
+                chunkFile.writeString(gsonMapper.toJson(chunkData), false);
+            } catch (Exception exception) {
+                exception.printStackTrace();
+            }
+        });
+
         //Gdx.app.getClipboard().setContents();
     }
 
     public void toNextUpperLevel(Vector3 entityPos) {
-        Vector3 topMost = this.terrainTiles.keySet().stream()
+        Vector3 chunkPos = getChunkFor(entityPos);
+        Vector3 topMost = this.chunks.get(chunkPos).tileDataMap.keySet().stream()
                 .filter(key -> key.x == Math.floor(entityPos.x) && key.y ==  Math.floor(entityPos.y) && key.z <= Math.floor(entityPos.z + 1f))
                 .max((key1, key2) -> Float.compare(key1.z, key2.z))
             .orElse(new Vector3(0,0,0));

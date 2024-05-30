@@ -15,6 +15,7 @@ import dbast.prometheus.engine.world.generation.features.CastleTower;
 import dbast.prometheus.engine.world.generation.features.Mountain;
 import dbast.prometheus.engine.world.tile.Tile;
 import dbast.prometheus.engine.world.tile.TileRegistry;
+import dbast.prometheus.utils.GeneralUtils;
 
 import java.util.Arrays;
 import java.util.List;
@@ -71,6 +72,7 @@ public class TestLevel {
                         if((-scale + z2 < y2 && y2 < scale - z2) && (-scale + z2 < x2 && x2 < scale - z2) ) {
                             world.placeTile(TileRegistry.idOfTag("dirt_0"), x+x2, y+y2, z+z2-1);
                             world.placeTile(TileRegistry.idOfTag("grass_0"), x+x2, y+y2, z+z2);
+                            world.placeTile(TileRegistry.idOfTag("grass_deco_0"), x+x2, y+y2, z+z2 + 1);
                         }
                     }
                 }
@@ -259,6 +261,17 @@ public class TestLevel {
                         .registerAnimation(Gdx.files.internal("world/objects/iso/chest_open.png"), 3, 1, 0.25f, false, "open")
         );
 
+        String[] growthStates = new String[]{"default", "tall1"};
+        worldSpace.placeTile(TileRegistry.idOfTag("grass_0"), 4f, 1f, 1f);
+        worldSpace.placeTile(TileRegistry.getByTag("grass_deco_0"), 4f, 1f, 2f, GeneralUtils.randomElement(growthStates));
+        worldSpace.placeTile(TileRegistry.idOfTag("grass_0"), 4f, 0f, 1f);
+        worldSpace.placeTile(TileRegistry.getByTag("grass_deco_0"), 4f, 0f, 2f,  GeneralUtils.randomElement(growthStates));
+        worldSpace.placeTile(TileRegistry.idOfTag("grass_0"), 3f, 1f, 1f);
+        worldSpace.placeTile(TileRegistry.getByTag("grass_deco_0"), 3f, 1f, 2f,  GeneralUtils.randomElement(growthStates));
+        worldSpace.placeTile(TileRegistry.idOfTag("grass_0"), 3f, 0f, 1f);
+        worldSpace.placeTile(TileRegistry.getByTag("grass_deco_0"), 3f, 0f, 2f, GeneralUtils.randomElement(growthStates));
+
+        /*
         worldSpace.entities.addNewEntity(
                 CollisionBox.createBasic().setPermeable(false),
                 SizeComponent.createBasic(),

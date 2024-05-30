@@ -9,13 +9,10 @@ import dbast.prometheus.engine.world.WorldSpace;
 import dbast.prometheus.engine.world.generation.OpenSimplexNoise;
 import dbast.prometheus.engine.world.tile.Tile;
 import dbast.prometheus.engine.world.tile.TileRegistry;
-import dbast.prometheus.utils.GeneralUtils;
-import net.dermetfan.gdx.math.MathUtils;
 
 import javax.imageio.ImageIO;
 import java.awt.*;
 import java.awt.image.BufferedImage;
-import java.io.File;
 import java.io.IOException;
 import java.util.Arrays;
 
@@ -54,7 +51,7 @@ public class PerlinTest {
             for (int x = 0; x < numberOfChunksX; x++) {
                 int index = (y * numberOfChunksX) + x;
                 chunks[index] = new WorldChunk();
-                chunks[index].position = new Vector3(x - numberOfChunksX / 2, y - numberOfChunksY / 2, 0);
+                chunks[index].setPosition(new Vector3(x - numberOfChunksX / 2, y - numberOfChunksY / 2, 0));
             }
         }
 
@@ -62,8 +59,8 @@ public class PerlinTest {
                 worldChunk -> {
                 Tile tileToPlace = null;
 
-                float chunkY = (worldChunk.position.y)  * worldSpace.chunkSize;
-                float chunkX = (worldChunk.position.x) * worldSpace.chunkSize;
+                float chunkY = (worldChunk.getPosition().y)  * worldSpace.chunkSize;
+                float chunkX = (worldChunk.getPosition().x) * worldSpace.chunkSize;
                 for (float yc = 0; yc < worldSpace.chunkSize; yc++) {
                     float yAbs = yc + chunkY;
                     for (float xc = 0; xc < worldSpace.chunkSize; xc++) {

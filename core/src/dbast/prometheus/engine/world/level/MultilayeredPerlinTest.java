@@ -9,6 +9,7 @@ import dbast.prometheus.engine.world.WorldSpace;
 import dbast.prometheus.engine.world.generation.OpenSimplexNoise;
 import dbast.prometheus.engine.world.tile.Tile;
 import dbast.prometheus.engine.world.tile.TileRegistry;
+import dbast.prometheus.utils.WeightedRandomBag;
 
 import javax.imageio.ImageIO;
 import java.awt.*;
@@ -81,16 +82,16 @@ public class MultilayeredPerlinTest {
             for (int x = 0; x < numberOfChunksX; x++) {
                 int index = (y * numberOfChunksX) + x;
                 chunks[index] = new WorldChunk();
-                chunks[index].position = new Vector3(x - numberOfChunksX / 2, y - numberOfChunksY / 2, 0);
+                chunks[index].setPosition(new Vector3(x - numberOfChunksX / 2, y - numberOfChunksY / 2, 0));
             }
         }
 
         Arrays.stream(chunks).forEach(
                 worldChunk -> {
 
-                float chunkY = (worldChunk.position.y)  * worldSpace.chunkSize;
-                float chunkX = (worldChunk.position.x) * worldSpace.chunkSize;
-                generateChunk(chunkX, chunkY, worldSpace);
+                float chunkY = (worldChunk.getPosition().y)  * worldSpace.chunkSize;
+                float chunkX = (worldChunk.getPosition().x) * worldSpace.chunkSize;
+                populateChunk(chunkX, chunkY, worldSpace);
             }
         );
 
@@ -112,12 +113,17 @@ public class MultilayeredPerlinTest {
     }
 
 
-    public void generateChunk(float chunkX, float chunkY, WorldSpace worldSpace) {
+    public void populateChunk(float chunkX, float chunkY, WorldSpace worldSpace) {
         Tile tileToPlace = null;
 
         int landmassWeight = 30;
         int heightWeight = 10;
         int smoothingWeight = 2;
+
+        WeightedRandomBag<String> grass_deco = new WeightedRandomBag<>();
+        grass_deco.addEntry("none",60);
+        grass_deco.addEntry("default",25);
+        grass_deco.addEntry("tall1",15);
 
         for (float yc = 0; yc < worldSpace.chunkSize; yc++) {
             float yAbs = yc + chunkY;
@@ -149,7 +155,7 @@ public class MultilayeredPerlinTest {
 
                 float terrainLimit = (float) ((worldDepth) * (2 * Math.pow(Math.abs(productDividedByWeight), 1.85)) * ((product < 0) ? -1 : 1));
 
-                Gdx.app.log("world_...", String.format("generating at x%s/y%s => terrainLimit: %s - product: %s (layer: %s | landmass: %s (noise: %s) | height: %s | smoothing %s", xAbs, yAbs, terrainLimit, product, currentLayer.name(), landmassWithWeight, landmassNoiseVal, heightWithWeight, smoothingWithWeight));
+               // Gdx.app.log("world_...", String.format("generating at x%s/y%s => terrainLimit: %s - product: %s (layer: %s | landmass: %s (noise: %s) | height: %s | smoothing %s", xAbs, yAbs, terrainLimit, product, currentLayer.name(), landmassWithWeight, landmassNoiseVal, heightWithWeight, smoothingWithWeight));
 
                 float maxZ = (terrainLimit < 0) ? 0 : (float)Math.floor(terrainLimit);
 
@@ -198,6 +204,10 @@ public class MultilayeredPerlinTest {
                         } else if (z == maxZ) {
                             if (z != 0) {
                                 tileToPlace = TileRegistry.getByTag("grass_0");
+                                String deco = grass_deco.getRandom();
+                                if (!deco.equals("none")) {
+                                    worldSpace.placeTile(TileRegistry.getByTag("grass_deco_0"), xAbs, yAbs, z + 1f, deco);
+                                }
                             } else {
                                 tileToPlace = TileRegistry.getByTag("sand");
                             }
@@ -217,7 +227,7 @@ public class MultilayeredPerlinTest {
 
     public void setMinimapPixel(int x, int y, Color color, float terrainLimit) {
         float alphaValue = normalizeNoise((Math.abs(terrainLimit) > worldDepth ? worldDepth : (terrainLimit / worldDepth)));
-        Gdx.app.log("world_...", String.format("rendering worldmap, %s %s | height: %s | color: %s", x, y, terrainLimit,alphaValue));
+      //  Gdx.app.log("world_...", String.format("rendering worldmap, %s %s | height: %s | color: %s", x, y, terrainLimit,alphaValue));
 
         Color c = new Color((int)(color.getRed() * alphaValue),
                 (int)(color.getGreen()* alphaValue),

@@ -5,6 +5,7 @@ import com.badlogic.gdx.files.FileHandle;
 import com.badlogic.gdx.math.Vector3;
 import com.badlogic.gdx.math.collision.BoundingBox;
 import dbast.prometheus.engine.entity.components.RenderComponent;
+import dbast.prometheus.utils.GeneralUtils;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -40,7 +41,7 @@ public class Tile {
         BoundingBox basic = new BoundingBox(offset, offset);
         BoundingBox tileBox = new BoundingBox(offset, offset);
 
-        Vector3 boundsMin = new Vector3(bounds[0][0], bounds[0][1], bounds[0][2]);
+        Vector3 boundsMin = GeneralUtils.floatToVector(bounds[0]);
         Vector3 boundsMax = new Vector3(bounds[0][bounds.length-3], bounds[0][bounds.length-2], bounds[0][bounds.length-1]);
 
 

@@ -91,31 +91,26 @@ public class RenderSystem extends ComponentSystem {
 
         for(WorldChunk chunk : visibleChunks) {
 
-            for (Map.Entry<Vector3, TileData> tileDataEntry : chunk.tileDataMap.entrySet()) {
-                Vector3 tilePos = tileDataEntry.getKey();
-                TileData tileData = tileDataEntry.getValue();
+            for (TileData tileData : chunk.visibleTileData) {
+                RenderComponent renderComponent = tileData.tile.renderComponent;
+                PositionComponent positionComponent = tileData.positionComponent;
+                StateComponent stateComponent = tileData.stateComponent;
 
-                String cacheKey = "Tile" + tilePos.toString();
-               // if (lockOnPosition.isNearby(tilePos, WorldScene.renderDistance)) {
-                    RenderComponent renderComponent = tileData.tile.renderComponent;
-                    PositionComponent positionComponent = tileData.positionComponent;
-                    StateComponent stateComponent = tileData.stateComponent;
+                String cacheKey = "Tile" + tileData.positionComponent.position.toString();
 
-                    // TODO check if it's possible and feasible to get set the order index first based by the chunk then multiplied by the chunk internal order index, shoul get rid of current North/East issue.
-                    SpriteData spriteData = updateSpriteData(updateDelta, cacheKey, SpriteType.TILE, positionComponent, renderComponent, stateComponent);
+                // TODO check if it's possible and feasible to get set the order index first based by the chunk then multiplied by the chunk internal order index, shoul get rid of current North/East issue.
+                SpriteData spriteData = updateSpriteData(updateDelta, cacheKey, SpriteType.TILE, positionComponent, renderComponent, stateComponent);
 
-                    if (tileData.isVisibleFrom(lockOnPosition.position)) {
-                        for(Direction dirEnum : Direction.values()) {
-                            TileData neighbor = tileData.getNeighbor(dirEnum);
-                            if (neighbor == null || neighbor.tile != tileData.tile) {
-                                spriteData.notBlocked.add(dirEnum);
-                            } else {
-                                spriteData.notBlocked.remove(dirEnum);
-                            }
+                    for(Direction dirEnum : Direction.values()) {
+                        TileData neighbor = tileData.getNeighbor(dirEnum);
+                        if (neighbor == null || neighbor.tile != tileData.tile) {
+                            spriteData.notBlocked.add(dirEnum);
+                        } else {
+                            spriteData.notBlocked.remove(dirEnum);
                         }
-
-                        spriteQueue.add(spriteData);
                     }
+
+                    spriteQueue.add(spriteData);
               //  } else {
                     // TODO implement cleaning of sprite cache when sprites in it haven't been used for some time
                     // spriteDataCache.remove(cacheKey);

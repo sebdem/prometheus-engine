@@ -8,8 +8,10 @@ import dbast.prometheus.engine.entity.Entity;
 import dbast.prometheus.engine.entity.components.*;
 import dbast.prometheus.engine.world.WorldSpace;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.stream.Collectors;
 
 public class MovementSystem extends ComponentSystem {
 
@@ -49,16 +51,27 @@ public class MovementSystem extends ComponentSystem {
                 if (canMoveTo && collisionBox != null && !collisionBox.isPermeable()) {
                     BoundingBox entityBoundary =collisionBox.getBoundsAt(newPos);
                // TODO a lot of this stuff, while related to movement, really shouldn't be in here. Gravity/ascend, only makes sense inside a movement system if it is limited only to the grid. Currently it's more physics based.
-                    //float allowedStep = 0.66f;
-                    float allowedStep = 2f;
+                    float allowedStep = 0.66f;
+                    //float allowedStep = 2f;
                     Vector3 newPosHigher = newPos.cpy().add(0,0,allowedStep);
                     Vector3 newPosLower = newPos.cpy().add(0,0,-allowedStep);
                     BoundingBox entityBoundaryHigher = collisionBox.getBoundsAt(newPosHigher);
                     BoundingBox entityBoundaryLower= collisionBox.getBoundsAt(newPosLower);
 
-                    Vector3 chunkPosition = worldSpace.getChunkFor(newPos);
-                    List<BoundingBox> chunkBounds = worldSpace.boundariesPerChunk.get(chunkPosition);
-                    if (chunkBounds != null && !chunkBounds.isEmpty()) {
+
+                    Vector3 minChunk = worldSpace.getChunkFor(entityBoundary.min);
+                    Vector3 maxChunk = worldSpace.getChunkFor(entityBoundary.max);
+
+                    List<BoundingBox> chunkBounds = new ArrayList<>();
+
+                    if (minChunk.equals(maxChunk)) {
+                        chunkBounds.addAll(worldSpace.chunks.get(minChunk).boundaries);
+                    } else {
+                        chunkBounds.addAll(worldSpace.chunks.get(minChunk).boundaries);
+                        chunkBounds.addAll(worldSpace.chunks.get(maxChunk).boundaries);
+                    }
+
+                    if (!chunkBounds.isEmpty()) {
                         for(BoundingBox bb : chunkBounds) {
                             if (bb.intersects(entityBoundary)) {
                                 if (!bb.intersects(entityBoundaryHigher)) {

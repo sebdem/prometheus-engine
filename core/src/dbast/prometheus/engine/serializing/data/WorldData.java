@@ -1,9 +1,6 @@
 package dbast.prometheus.engine.serializing.data;
 
-import com.badlogic.gdx.math.Vector3;
-import dbast.prometheus.engine.entity.Entity;
 import dbast.prometheus.engine.world.WorldSpace;
-import dbast.prometheus.engine.world.tile.Tile;
 
 import java.io.Serializable;
 import java.util.ArrayList;
@@ -16,8 +13,12 @@ public class WorldData implements Serializable {
     public int width;
     public int height;
    // public Map<String, ArrayList<Vector3>> tiles;
+    @Deprecated
     public Map<String, ArrayList<float[]>> tiles;
+    public List<PositionHash> chunks;
     public List<EntityData> entities;
+
+    public transient Map<String, WorldChunkData> chunkData;
 
     public WorldData() {
     }
@@ -30,11 +31,22 @@ public class WorldData implements Serializable {
 
         // tiles
         this.tiles = new HashMap<>();
+
+        this.chunks = new ArrayList<>();
+        this.chunkData = new HashMap<>();
+
+        worldSpace.chunks.forEach((vector3, chunk) -> {
+            PositionHash chunkPosition = new PositionHash(chunk);
+            this.chunks.add(new PositionHash(chunk));
+            this.chunkData.put(chunkPosition.chunkHash, new WorldChunkData(chunk, chunkPosition));
+        });
+
+        /*
         for (Map.Entry<Vector3, Tile> entry : worldSpace.terrainTiles.entrySet()) {
             ArrayList<float[]> positionsOfTile = this.tiles.getOrDefault(entry.getValue().tag, new ArrayList<>());
             positionsOfTile.add(new float[]{entry.getKey().x,entry.getKey().y, entry.getKey().z});
             tiles.put(entry.getValue().tag, positionsOfTile);
-        }
+        }*/
         // entities
         this.entities = worldSpace.entities.values().stream().map(EntityData::new).collect(Collectors.toList());
     }

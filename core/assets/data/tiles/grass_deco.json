@@ -1,0 +1,22 @@
+{
+  "name": "grass_deco",
+  "tag": "grass_deco_0",
+  "model": "grass_deco",
+  "bounds": [
+    [0,0,0,1,1,0]
+  ],
+  "renderData": {
+    "default": {
+      "offset": [0,0,0.5],
+      "path": "world/terrain/iso/grass_growth.png",
+      "normal": "world/terrain/iso/grass_normal.png",
+      "animated": false
+    },
+    "tall1": {
+      "offset": [0,0,0.5],
+      "path": "world/terrain/iso/grass_growth_tall.png",
+      "normal": "world/terrain/iso/grass_normal.png",
+      "animated": false
+    }
+  }
+}

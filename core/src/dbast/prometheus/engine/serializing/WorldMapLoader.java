@@ -15,6 +15,7 @@ public class WorldMapLoader extends AbstractLoader<WorldSpace> {
 
     public WorldData data;
 
+    // TODO update...
     @Override
     public WorldSpace build() {
         WorldSpace buildResult = new WorldSpace(data.width, data.height);
@@ -25,13 +26,14 @@ public class WorldMapLoader extends AbstractLoader<WorldSpace> {
                 buildResult.placeTile(tile, positionXYZ[0],positionXYZ[1], positionXYZ[2]);
             });
         });
+
         // TODO rebuiltEntities...
+        buildResult.entities = new EntityRegistry();
         data.entities.forEach((entityData) -> {
             Gdx.app.getApplicationLogger().log("WorldMapLoader", String.format("Found entity %s but cannot build", entityData.id));
         });
 
-        // built player entity
-        buildResult.entities = new EntityRegistry();
+        // set player entity
         buildResult.entities.addNewEntity(
                 1L,
                 CollisionBox.createBasic(),

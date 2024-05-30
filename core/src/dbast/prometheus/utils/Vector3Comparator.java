@@ -72,10 +72,10 @@ public class Vector3Comparator {
             }
         }
     }
-
-    /**
+/*
+    *//**
      * Idea was to make a direction based comparer. Issue is the camera only has one point, when the 'real' screen plane would be a better idea... Maybe rebuild using camera frustrum???
-     */
+     *//*
     public static class Relative implements Comparator<Vector3> {
         protected PositionProvider provider;
         public Relative(PositionProvider relativeTo) {
@@ -90,5 +90,5 @@ public class Vector3Comparator {
 
             return Float.compare(dst1, dst1);
         }
-    }
+    }*/
 }

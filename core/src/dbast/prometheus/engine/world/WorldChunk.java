@@ -2,60 +2,61 @@ package dbast.prometheus.engine.world;
 
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.math.Vector3;
-import com.badlogic.gdx.physics.box2d.World;
+import com.badlogic.gdx.math.collision.BoundingBox;
 import dbast.prometheus.engine.LockOnCamera;
+import dbast.prometheus.engine.base.PositionProvider;
 import dbast.prometheus.engine.world.tile.TileData;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 
 // TODO migrate prepared sprites and collision data to this for a neat performance boost.
 // TODO consider actual world data as well (~~tiles~~, entities etc.)
-public class WorldChunk {
+public class WorldChunk implements PositionProvider {
 
-    public Vector3 position;
-    protected Vector3 screenPosition;
+    private Vector3 position;
 
-    protected boolean requiredDataUpdate = true;
+    public boolean requiredDataUpdate = true;
     protected boolean loaded = false;
-    private Map<Vector3, TileData> tileDataMap;
+    public Map<Vector3, TileData> tileDataMap;
 
-    public Map<Vector3, TileData> visibleTiles;
+    public List<BoundingBox> boundaries;
+    public List<TileData> visibleTileData;
 
     public WorldChunk() {
         this.tileDataMap = new HashMap<>();
-        this.visibleTiles = new HashMap<>();
+        this.boundaries = new ArrayList<>();
+        this.visibleTileData = new ArrayList<>();
+        // Todo refactor to "load" chunks dynamically eventually
         this.load();
     }
 
     public WorldChunk(Vector3 position) {
         this();
-        this.position = position;
-        this.screenPosition = LockOnCamera.project_custom(this.position.cpy(),
-            WorldSpace.BASE_CHUNK_SIZE,
-            0.5f
-        );
+        this.setPosition(position);
     }
 
     public void update(float deltaTime) {
         if (requiredDataUpdate) {
-
-          //  Gdx.app.log("world_chunk", "updating chunk...");
-            this.visibleTiles.clear();
-
-            this.visibleTiles.putAll(
-                    this.getTileDataMap().entrySet().stream()
-                    .filter(vector3TileDataEntry -> {
-                        boolean shouldBeVisible = vector3TileDataEntry.getValue().isVisibleFrom(Vector3.Zero);
-                        Gdx.app.log("world_chunk", String.format("Tile with %s neighbors is visible = %s", vector3TileDataEntry.getValue().neighbors.size(), shouldBeVisible));
-                        return shouldBeVisible;
-                    })
-                    .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue))
-            );
-
+            Gdx.app.log("WorldUpdate", "Detected World Chunk Data Update");
+            // Todo boundary generation could be tied to visible tiles only?
+            for (Map.Entry<Vector3, TileData> tiles : this.tileDataMap.entrySet()) {
+                // update chunk boundaries
+                List<BoundingBox> tileBounds = tiles.getValue().tile.getBoundsForPositon(tiles.getKey());
+                if (tileBounds != null && !tileBounds.isEmpty()) {
+                    this.boundaries.addAll(tileBounds);
+                }
+                // update visibleTile Data
+                if (tiles.getValue().isVisibleFrom(/*lockOnPosition.position*/)) {
+                    this.visibleTileData.add(tiles.getValue());
+                }
+            }
+           // this.boundariesPerChunk.put(chunk.getKey(), chunkBoundaries);
             this.requiredDataUpdate = false;
         }
+
     }
     // TODO consider dumber version of update, idea is to have update run on any chunks nearby players. Everything else will only simulate. Server may call update on anything anyway?
     public void simulate(float deltaTime) {
@@ -68,6 +69,7 @@ public class WorldChunk {
      */
     public WorldChunk load() {
         loaded = true;
+        requiredDataUpdate = true;
         return this;
     }
 
@@ -80,16 +82,12 @@ public class WorldChunk {
         return this;
     }
 
-    public Map<Vector3, TileData> getTileDataMap() {
-        return tileDataMap;
+    @Override
+    public Vector3 getPosition() {
+        return position;
     }
 
-    public void putTileData(Vector3 inWorldPosition, TileData tileData) {
-        this.getTileDataMap().put(inWorldPosition, tileData);
-        requiredDataUpdate = true;
-    }
-
-    public Map<Vector3, TileData> getVisibleTiles() {
-        return this.visibleTiles;
+    public void setPosition(Vector3 position) {
+        this.position = position;
     }
 }

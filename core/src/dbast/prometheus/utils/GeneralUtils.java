@@ -66,4 +66,50 @@ public class GeneralUtils {
         // storing unmodified z as "depth"
         return new Vector3((vector3.x - vector3.y) * scaleX, ((vector3.x/2) + (vector3.y / 2) - vector3.z) * scaleY, vector3.z);
     }
+
+
+    public static Vector3 floatToVector(float[] floats) {
+        return new Vector3(floats);
+    }
+    public static Vector3[] floatsToVectors(float[] floats) {
+        Vector3[] vector3s = new Vector3[(int) Math.floor(floats.length / 3f)];
+        for(int i = 0; i <= floats.length - 3; i += 3) {
+            vector3s[i] = new Vector3(floats[i], floats[i+1], floats[i+2]);
+        }
+        return vector3s;
+    }
+
+    public static float[] vectorToFloat(Vector3 vector3) {
+        return new float[]{vector3.x, vector3.y, vector3.z};
+    }
+
+
+    public final static char FLOAT_HASH_DELIMITER = '_';
+    public static String floatToString(float[] floats, boolean toInt) {
+        StringBuilder hashBuilder = new StringBuilder();
+
+        for(int i = 0; i < floats.length; i++) {
+            if (toInt) {
+                hashBuilder.append(Math.round(floats[i]));
+            } else {
+                hashBuilder.append(floats[i]);
+            }
+            if (i < floats.length - 1) {
+                hashBuilder.append(FLOAT_HASH_DELIMITER);
+            }
+        }
+
+        return hashBuilder.toString();
+    }
+
+    public static float[] stringToFloat(String floatHash) {
+        String[] elements = floatHash.split(String.valueOf(FLOAT_HASH_DELIMITER));
+        float[] floats = new float[elements.length];
+
+        for(int i = 0; i < elements.length; i++) {
+            floats[i] = Float.parseFloat(elements[i]);
+        }
+
+        return floats;
+    }
 }

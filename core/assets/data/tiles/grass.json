@@ -4,7 +4,7 @@
 	"model": "grass",
 	"renderData": {
 		"default": {
-			"path": "world/terrain/iso/grass.png",
+			"path": "world/terrain/iso/grass_cut.png",
 			"normal": "world/terrain/iso/grass_normal.png",
 			"animated": false
 		},
