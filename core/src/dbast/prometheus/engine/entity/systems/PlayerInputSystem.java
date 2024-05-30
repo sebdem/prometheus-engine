@@ -3,11 +3,9 @@ package dbast.prometheus.engine.entity.systems;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Input;
 import com.badlogic.gdx.InputProcessor;
-import com.badlogic.gdx.graphics.Camera;
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.math.Vector3;
 import dbast.prometheus.engine.LockOnCamera;
-import dbast.prometheus.engine.config.PrometheusConfig;
 import dbast.prometheus.engine.entity.Entity;
 import dbast.prometheus.engine.entity.components.*;
 
@@ -34,7 +32,7 @@ public class PlayerInputSystem extends ComponentSystem {
     }
 
     @Override
-    public void execute(float updateDelta, List<Entity> entities) {
+    public void execute(float updateDelta) {
         InputProcessor inputProcessor = Gdx.input.getInputProcessor();
         float velocityX = 0;
         float velocityY = 0;
@@ -74,7 +72,7 @@ public class PlayerInputSystem extends ComponentSystem {
             velocityY /= 1.41421356237;
         }
 */
-        for(Entity entity : entities) {
+        for(Entity entity : qualifiedEntities) {
             InputControllerComponent inputController = entity.getComponent(InputControllerComponent.class);
             if (inputController.active) {
                 //Gdx.app.getApplicationLogger().log("PIS", String.format("Entity %s update for PIS System at %s", entity.getId(), updateDelta));

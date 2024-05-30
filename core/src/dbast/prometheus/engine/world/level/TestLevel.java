@@ -1,8 +1,11 @@
 package dbast.prometheus.engine.world.level;
 
 import com.badlogic.gdx.Gdx;
+import com.badlogic.gdx.files.FileHandle;
 import com.badlogic.gdx.graphics.Texture;
+import com.badlogic.gdx.math.MathUtils;
 import com.badlogic.gdx.math.Vector2;
+import com.badlogic.gdx.math.Vector3;
 import dbast.prometheus.engine.config.PrometheusConfig;
 import dbast.prometheus.engine.entity.EntityRegistry;
 import dbast.prometheus.engine.entity.components.*;
@@ -143,13 +146,13 @@ public class TestLevel {
                 new Mountain("grass_0"), new CastleTower("brickF"));
         // Step 2 go over terrain and randomly place features
 
-        for(int i = 0; i <= 30; i++) {
+        for(int i = 0; i <= 5; i++) {
             float y = (float) Math.floor((Math.random()*worldSpace.height));
             float x = (float) Math.floor((Math.random()*worldSpace.width));
             float z = 0f;
             int feature = (int) (Math.random() * features.size());
 
-            features.get(feature).place(worldSpace, x, y, 0f);
+            features.get(feature).place(worldSpace, x, y, z);
         }
         /*for(float y = 0; y < worldSpace.height; y++) {
             for (float x = 0; x < worldSpace.width; x++) {
@@ -181,6 +184,7 @@ public class TestLevel {
                                 new Vector2(x,y+1),
                         };
                         Tile tile = worldSpace.lookupTile(x, y, z);
+
                         if (tile != null && tile.tag.equals("water")) {
                             for(Vector2 nearbyTile : nearbys) {
                                 if (Math.random() < 0.5f) {
@@ -203,28 +207,27 @@ public class TestLevel {
         worldSpace.entities = new EntityRegistry();
         worldSpace.entities.addNewEntity(
                 1L,
-                new CollisionBox(1f,1f,false),
+                new CollisionBox(new Vector3(0.99f,0.99f,1.49f).scl(0.75f), false),
                 new SizeComponent(1f,1f),
-                new PositionComponent(worldSpace.getSpawnPoint()),
+                new PositionComponent(new Vector3(0,0,10)),
                 new InputControllerComponent(),
                 new VelocityComponent(0,0),
                 new HealthComponent(200f),
-                SpriteComponent.fromFile(Gdx.files.internal(
-                        (useIsometric) ?  "sprites/player/iso_test_01.png" : "sprites/player/test_01.png"
-                ))
+                new StateComponent(),
+                RenderComponent.playerRenderComponent()
         );
 
-        Texture[] blobTextures = new Texture[]{
-                new Texture(Gdx.files.internal("sprites/enemies/" + ((useIsometric) ?  "iso_" : "") + "blob_0.png")),
-                new Texture(Gdx.files.internal("sprites/enemies/" + ((useIsometric) ?  "iso_" : "") + "blob_1.png")),
-                new Texture(Gdx.files.internal("sprites/enemies/" + ((useIsometric) ?  "iso_" : "") + "blob_2.png"))
+        RenderComponent[] blobs = new RenderComponent[]{
+                new RenderComponent().registerAnimation(Gdx.files.internal("sprites/enemies/" + ((useIsometric) ?  "iso_" : "") + "blob_0.png"), "default"),
+                new RenderComponent().registerAnimation(Gdx.files.internal("sprites/enemies/" + ((useIsometric) ?  "iso_" : "") + "blob_1.png"), "default"),
+                new RenderComponent().registerAnimation(Gdx.files.internal("sprites/enemies/" + ((useIsometric) ?  "iso_" : "") + "blob_2.png"), "default")
         };
         for(int i = 0; i < 100; i++) {
             worldSpace.entities.addNewEntity(
                     CollisionBox.createBasic(),
                     SizeComponent.createBasic(),
                     new PositionComponent(worldSpace.getSpawnPoint()),
-                    SpriteComponent.fromTexture(blobTextures[(int)(Math.random() * 3)]),
+                    blobs[(int)(Math.random() * 3)],
                     new VelocityComponent((float)((Math.random() * 3) - 1f),(float)((Math.random() * 3) - 1f))
             );
         }
@@ -245,36 +248,27 @@ public class TestLevel {
             worldSpace.placeTile( TileRegistry.idOfTag("tree"), treeX, treeY, 1f);
         }
 
-        StateComponent stateComponent =  new StateComponent();
         worldSpace.entities.addNewEntity(
                 CollisionBox.createBasic().setPermeable(false),
                 SizeComponent.createBasic(),
-                new PositionComponent(4f, 1f),
-                stateComponent,
-
-                StateBasedSpriteComponent
-                        /*
-                        .fromFile(Gdx.files.internal("world/objects/chest_locked.png"))
-                        .addState("colliding", Gdx.files.internal("world/objects/chest_active.png"))
-                        .addState("open", Gdx.files.internal("world/objects/chest_open_1.png"))
-                        */
-
-                        .fromFile(Gdx.files.internal("world/objects/iso/chest_active.png"))
-                        .addState("colliding", Gdx.files.internal("world/objects/iso/chest_active.png"))
-                        .addState("open", Gdx.files.internal("world/objects/iso/chest_active.png"))
-                        .bindTo(stateComponent)
+                new PositionComponent(4f, 1f, 2f),
+                new StateComponent(),
+                new RenderComponent()
+                        .registerAnimation(Gdx.files.internal("world/objects/iso/chest_active.png"), "default")
+                        .registerAnimation(Gdx.files.internal("world/objects/iso/chest_open.png"), 3, 1, 0.25f, false, "colliding" )
+                        .registerAnimation(Gdx.files.internal("world/objects/iso/chest_open.png"), 3, 1, 0.25f, false, "open")
         );
 
         worldSpace.entities.addNewEntity(
                 CollisionBox.createBasic().setPermeable(false),
                 SizeComponent.createBasic(),
-                new PositionComponent(6f, 4f),
+                new PositionComponent(6f, 4f, 3f),
                 SpriteComponent.fromFile(Gdx.files.internal("world/objects/iso/chest_active.png"))
-        );
+        );*/
 
-        // genereate structures...
+        // generate structures...
         int brickId = TileRegistry.idOfTag("brickF");
-        for(float y = 20; y < 33; y++) {
+       /* for(float y = 20; y < 33; y++) {
             for(float x = 20; x < 36; x++) {
                 worldSpace.placeTile(brickId, x, y, 0);
                 if (x % 5 == 0 || y % 4 == 0) {
@@ -286,7 +280,7 @@ public class TestLevel {
                     worldSpace.placeTile( TileRegistry.idOfTag("brickF"), x, y, 3);
                 }
             }
-        }
+        }*/
 
         return worldSpace;
     }

@@ -42,16 +42,25 @@ public class GenerationUtils {
         };
     }
 
-    public static Vector3[] nearby(Vector3 center, float distance, float steps) {
-        List<Vector3> resultList = new ArrayList<>();
-        for (float y = -distance; y <= distance; y += steps) {
-            for (float x = -distance; x <= distance; x += steps) {
-                resultList.add(center.cpy().add(x, y, 0));
+    public static Vector3[] nearbyDiamond(Vector3 center, float radius, float offsetStep) {
+        List<Vector3> nearbyVectors = new ArrayList<>();
+        /*for (float offsetY = -offset; offsetY <= offset; offsetY +=1) {
+            for (float offsetX = -offset; offsetX <= offset; offsetX +=1) {
+                if (offsetX != 0 && offsetY != 0) {
+                    nearbyVectors.add(center.cpy().add(offsetX, offsetY, 0));
+                }
+            }
+        }*/
+
+       for (float offsetY = -radius; offsetY <= radius; offsetY +=offsetStep) {
+            for (float offsetX = -radius; offsetX <= radius; offsetX +=offsetStep) {
+                if ((0 <= -Math.abs(offsetX) +radius - Math.abs(offsetY) ) && !(offsetX == 0 && offsetY == 0) ) {
+                    nearbyVectors.add(center.cpy().add(offsetX, offsetY, 0));
+                }
             }
         }
-        resultList.remove(center);
-        Gdx.app.log("Utils, Rendering", String.format("Visible Chunks are: { %s } ", resultList.stream().map(Vector3::toString).collect(Collectors.joining(", "))));
-        return resultList.toArray(new Vector3[0]);
+
+        return nearbyVectors.toArray(new Vector3[0]);
     }
 
     public static Vector3[] nearby4Of(Vector3 center) {

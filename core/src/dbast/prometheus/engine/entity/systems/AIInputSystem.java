@@ -25,7 +25,7 @@ public class AIInputSystem extends ComponentSystem{
     }
 
     @Override
-    public void execute(float updateDelta, List<Entity> qualifiedEntities) {
+    public void execute(float updateDelta) {
         for(Entity entity : qualifiedEntities) {
             PositionComponent positionComponent = entity.getComponent(PositionComponent.class);
             VelocityComponent velocityComponent = entity.getComponent(VelocityComponent.class);

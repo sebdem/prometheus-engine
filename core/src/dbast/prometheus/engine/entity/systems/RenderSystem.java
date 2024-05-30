@@ -28,7 +28,7 @@ public class RenderSystem extends ComponentSystem {
 
     public LockOnCamera camera;
 
-    protected PrometheusCache<String, SpriteData> spriteDataCache;
+    protected Map<String, SpriteData> spriteDataCache;
     public SpriteDataQueue spriteQueue;
 
     public float animatorLife;
@@ -48,19 +48,18 @@ public class RenderSystem extends ComponentSystem {
             spriteQueue.clear();
         }
         spriteQueue = new SpriteDataQueue();
-        spriteDataCache = new PrometheusCache<>();
+        spriteDataCache = new HashMap<>();
 
         this.animatorLife = 0f;
     }
 
     @Override
-    public void execute(float updateDelta, List<Entity> qualifiedEntities) {
+    public void execute(float updateDelta) {
         animatorLife += updateDelta;
         Entity cameraLockOn = camera.getLockOnEntity();
         PositionComponent lockOnPosition = cameraLockOn.getComponent(PositionComponent.class);
 
         spriteQueue.clear();
-        spriteDataCache.update(updateDelta);
 
         this.baseSpriteSize = WorldScene.baseSpriteSize;
 
@@ -80,19 +79,19 @@ public class RenderSystem extends ComponentSystem {
         }
         long afterEntity = System.nanoTime();
 
+
+        // TODO migrate world rendering to building of a "mesh" (an object holding the chunks data since the last update instead of doing this *every* frame)
         Vector3 centerChunk = world.getChunkFor(lockOnPosition.position);
         // chunks are currently only horizontally, hence the 8 surroundings should suffice
-    //    List<Vector3> visibleChunkCords = new ArrayList<>(Arrays.asList(GenerationUtils.nearby8Of(centerChunk, world.chunkSize)));
-        List<Vector3> visibleChunkCords = new ArrayList<>(Arrays.asList(GenerationUtils.nearby(centerChunk, world.chunkSize* 2, world.chunkSize)));
+       // List<Vector3> visibleChunkCords = new ArrayList<>(Arrays.asList(GenerationUtils.nearby8Of(centerChunk, world.chunkSize)));
+        List<Vector3> visibleChunkCords = new ArrayList<>(Arrays.asList(GenerationUtils.nearbyDiamond(centerChunk, world.chunkSize * 2, world.chunkSize)));
         visibleChunkCords.add(centerChunk);
-
 
         List<WorldChunk> visibleChunks = world.chunks.getMultiple(visibleChunkCords);
 
         for(WorldChunk chunk : visibleChunks) {
 
-            for (Map.Entry<Vector3, TileData> tileDataEntry : chunk.getVisibleTiles().entrySet()) {
-           // for (Map.Entry<Vector3, TileData> tileDataEntry : chunk.getTileDataMap().entrySet()) {
+            for (Map.Entry<Vector3, TileData> tileDataEntry : chunk.tileDataMap.entrySet()) {
                 Vector3 tilePos = tileDataEntry.getKey();
                 TileData tileData = tileDataEntry.getValue();
 
@@ -106,7 +105,6 @@ public class RenderSystem extends ComponentSystem {
                     SpriteData spriteData = updateSpriteData(updateDelta, cacheKey, SpriteType.TILE, positionComponent, renderComponent, stateComponent);
 
                     if (tileData.isVisibleFrom(lockOnPosition.position)) {
-                       /*
                         for(Direction dirEnum : Direction.values()) {
                             TileData neighbor = tileData.getNeighbor(dirEnum);
                             if (neighbor == null || neighbor.tile != tileData.tile) {
@@ -115,7 +113,6 @@ public class RenderSystem extends ComponentSystem {
                                 spriteData.notBlocked.remove(dirEnum);
                             }
                         }
-                        */
 
                         spriteQueue.add(spriteData);
                     }

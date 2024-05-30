@@ -111,15 +111,15 @@ public class WorldScene extends AbstractScene{
 
 
         // ==== [ prepare world ] ============================
-      /*world = new WaveFunctionTest(100, 100, 20, false, true,
+/*       world = new WaveFunctionTest(100, 100, 20, false, true,
                 Arrays.asList(
                         new CastleTower("brickF"),
                         new CastleTower("dirt_0"),
                         new Hole()
                 ), 6,20).setup();*/
         //world = new Superflat(30, 30).setup();
-       world = new MultilayeredPerlinTest(200, 200).setup();
-      //  world = new MinimalLevel2().setup();
+       world = new MultilayeredPerlinTest(256, 128).setup();
+        //world = new TestLevel().setup();
        // world = WorldMapLoader.fromJson(Gdx.files.local("save/world_38571562605.json")).build();
 
         // ==== [ camera setup ] ============================
@@ -465,15 +465,30 @@ Gdx.app.log("shader", shader.getLog());
         this.background = world.getSkyboxColor();
 
         // ECS updates - TODO might have to delegate this to worlds update?
-        collisionDetectionSystem.entityHitboxCache.clear();
-        // TODO can this be simplified? Instead of passing lists of entities to all systems, iterate entities and pass to systems if qualified components are here
-        collisionDetectionSystem.execute(deltaTime, world.entities.compatibleWith(collisionDetectionSystem) );
-        playerInputSystem.execute(deltaTime, world.entities.compatibleWith(playerInputSystem));
-        aiInputSystem.execute(deltaTime, world.entities.compatibleWith(aiInputSystem));
-        movementSystem.execute(deltaTime, world.entities.compatibleWith(movementSystem));
-        stateSystem.execute(deltaTime, world.entities.compatibleWith(stateSystem));
+        collisionDetectionSystem.clear();
+        playerInputSystem.clear();
+        aiInputSystem.clear();
+        movementSystem.clear();
+        stateSystem.clear();
+        renderSystem.clear();
 
-        renderSystem.execute(deltaTime, world.entities.compatibleWith(renderSystem));
+        // TODO can this be simplified? Instead of passing lists of entities to all systems, iterate entities and pass to systems if qualified components are here
+
+        world.entities.values().forEach(entity -> {
+            collisionDetectionSystem.registerIfQualified(entity);
+            playerInputSystem.registerIfQualified(entity);
+            aiInputSystem.registerIfQualified(entity);
+            movementSystem.registerIfQualified(entity);
+            stateSystem.registerIfQualified(entity);
+            renderSystem.registerIfQualified(entity);
+        });
+
+        collisionDetectionSystem.execute(deltaTime);
+        playerInputSystem.execute(deltaTime);
+        aiInputSystem.execute(deltaTime);
+        movementSystem.execute(deltaTime);
+        stateSystem.execute(deltaTime);
+        renderSystem.execute(deltaTime);
 
         cam.update();
     }

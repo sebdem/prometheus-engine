@@ -1,20 +1,12 @@
 package dbast.prometheus.engine.entity.systems;
 
 import com.badlogic.gdx.Gdx;
-import com.badlogic.gdx.math.Intersector;
-import com.badlogic.gdx.math.Polygon;
 import com.badlogic.gdx.math.Rectangle;
 import com.badlogic.gdx.math.Vector3;
 import com.badlogic.gdx.math.collision.BoundingBox;
-import com.badlogic.gdx.math.collision.Sphere;
-import com.badlogic.gdx.physics.bullet.Bullet;
-import com.badlogic.gdx.physics.bullet.collision.SWIGTYPE_p_f_p_q_const__btCollisionShape_p_q_const__btCollisionShape__bool;
-import com.badlogic.gdx.physics.bullet.collision.btAABB;
 import dbast.prometheus.engine.entity.Entity;
 import dbast.prometheus.engine.entity.components.*;
 import dbast.prometheus.engine.world.WorldSpace;
-import dbast.prometheus.engine.world.tile.Tile;
-import dbast.prometheus.utils.GeneralUtils;
 
 import java.util.Arrays;
 import java.util.List;
@@ -30,7 +22,7 @@ public class MovementSystem extends ComponentSystem {
     }
 
     @Override
-    public void execute(float updateDelta, List<Entity> qualifiedEntities) {
+    public void execute(float updateDelta) {
         for(Entity entity : qualifiedEntities) {
             PositionComponent positionComponent = entity.getComponent(PositionComponent.class);
             VelocityComponent velocity = entity.getComponent(VelocityComponent.class);

@@ -1,17 +1,11 @@
 package dbast.prometheus.engine.entity.systems;
 
-import com.badlogic.gdx.math.Vector3;
 import dbast.prometheus.engine.entity.Entity;
 import dbast.prometheus.engine.entity.components.*;
-import dbast.prometheus.engine.world.Direction;
 import dbast.prometheus.engine.world.WorldSpace;
-import dbast.prometheus.engine.world.tile.Tile;
-import dbast.prometheus.engine.world.tile.TileData;
 
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 public class StateUpdateSystem extends ComponentSystem {
 
@@ -22,7 +16,7 @@ public class StateUpdateSystem extends ComponentSystem {
     }
 
     @Override
-    public void execute(float updateDelta, List<Entity> qualifiedEntities) {
+    public void execute(float updateDelta) {
         for(Entity entity : qualifiedEntities) {
             StateComponent entityState = entity.getComponent(StateComponent.class);
 

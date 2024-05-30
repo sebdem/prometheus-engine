@@ -6,8 +6,6 @@ import dbast.prometheus.engine.entity.Entity;
 import dbast.prometheus.engine.entity.components.CollisionBox;
 import dbast.prometheus.engine.entity.components.Component;
 import dbast.prometheus.engine.entity.components.PositionComponent;
-import dbast.prometheus.engine.events.Event;
-import dbast.prometheus.engine.events.EventBus;
 
 import java.util.Arrays;
 import java.util.HashMap;
@@ -19,11 +17,18 @@ public class CollisionDetectionSystem extends ComponentSystem {
     private static boolean LOG_COLLISIONS = false;
 
     public Map<Long, Rectangle> entityHitboxCache = new HashMap<>();
+
     @Override
-    public void execute(float updateDelta, List<Entity> entities) {
+    public void clear() {
+        super.clear();
+        this.entityHitboxCache.clear();
+    }
+
+    @Override
+    public void execute(float updateDelta) {
         // TODO i believe this can be optimized for local comparing of collisions
 
-        for(Entity entityA : entities) {
+        for(Entity entityA : qualifiedEntities) {
             PositionComponent positionA = entityA.getComponent(PositionComponent.class);
             CollisionBox collisionA = entityA.getComponent(CollisionBox.class);
 
@@ -32,7 +37,7 @@ public class CollisionDetectionSystem extends ComponentSystem {
 
             collisionA.setColliding(false);
 
-            entities.stream().filter(entityB ->
+            qualifiedEntities.stream().filter(entityB ->
                 !entityB.getId().equals(entityA.getId())
                 && positionA.isNearby(entityB.getComponent(PositionComponent.class).position, 4f)
             ).forEach(entityB -> {
