@@ -4,9 +4,11 @@ import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.math.Vector3;
 import dbast.prometheus.engine.entity.EntityRegistry;
 import dbast.prometheus.engine.entity.components.*;
+import dbast.prometheus.engine.serializing.WorldLoader;
 import dbast.prometheus.engine.world.WorldChunk;
 import dbast.prometheus.engine.world.WorldSpace;
 import dbast.prometheus.engine.world.generation.OpenSimplexNoise;
+import dbast.prometheus.engine.world.generation.WorldGenerator;
 import dbast.prometheus.engine.world.tile.Tile;
 import dbast.prometheus.engine.world.tile.TileRegistry;
 import dbast.prometheus.utils.WeightedRandomBag;
@@ -70,13 +72,13 @@ public class MultilayeredPerlinTest {
 
         int totalHeight = (height * 2);
         int totalWidth = width * 2;
-        int numberOfChunksY = totalHeight / worldSpace.chunkSize/* + 2*/;
-        int numberOfChunksX = totalWidth / worldSpace.chunkSize/* + 2*/;
+        int numberOfChunksY = totalHeight / WorldChunk.CHUNK_SIZE/* + 2*/;
+        int numberOfChunksX = totalWidth / WorldChunk.CHUNK_SIZE/* + 2*/;
 
-
+        worldSpace.attachGenerator(new WorldGenerator(123456789L));
 
         // TODO separate Chunk creation from generation...
-        WorldChunk[] chunks = new WorldChunk[numberOfChunksY * numberOfChunksX];
+       /* WorldChunk[] chunks = new WorldChunk[numberOfChunksY * numberOfChunksX];
 
         for (int y = 0; y < numberOfChunksY; y++) {
             for (int x = 0; x < numberOfChunksX; x++) {
@@ -84,16 +86,17 @@ public class MultilayeredPerlinTest {
                 chunks[index] = new WorldChunk();
                 chunks[index].setPosition(new Vector3(x - numberOfChunksX / 2, y - numberOfChunksY / 2, 0));
             }
-        }
+        }*/
 
+        /*
         Arrays.stream(chunks).forEach(
                 worldChunk -> {
 
-                float chunkY = (worldChunk.getPosition().y)  * worldSpace.chunkSize;
-                float chunkX = (worldChunk.getPosition().x) * worldSpace.chunkSize;
+                float chunkY = (worldChunk.getPosition().y)  * WorldChunk.CHUNK_SIZE;
+                float chunkX = (worldChunk.getPosition().x) * WorldChunk.CHUNK_SIZE;
                 populateChunk(chunkX, chunkY, worldSpace);
             }
-        );
+        );*/
 
         generateMinimap(totalWidth, totalHeight, worldSpace);
         Gdx.app.getApplicationLogger().log("WorldSetup", "Generating Entities");
@@ -102,7 +105,7 @@ public class MultilayeredPerlinTest {
                 1L,
                 new CollisionBox(new Vector3(0.99f,0.99f,1.49f).scl(0.75f), false),
                 new SizeComponent(1f,1f),
-                new PositionComponent(new Vector3(0,0,10)),
+                new PositionComponent(new Vector3(0,0,5)),
                 new InputControllerComponent(),
                 new VelocityComponent(0,0),
                 new HealthComponent(200f),
@@ -125,9 +128,9 @@ public class MultilayeredPerlinTest {
         grass_deco.addEntry("default",25);
         grass_deco.addEntry("tall1",15);
 
-        for (float yc = 0; yc < worldSpace.chunkSize; yc++) {
+        for (float yc = 0; yc < WorldChunk.CHUNK_SIZE; yc++) {
             float yAbs = yc + chunkY;
-            for (float xc = 0; xc < worldSpace.chunkSize; xc++) {
+            for (float xc = 0; xc < WorldChunk.CHUNK_SIZE; xc++) {
                 float xAbs = xc + chunkX;
 
                 float landmassNoiseVal = (float) landmassNoise.eval(xAbs / landmassScale, yAbs / landmassScale);

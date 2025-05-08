@@ -3,8 +3,8 @@ package dbast.prometheus.engine.world;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.math.Vector3;
 import com.badlogic.gdx.math.collision.BoundingBox;
-import dbast.prometheus.engine.LockOnCamera;
 import dbast.prometheus.engine.base.PositionProvider;
+import dbast.prometheus.engine.world.tile.Tile;
 import dbast.prometheus.engine.world.tile.TileData;
 
 import java.util.ArrayList;
@@ -16,6 +16,7 @@ import java.util.Map;
 // TODO consider actual world data as well (~~tiles~~, entities etc.)
 public class WorldChunk implements PositionProvider {
 
+    public static int CHUNK_SIZE = 16;
     private Vector3 position;
 
     public boolean requiredDataUpdate = true;
@@ -25,12 +26,14 @@ public class WorldChunk implements PositionProvider {
     public List<BoundingBox> boundaries;
     public List<TileData> visibleTileData;
 
+    protected WorldSpace worldSpace;
+
     public WorldChunk() {
         this.tileDataMap = new HashMap<>();
         this.boundaries = new ArrayList<>();
         this.visibleTileData = new ArrayList<>();
         // Todo refactor to "load" chunks dynamically eventually
-        this.load();
+        //this.load();
     }
 
     public WorldChunk(Vector3 position) {
@@ -39,8 +42,9 @@ public class WorldChunk implements PositionProvider {
     }
 
     public void update(float deltaTime) {
+        //Gdx.app.log("ChunkUpdate", String.format("Chunk %s does require an update: %s", this.getPosition(), requiredDataUpdate));
         if (requiredDataUpdate) {
-            Gdx.app.log("WorldUpdate", "Detected World Chunk Data Update");
+            Gdx.app.log("ChunkUpdate", "Detected World Chunk Data Update");
             // Todo boundary generation could be tied to visible tiles only?
             for (Map.Entry<Vector3, TileData> tiles : this.tileDataMap.entrySet()) {
                 // update chunk boundaries
@@ -79,6 +83,9 @@ public class WorldChunk implements PositionProvider {
      */
     public WorldChunk unload() {
         loaded = false;
+
+        this.boundaries.clear();
+        this.visibleTileData.clear();
         return this;
     }
 
@@ -89,5 +96,26 @@ public class WorldChunk implements PositionProvider {
 
     public void setPosition(Vector3 position) {
         this.position = position;
+    }
+
+    public void placeTile(Tile tile, float x, float y, float z, String state) {
+        Vector3 position = new Vector3(x, y, z);
+        TileData tileData = new TileData(tile, getWorldSpace(), position, state);
+
+        placeTile(position, tileData);
+    }
+    public void placeTile(Vector3 inWorldPosition, TileData tileData) {
+        Gdx.app.log("Chunk", String.format("Chunk %s : Placing tile %s at position %s", this.getPosition(), tileData.tile.tag, inWorldPosition));
+        this.tileDataMap.put(inWorldPosition, tileData);
+        this.requiredDataUpdate = true;
+        this.worldSpace.dataUpdate = true;
+    }
+
+    public WorldSpace getWorldSpace() {
+        return worldSpace;
+    }
+
+    public void setWorldSpace(WorldSpace worldSpace) {
+        this.worldSpace = worldSpace;
     }
 }

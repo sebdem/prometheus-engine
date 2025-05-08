@@ -5,7 +5,6 @@ import com.badlogic.gdx.files.FileHandle;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.math.MathUtils;
 import com.badlogic.gdx.math.Vector3;
-import com.badlogic.gdx.math.collision.BoundingBox;
 import com.google.gson.Gson;
 import dbast.prometheus.engine.entity.Entity;
 import dbast.prometheus.engine.entity.EntityRegistry;
@@ -13,6 +12,7 @@ import dbast.prometheus.engine.entity.components.InputControllerComponent;
 import dbast.prometheus.engine.entity.components.PositionComponent;
 import dbast.prometheus.engine.entity.components.SizeComponent;
 import dbast.prometheus.engine.serializing.data.WorldData;
+import dbast.prometheus.engine.world.generation.WorldGenerator;
 import dbast.prometheus.engine.world.tile.Tile;
 import dbast.prometheus.engine.world.tile.TileData;
 import dbast.prometheus.engine.world.tile.TileRegistry;
@@ -21,6 +21,9 @@ import dbast.prometheus.utils.Vector3IndexMap;
 
 import java.util.*;
 
+
+// TODO remove old chunk property.
+// TODO fix serialization to depend on the new ChunkRegistry class
 public class WorldSpace {
 
     public String id;
@@ -35,8 +38,6 @@ public class WorldSpace {
     // TODO introduce boundaries as a cube "playarea", adjust methods accordingly
 
     public EntityRegistry entities;
-    public int chunkSize;
-    public final static int BASE_CHUNK_SIZE = 16;
     /*
         Time data
      */
@@ -49,10 +50,15 @@ public class WorldSpace {
     /*
         Generic data for runtime
      */
-    // TODO It's chunkin' time
+    @Deprecated
     public Vector3IndexMap<WorldChunk> chunks;
 
+    @Deprecated //?
     protected boolean dataUpdate;
+
+    protected WorldGenerator generator;
+
+    protected ChunkRegister chunkRegister;
 
     public WorldSpace(int width, int height) {
         this(0,0, width, height);
@@ -63,7 +69,6 @@ public class WorldSpace {
         this.minY = minY;
         this.width = width;
         this.height = height;
-        this.chunkSize = BASE_CHUNK_SIZE;
         //this.terrainTiles = new Vector3IndexMap<>(new Vector3Comparator.Planar());
         //this.tileDataMap = new HashMap<>();
         this.dataUpdate = true;
@@ -71,30 +76,35 @@ public class WorldSpace {
         this.chunks = new Vector3IndexMap<>(new Vector3Comparator.Planar());
     }
 
+    public void attachGenerator(WorldGenerator newGenerator) {
+        this.generator = newGenerator;
+        this.dataUpdate = true;
+    }
+
 
     public void update(float updateDelta) {
         this.age += updateDelta;
         this.realTime = System.currentTimeMillis();
 
-        if (dataUpdate) {
-            Gdx.app.log("WorldUpdate", "Detected World Data Update");
+        //if (dataUpdate) {
+        //    Gdx.app.log("WorldUpdate", "Detected World Data Update");
 
-            for (WorldChunk chunk : this.chunks.values()) {
-                chunk.update(updateDelta);
+            if (chunkRegister != null) {
+                chunkRegister.update(updateDelta);
             }
 
             dataUpdate = false;
-            Gdx.app.log("WorldUpdate", "Finished World Data Update");
-        }
+        //    Gdx.app.log("WorldUpdate", "Finished World Data Update");
+        //}
 
     //   Gdx.app.getApplicationLogger().log("World", String.format("Current age: %s | RealTime: %s | CurrentTime: %s | currentOClock %s", this.age, realTime, currentTime.name(), (this.age / 60) % 24 ));
     }
 
 
-    public Vector3 getChunkFor(Vector3 worldPosition) {
+    public Vector3 convertToChunkPos(Vector3 worldPosition) {
         return new Vector3(
-                (float)(Math.floor(worldPosition.x / chunkSize) * chunkSize),
-                (float)(Math.floor(worldPosition.y / chunkSize) * chunkSize),
+                (float)(Math.floor(worldPosition.x / WorldChunk.CHUNK_SIZE) * WorldChunk.CHUNK_SIZE),
+                (float)(Math.floor(worldPosition.y / WorldChunk.CHUNK_SIZE) * WorldChunk.CHUNK_SIZE),
                 0f
                 //(Math.floor(worldPosition.z / chunkSize) * chunkSize),
         );
@@ -127,8 +137,9 @@ public class WorldSpace {
         return this;
     }
 
+    @Deprecated
     public WorldChunk placeInChunk(Vector3 inWorldPosition, TileData tileData) {
-        Vector3 chunkPos = this.getChunkFor(inWorldPosition);
+        Vector3 chunkPos = this.convertToChunkPos(inWorldPosition);
         WorldChunk chunk = this.chunks.getOrDefault(chunkPos, new WorldChunk(chunkPos));
         chunk.tileDataMap.put(inWorldPosition, tileData);
         chunk.requiredDataUpdate = true;
@@ -143,8 +154,9 @@ public class WorldSpace {
         return tileData == null ? null : tileData.tile;
     }
     public TileData lookupTileDataAbsolute(Vector3 vector3) {
-        Vector3 targetChunk = getChunkFor(vector3);
-        WorldChunk chunk = this.chunks.getOrDefault(targetChunk, null);
+        Vector3 targetChunk = convertToChunkPos(vector3);
+
+        WorldChunk chunk = chunkRegister.getLoadedChunk(targetChunk);;
         if (chunk == null) {
             return null;
         } else {
@@ -156,7 +168,7 @@ public class WorldSpace {
     public WorldSpace removeTile(float x, float y, float z) {
         //this.terrainTiles.remove();
         Vector3 targetPosition = new Vector3(x, y, z);
-        Vector3 targetChunk = getChunkFor(targetPosition);
+        Vector3 targetChunk = convertToChunkPos(targetPosition);
         this.chunks.get(targetChunk).tileDataMap.remove(targetPosition);
         this.chunks.get(targetChunk).requiredDataUpdate = true;
         this.dataUpdate = true;
@@ -196,7 +208,7 @@ public class WorldSpace {
             targetPosition.set(
                     (float) (MathUtils.random(minX, this.width)),
                     (float) (MathUtils.random(minY, this.height)),
-                    1f
+                    10f
             );
             attempts++;
             isValidPosition = this.isPositionInWorld(targetPosition) && this.canStandIn(targetPosition);
@@ -225,6 +237,7 @@ public class WorldSpace {
     }
 
 
+    //TODO map to new ChunkRegister concept
     public void persist() {
         WorldData worldData = new WorldData(this);
         Gson gsonMapper = new Gson();
@@ -249,7 +262,7 @@ public class WorldSpace {
     }
 
     public void toNextUpperLevel(Vector3 entityPos) {
-        Vector3 chunkPos = getChunkFor(entityPos);
+        Vector3 chunkPos = convertToChunkPos(entityPos);
         Vector3 topMost = this.chunks.get(chunkPos).tileDataMap.keySet().stream()
                 .filter(key -> key.x == Math.floor(entityPos.x) && key.y ==  Math.floor(entityPos.y) && key.z <= Math.floor(entityPos.z + 1f))
                 .max((key1, key2) -> Float.compare(key1.z, key2.z))
@@ -267,5 +280,13 @@ public class WorldSpace {
                         this.entities.values().toArray(new Entity[0])[0]
                 )
         );
+    }
+
+    public ChunkRegister getChunkRegister() {
+        if (chunkRegister == null) {
+            this.chunkRegister = new ChunkRegister(this, generator);
+            this.dataUpdate = true;
+        }
+        return chunkRegister;
     }
 }

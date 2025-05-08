@@ -5,7 +5,6 @@ import com.badlogic.gdx.backends.lwjgl.LwjglApplication;
 import com.badlogic.gdx.backends.lwjgl.LwjglApplicationConfiguration;
 import com.badlogic.gdx.math.Vector2;
 import dbast.prometheus.PrometheusGame;
-import dbast.prometheus.SimpleDecalTest;
 import dbast.prometheus.engine.config.PrometheusConfig;
 
 import java.time.LocalDateTime;
@@ -51,8 +50,8 @@ public class DesktopLauncher {
 			config.height= 2160;
 			config.width= 3840;
 		} else {
-
 			final Map<String, Vector2> resConfig = new HashMap<>();
+
 			resConfig.put("nds", new Vector2(256, 192));
 			resConfig.put("3ds", new Vector2(320, 240));
 			resConfig.put("hd720", new Vector2(1280, 720));
@@ -72,6 +71,7 @@ public class DesktopLauncher {
 
 			config.title = "It's " + LocalDateTime.now().getDayOfWeek().getDisplayName(TextStyle.FULL, Locale.ENGLISH) +" mah dudes"; // TODO slap a name on this motherf
 		}
+		config.forceExit = false;
 
 		new LwjglApplication(new PrometheusGame(), config);
 

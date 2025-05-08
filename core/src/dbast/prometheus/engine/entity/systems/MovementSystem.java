@@ -1,7 +1,6 @@
 package dbast.prometheus.engine.entity.systems;
 
 import com.badlogic.gdx.Gdx;
-import com.badlogic.gdx.math.Rectangle;
 import com.badlogic.gdx.math.Vector3;
 import com.badlogic.gdx.math.collision.BoundingBox;
 import dbast.prometheus.engine.entity.Entity;
@@ -11,15 +10,12 @@ import dbast.prometheus.engine.world.WorldSpace;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import java.util.stream.Collectors;
 
 public class MovementSystem extends ComponentSystem {
 
-    protected Rectangle boundaries;
     protected WorldSpace worldSpace;
 
     public MovementSystem(WorldSpace worldSpace) {
-        this.boundaries = new Rectangle(0f,0f, worldSpace.width, worldSpace.height);
         this.worldSpace = worldSpace;
     }
 
@@ -59,16 +55,16 @@ public class MovementSystem extends ComponentSystem {
                     BoundingBox entityBoundaryLower= collisionBox.getBoundsAt(newPosLower);
 
 
-                    Vector3 minChunk = worldSpace.getChunkFor(entityBoundary.min);
-                    Vector3 maxChunk = worldSpace.getChunkFor(entityBoundary.max);
+                    Vector3 minChunk = worldSpace.convertToChunkPos(entityBoundary.min);
+                    Vector3 maxChunk = worldSpace.convertToChunkPos(entityBoundary.max);
 
                     List<BoundingBox> chunkBounds = new ArrayList<>();
 
                     if (minChunk.equals(maxChunk)) {
-                        chunkBounds.addAll(worldSpace.chunks.get(minChunk).boundaries);
+                        chunkBounds.addAll(worldSpace.getChunkRegister().getChunk(minChunk).boundaries);
                     } else {
-                        chunkBounds.addAll(worldSpace.chunks.get(minChunk).boundaries);
-                        chunkBounds.addAll(worldSpace.chunks.get(maxChunk).boundaries);
+                        chunkBounds.addAll(worldSpace.getChunkRegister().getChunk(minChunk).boundaries);
+                        chunkBounds.addAll(worldSpace.getChunkRegister().getChunk(maxChunk).boundaries);
                     }
 
                     if (!chunkBounds.isEmpty()) {

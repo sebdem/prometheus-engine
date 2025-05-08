@@ -37,8 +37,8 @@ public class PerlinTest {
 
         int totalHeight = (height * 2);
         int totalWidth = width * 2;
-        int numberOfChunksY = totalHeight / worldSpace.chunkSize/* + 2*/;
-        int numberOfChunksX = totalWidth / worldSpace.chunkSize/* + 2*/;
+        int numberOfChunksY = totalHeight / WorldChunk.CHUNK_SIZE/* + 2*/;
+        int numberOfChunksX = totalWidth / WorldChunk.CHUNK_SIZE/* + 2*/;
 
         int perlinScale = 24;
         int biomeScale = 16;
@@ -59,11 +59,11 @@ public class PerlinTest {
                 worldChunk -> {
                 Tile tileToPlace = null;
 
-                float chunkY = (worldChunk.getPosition().y)  * worldSpace.chunkSize;
-                float chunkX = (worldChunk.getPosition().x) * worldSpace.chunkSize;
-                for (float yc = 0; yc < worldSpace.chunkSize; yc++) {
+                float chunkY = (worldChunk.getPosition().y)  * WorldChunk.CHUNK_SIZE;
+                float chunkX = (worldChunk.getPosition().x) * WorldChunk.CHUNK_SIZE;
+                for (float yc = 0; yc < WorldChunk.CHUNK_SIZE; yc++) {
                     float yAbs = yc + chunkY;
-                    for (float xc = 0; xc < worldSpace.chunkSize; xc++) {
+                    for (float xc = 0; xc < WorldChunk.CHUNK_SIZE; xc++) {
                         float xAbs = xc + chunkX;
 
                         float simplexValue =  (float)simplexNoise.eval(xAbs / perlinScale, yAbs / perlinScale);

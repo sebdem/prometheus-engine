@@ -35,9 +35,14 @@ public class WorldData implements Serializable {
         this.chunks = new ArrayList<>();
         this.chunkData = new HashMap<>();
 
-        worldSpace.chunks.forEach((vector3, chunk) -> {
+
+        chunks.addAll(worldSpace.getChunkRegister().getKnownChunks());
+        // TODO persisting of Chunks
+        worldSpace.getChunkRegister().getLoadedChunks().forEach((vector3, chunk) -> {
             PositionHash chunkPosition = new PositionHash(chunk);
-            this.chunks.add(new PositionHash(chunk));
+            if (!this.chunks.contains(chunkPosition)) {
+                this.chunks.add(chunkPosition);
+            }
             this.chunkData.put(chunkPosition.chunkHash, new WorldChunkData(chunk, chunkPosition));
         });
 

@@ -69,7 +69,9 @@ public abstract class AbstractScene implements IKeyed {
     }
     public void mainRender(int windowWidth, int windowHeight, float aspect) {
         fpsCounter.setText(Gdx.graphics.getFramesPerSecond() + " FPS");
-        this.gui.draw();
+        if (this.gui != null) {
+            this.gui.draw();
+        }
     }
 
     public void afterRender(int windowWidth, int windowHeight, float aspect) {
@@ -79,7 +81,10 @@ public abstract class AbstractScene implements IKeyed {
     /**
      * Load all larger assets here, when the game switches to this scene
      */
-    public void activateScene() { }
+    public void activateScene() {
+        // TODO am thinking i can get rid of GUI again... Good idea or not, future me? Could shove all that shit into a separate class based on our logic.
+        Gdx.input.setInputProcessor(this.gui);
+    }
 
     public void update(float deltaTime){
         this.gui.act(deltaTime);

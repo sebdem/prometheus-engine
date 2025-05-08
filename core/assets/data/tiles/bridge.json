@@ -1,0 +1,19 @@
+{
+	"name": "bridge",
+	"tag": "bridge",
+	"bounds": [
+		[0,0,0.5,1,1,1]
+	],
+	"renderData": {
+		"default": {
+			"path": "world/terrain/iso/bridge_x.png",
+			"normal": "world/terrain/iso/normal_c.png",
+			"animated": false
+		},
+		"variant": {
+			"path": "world/terrain/iso/bridge_y.png",
+			"normal": "world/terrain/iso/normal_c.png",
+			"animated": false
+		}
+	}
+}

@@ -81,16 +81,19 @@ public class RenderSystem extends ComponentSystem {
 
 
         // TODO migrate world rendering to building of a "mesh" (an object holding the chunks data since the last update instead of doing this *every* frame)
-        Vector3 centerChunk = world.getChunkFor(lockOnPosition.position);
+        Vector3 centerChunk = world.convertToChunkPos(lockOnPosition.position);
         // chunks are currently only horizontally, hence the 8 surroundings should suffice
        // List<Vector3> visibleChunkCords = new ArrayList<>(Arrays.asList(GenerationUtils.nearby8Of(centerChunk, world.chunkSize)));
-        List<Vector3> visibleChunkCords = new ArrayList<>(Arrays.asList(GenerationUtils.nearbyDiamond(centerChunk, world.chunkSize * 2, world.chunkSize)));
-        visibleChunkCords.add(centerChunk);
+        /*List<Vector3> visibleChunkCords = new ArrayList<>(Arrays.asList(GenerationUtils.nearbyDiamond(centerChunk, WorldChunk.CHUNK_SIZE * 2, WorldChunk.CHUNK_SIZE)));
+        visibleChunkCords.add(centerChunk);*/
 
-        List<WorldChunk> visibleChunks = world.chunks.getMultiple(visibleChunkCords);
+        List<WorldChunk> visibleChunks = new ArrayList<>(world.getChunkRegister().getChunks(GenerationUtils.nearbyDiamond(centerChunk, WorldChunk.CHUNK_SIZE * 2, WorldChunk.CHUNK_SIZE)));
+        visibleChunks.add(world.getChunkRegister().getChunk(centerChunk));
 
+        Gdx.app.log("RenderSystem", String.format("Found %s visible Chunks", visibleChunks.size()));
         for(WorldChunk chunk : visibleChunks) {
 
+            Gdx.app.log("RenderSystem", String.format("Chunk %s has %s visible Tile Data", chunk.getPosition(), chunk.visibleTileData.size()));
             for (TileData tileData : chunk.visibleTileData) {
                 RenderComponent renderComponent = tileData.tile.renderComponent;
                 PositionComponent positionComponent = tileData.positionComponent;

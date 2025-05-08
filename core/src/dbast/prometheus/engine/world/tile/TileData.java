@@ -14,7 +14,7 @@ public class TileData {
     public StateComponent stateComponent;
 
     public PositionComponent positionComponent;
-    public WorldSpace worldSpace;
+    protected WorldSpace worldSpace;
 
     public Map<Direction, TileData> neighbors;
     public TileData() {

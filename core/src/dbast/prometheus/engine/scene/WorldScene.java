@@ -39,7 +39,7 @@ import dbast.prometheus.engine.graphics.SpriteDataQueue;
 
 import java.util.*;
 
-public class WorldScene extends AbstractScene{
+public class WorldScene extends AbstractScene {
 
     private static final Vector3 LIGHT_POS = new Vector3(0,0, 0);
     private static final Vector3 SUN_DIR = new Vector3(-1f,0, 1);
@@ -94,7 +94,12 @@ public class WorldScene extends AbstractScene{
         TileRegistry.output();
 
         bgmMusic = Gdx.audio.newMusic(Gdx.files.local("resources/sounds/song.wav"));
-        bgmMusic.setLooping(true);
+        bgmMusic.setLooping(false);
+        bgmMusic.setOnCompletionListener((music) -> {
+            music.setVolume((float) (0.5f + (Math.random() / 2)));
+            Gdx.app.log("music", "Finished iteration");
+            music.play();
+        });
 
         background_image = new Texture(Gdx.files.internal("skybox.png"));
        // background_image.setWrap(Texture.TextureWrap.MirroredRepeat, Texture.TextureWrap.MirroredRepeat);
@@ -143,8 +148,7 @@ public class WorldScene extends AbstractScene{
 
         entityRenderComponents = Arrays.asList(RenderComponent.class, PositionComponent.class, SizeComponent.class);
 
-        // TODO am thinking i can get rid of GUI again... Good idea or not, future me? Could shove all that shit into a separate class based on our logic.
-        Gdx.input.setInputProcessor(this.gui);
+
 
         EventBus.subscribe("key_input", (event) -> {
             int keycode = (Integer)event.properties.getOrDefault("keycode", "0");
@@ -244,8 +248,13 @@ public class WorldScene extends AbstractScene{
 
         Gdx.graphics.setSystemCursor(Cursor.SystemCursor.Hand);
 
-        //bgmMusic.play();
         return this;
+    }
+
+    @Override
+    public void activateScene() {
+        super.activateScene();
+      //  bgmMusic.play();
     }
 
     @Override
@@ -262,9 +271,9 @@ public class WorldScene extends AbstractScene{
         batch.begin();
 
         ShaderProgram shader = batch.getShader();
-/*
-Gdx.app.log("shader", shader.getLog());
-*/
+        /*
+        Gdx.app.log("shader", shader.getLog());
+        */
         //update light position, normalized to screen resolution
         float x = this.playerInputSystem.cursorInput.x / (float)Gdx.graphics.getWidth();
         float y = this.playerInputSystem.cursorInput.y / (float)Gdx.graphics.getHeight();
